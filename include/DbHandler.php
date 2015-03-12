@@ -236,6 +236,39 @@ class DbHandler {
     }
 
     /**
+     * Updating user
+     * @param String $user_id id of user
+     * @param String $fullname Fullname
+     * @param String $phone Phone Number
+     * @param String $personalID Personal Identification
+     * @param String $personalID_img Personal Identification Image
+     * @param String $link_avatar Link Avartar
+     */
+    public function updateUser($user_id, $fullname, $phone, $personalID, $personalID_img, $link_avatar) {
+        $stmt = $this->conn->prepare("UPDATE user set fullname = ?, phone = ?, personalID = ?,
+                                        personalID_img = ?, link_avatar = ?
+                                        WHERE user_id = ?");
+        $stmt->bind_param("sssssi", $fullname, $phone, $personalID, $personalID_img, $link_avatar, $user_id);
+        $stmt->execute();
+        $num_affected_rows = $stmt->affected_rows;
+        $stmt->close();
+        return $num_affected_rows > 0;
+    }
+
+    /**
+     * Deleting user
+     * @param String $user_id id of user
+     */
+    public function deleteUser($user_id, $task_id) {
+        $stmt = $this->conn->prepare("DELETE t FROM tasks t, user_tasks ut WHERE t.id = ? AND ut.task_id = t.id AND ut.user_id = ?");
+        $stmt->bind_param("ii", $task_id, $user_id);
+        $stmt->execute();
+        $num_affected_rows = $stmt->affected_rows;
+        $stmt->close();
+        return $num_affected_rows > 0;
+    }
+
+    /**
      * Validating user api key
      * If the api key is there in db, it is a valid key
      * @param String $api_key user api key

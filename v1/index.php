@@ -226,6 +226,63 @@ $app->delete('/itinerary/:id', 'authenticate', function($task_id) use($app) {
 
 
 /**
+ * Updating user
+ * method PUT
+ * params task, status
+ * url - /user
+ */
+$app->put('/user', 'authenticate', function() use($app) {
+            // check for required params
+            verifyRequiredParams(array('fullname', 'phone', 'personalID', 'personalID_img', 'link_avatar'));
+
+            global $user_id;            
+            $fullname = $app->request->put('fullname');
+            $phone = $app->request->put('phone');
+            $personalID = $app->request->put('personalID');
+            $personalID_img = $app->request->put('personalID_img');
+            $link_avatar = $app->request->put('link_avatar');
+
+            $db = new DbHandler();
+            $response = array();
+
+            // updating task
+            $result = $db->updateUser($user_id, $fullname, $phone, $personalID, $personalID_img, $link_avatar);
+            if ($result) {
+                // task updated successfully
+                $response["error"] = false;
+                $response["message"] = "Cập nhật thông tin thành công!";
+            } else {
+                // task failed to update
+                $response["error"] = true;
+                $response["message"] = "Cập nhật thông tin thất bại. Vui lòng thử lại!";
+            }
+            echoRespnse(200, $response);
+        });
+
+/**
+ * Deleting task. Users can delete only their tasks
+ * method DELETE
+ * url /tasks
+ */
+$app->delete('/user/:user_id', 'authenticate', function($user_id) use($app) {
+            global $user_id;
+
+            $db = new DbHandler();
+            $response = array();
+            $result = $db->deleteTask($user_id, $task_id);
+            if ($result) {
+                // task deleted successfully
+                $response["error"] = false;
+                $response["message"] = "Xóa người dùng thành công!";
+            } else {
+                // task failed to delete
+                $response["error"] = true;
+                $response["message"] = "Xóa người dùng thất bại. Vui lòng thử lại!";
+            }
+            echoRespnse(200, $response);
+        });
+
+/**
  * Listing all tasks of particual user
  * method GET
  * url /tasks          
