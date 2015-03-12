@@ -37,11 +37,16 @@ class DbHandler {
             // Generating API key
             $api_key = $this->generateApiKey();
 
-            // insert query
-            $stmt = $this->conn->prepare("INSERT INTO user(email, password, api_key, status) values(?, ?, ?, 1)");
-            $stmt->bind_param("sss", $email, $password_hash, $api_key);
+            $sql_query = "INSERT INTO user(email, password, api_key, status) values(?, ?, ?, ". USER_NOT_ACTIVATE. ")";
 
-            $result = $stmt->execute();
+            // insert query
+            if ($stmt = $this->conn->prepare($sql_query)) {
+                $stmt->bind_param("sss", $email, $password_hash, $api_key);
+
+                $result = $stmt->execute();
+            } else {
+                var_dump($this->conn->error);
+            }
 
             $stmt->close();
 
@@ -57,6 +62,54 @@ class DbHandler {
             // User with same email already existed in the db
             return USER_ALREADY_EXISTED;
         }
+    }
+
+    /**
+     * Activate user
+     * @param String $activation_code Activation code
+     */
+    public function activateUser($activation_code) {
+        // fetching user by activation code
+        $sql_query = "SELECT user_id FROM user WHERE api_key = ? AND status = ". USER_NOT_ACTIVATE;
+
+        $stmt = $this->conn->prepare($sql_query);
+
+        $stmt->bind_param("s", $activation_code);
+
+        if ($stmt->execute()) {
+            $stmt->bind_result($user_id);
+
+            $stmt->store_result();
+
+            $stmt->fetch();
+        }
+
+        if ($stmt->num_rows > 0) {
+            // Found user with the activation code
+            // Now activate user
+
+            $api_key = $this->generateApiKey();
+
+            $sql_query = "UPDATE user SET api_key = ?, status = ". USER_ACTIVATED. " WHERE user_id = ". $user_id;
+
+            // insert query
+            if ($stmt = $this->conn->prepare($sql_query)) {
+                $stmt->bind_param("s", $api_key);
+
+                $result = $stmt->execute();
+            } else {
+                var_dump($user_id);
+                var_dump($this->conn->error);
+            }
+
+            $stmt->close();
+
+            return USER_ACTIVATED_SUCCESSFULLY;
+        } else {
+            $stmt->close();
+
+            return USER_ACTIVATE_FAILED;
+        }       
     }
 
     /**

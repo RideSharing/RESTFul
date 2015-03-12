@@ -67,12 +67,25 @@ $app->post('/user', function() use ($app) {
             // validating email address
             validateEmail($email);
 
+            // validating password
+            validatePassword($password);
+
             $db = new DbHandler();
             $res = $db->createUser($email, $password);
 
             if ($res == USER_CREATED_SUCCESSFULLY) {
                 $response["error"] = false;
-                $response["message"] = "Bạn đã đăng kí thành công.";
+                $response["message"] = "Đăng kí thành công. Vui lòng kích hoạt tài khoản qua email bạn vừa đăng kí!";
+
+                $user = $db->getUserByEmail($email);
+                $activation_code = $user["api_key"];
+
+                $content_mail = "Chào bạn,<br>
+                                Vui lòng nhấn vào đường link sau để kích hoạt tài khoản:
+                                <a href='http://localhost/RESTFul/v1/user/". $activation_code.
+                                "'>Kích hoạt tài khoản</a>";
+
+                sendMail($email, $content_mail);
             } else if ($res == USER_CREATE_FAILED) {
                 $response["error"] = true;
                 $response["message"] = "Xin lỗi! Có lỗi xảy ra trong quá trình đăng kí.";
@@ -85,57 +98,36 @@ $app->post('/user', function() use ($app) {
         });
 
 /**
- * User Login
+ * User activation
  * url - /user
  * method - GET
- * params - email, password
+ * params - activation_code
  */
-$app->get('/user', function() use ($app) {
-            // check for required params
-            verifyRequiredParams(array('email', 'password'));
-
-            // reading post params
-            $email = $app->request()->post('email');
-            $password = $app->request()->post('password');
+$app->get('/user/:activation_code', function($activation_code) {
             $response = array();
 
             $db = new DbHandler();
-            // check for correct email and password
-            if ($db->checkLogin($email, $password)) {
-                // get the user by email
-                $user = $db->getUserByEmail($email);
+            $res = $db->activateUser($activation_code);
 
-                if ($user != NULL) {
-                    $response["error"] = false;
-                    $response['email'] = $user['email'];
-                    $response['apiKey'] = $user['api_key'];
-                    $response['fullname'] = $user['fullname'];
-                    $response['phone'] = $user['phone'];
-                    $response['personalID'] = $user['personalID'];
-                    $response['personalID_img'] = $user['personalID_img'];
-                    $response['link_avatar'] = $user['link_avatar'];
-                    $response['created_at'] = $user['created_at'];
-                } else {
-                    // unknown error occurred
-                    $response['error'] = true;
-                    $response['message'] = "Có lỗi xảy ra! Vui lòng thử lại.";
-                }
-            } else {
-                // user credentials are wrong
-                $response['error'] = true;
-                $response['message'] = 'Đăng nhập thất bại! Sai email hoặc mật khẩu.';
-            }
+            if ($res == USER_ACTIVATED_SUCCESSFULLY) {
+                $response["error"] = false;
+                $response["message"] = "Bạn đã kích hoạt tài khoản thành công.";
+            } else if ($res == USER_ACTIVATE_FAILED) {
+                $response["error"] = true;
+                $response["message"] = "Xin lỗi! Kích hoạt tài khoản thất bại.";
+            } 
 
+            // echo json response
             echoRespnse(200, $response);
         });
 
 /**
- * User Update
+ * User Login
  * url - /user
- * method - PUT
+ * method - POST
  * params - email, password
  */
-$app->get('/user', 'authenticate', function() use ($app) {
+$app->post('/login', function() use ($app) {
             // check for required params
             verifyRequiredParams(array('email', 'password'));
 
@@ -160,6 +152,7 @@ $app->get('/user', 'authenticate', function() use ($app) {
                     $response['personalID_img'] = $user['personalID_img'];
                     $response['link_avatar'] = $user['link_avatar'];
                     $response['created_at'] = $user['created_at'];
+                    $response['status'] = $user['status'];
                 } else {
                     // unknown error occurred
                     $response['error'] = true;
@@ -395,6 +388,66 @@ function validateEmail($email) {
         $response["message"] = 'Email address is not valid';
         echoRespnse(400, $response);
         $app->stop();
+    }
+}
+
+/**
+ * Validating password
+ */
+function validatePassword($password) {
+    $app = \Slim\Slim::getInstance();
+
+    if (strlen( ($password) < '6') || (strlen($password) > '12') ) {
+        $response["error"] = true;
+        $response["message"] = 'Độ dài mật khẩu phải nằm trong khoảng 6 đến 12 kí tự!';
+        echoRespnse(400, $response);
+        $app->stop();
+    } 
+
+    if (preg_match('#[\\s]#', $password)) {
+        $response["error"] = true;
+        $response["message"] = 'Mật khẩu không được có khoảng trống!';
+        echoRespnse(400, $response);
+        $app->stop();
+    } 
+}
+
+/**
+ * Send activation email
+ */
+function sendMail($receiver_mail, $content) {
+    require_once '../libs/PHPMailer/class.phpmailer.php';
+
+    $mail               = new PHPMailer();
+    $body               = $content;
+    $body               = eregi_replace("[\]",'',$body);
+    $mail->IsSMTP();
+
+    $mail->SMTPAuth     = true;                  // enable SMTP authentication
+    $mail->SMTPSecure   = "ssl";                 // sets the prefix to the servier
+    $mail->Host         = "smtp.gmail.com";      // sets GMAIL as the SMTP server
+    $mail->Port         = 465;                   // set the SMTP port for the GMAIL server
+    $mail->Username     = "thanhbkdn92@gmail.com";  // GMAIL username
+    $mail->Password     = "thanhkdt123";            // GMAIL password
+
+    $mail->SetFrom('thanhbkdn92@gmail.com', 'Ride Sharing Verification Team'); //Sender
+
+    $mail->Subject    = "Activate account"; //Subject
+
+    $mail->AltBody    = "Để xem tin này, vui lòng bật tương thích chế độ hiển thị mã HTML!"; // optional, comment out and test
+
+    $mail->MsgHTML($body);
+
+    $address = $receiver_mail; //Receiver
+    $mail->AddAddress($address, "Test"); //Send to?
+
+    // $mail->AddAttachment("dinhkem/02.jpg");      // Attach
+    // $mail->AddAttachment("dinhkem/200_100.jpg"); // Attach
+
+    if(!$mail->Send()) {
+      return "Lỗi gửi mail: " . $mail->ErrorInfo;
+    } else {
+      return "Mail đã được gửi!";
     }
 }
 
