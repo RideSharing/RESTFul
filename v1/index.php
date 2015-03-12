@@ -167,6 +167,43 @@ $app->post('/login', function() use ($app) {
             echoRespnse(200, $response);
         });
 
+//Route itinerary
+//
+//
+$app->post('/itinerary', 'authenticate', function() use ($app) {
+            // check for required params
+            //verifyRequiredParams(array('task'));
+
+            $response = array();
+            
+            $start_address = $app->request->post('start_address');
+            $end_address = $app->request->post('end_address');
+            $leave_day = $app->request->post('leave_day');
+            $duration = $app->request->post('duration');
+            $cost = $app->request->post('cost');
+            $description = $app->request->post('description');
+
+            global $user_id;
+            $db = new DbHandler($user_id, $start_address, $end_address, $leave_day, $duration, $cost, $description);
+
+            // creating new itinerary
+            $task_id = $db->createItinerary();
+
+            if ($task_id != NULL) {
+                $response["error"] = false;
+                $response["message"] = "Itinerary created successfully";
+                $response["task_id"] = $task_id;
+                echoRespnse(201, $response);
+            } else {
+                $response["error"] = true;
+                $response["message"] = "Failed to create itinerary. Please try again";
+                echoRespnse(200, $response);
+            }            
+        });
+
+
+
+
 /**
  * Updating user
  * method PUT

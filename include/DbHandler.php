@@ -291,6 +291,128 @@ class DbHandler {
         return md5(uniqid(rand(), true));
     }
 
+    /* ------------- `itinerary` table method ------------------ */
+
+    //not finished yet
+    public function createItinerary($driver_id, $start_address, $end_address, $leave_day, $duration, $cost, $description) {
+        $q = "INSERT INTO itinerary(driver_id, start_address, end_address, leave_day, duration, cost, description, status)
+                VALUES(?,?,?,?,?,?,?,?)";
+        $stmt = $this->conn->prepare($q);
+        $stmt->bind_param("isssidsi",$driver_id, $start_address, $end_address, $leave_day, $duration, $cost, $description, ITINERARY_STATUS_NOTACCEPT);//////
+        $result = $stmt->execute();
+        $stmt->close();
+
+        // Check for successful insertion
+        if ($result) {
+            // Itinerary successfully inserted
+            return ITINERARY_CREATED_SUCCESSFULLY;
+        } else {
+            // Failed to create itinerary
+            return ITINERARY_CREATE_FAILED;
+        }
+
+    }
+
+    //not finished yet
+    /**
+     * Fetching single itinerary
+     * @param String $itinerary_id id of the itinerary
+     */
+    public function getItinerary($itinerary_id) {
+        $q = "SELECT * FROM itinerary WHERE itinerary_id = ?";
+        $stmt = $this->conn->prepare($q);
+        $stmt->bind_param("i",$itinerary_id);
+        if ($stmt->execute()) {
+            $res = array();
+            $stmt->bind_result($id, $task, $status, $created_at);
+            // TODO
+            // $task = $stmt->get_result()->fetch_assoc();
+            $stmt->fetch();
+            $res["id"] = $id;
+            $res["task"] = $task;
+            $res["status"] = $status;
+            $res["created_at"] = $created_at;
+            $stmt->close();
+            return $res;
+        } else {
+            return NULL;
+        }
+
+    }
+
+    //not finished yet
+    public function getAllItineraries() {
+        # code...
+    }
+
+    //not finished yet
+    public function getDriverItineraries($driver_id) {
+        # code...
+    }
+
+    //not finished yet
+    public function getCustomerItineraries($customer_id) {
+        # code...
+    }
+
+    //not finished yet
+    /**
+     * Updating itinerary before accept
+     * @param String $task_id id of the task
+     * @param String $task task text
+     * @param String $status task status
+     */
+    public function updateItinerary($itinerary_id) {
+        $q = "UPDATE itinerary set start_address = ?, end_address = ?, leave_day = ?, duration = ?, cost = ?, description = ? 
+                WHERE itinerary_id = ?";
+        $stmt = $this->conn->prepare();
+        $stmt->bind_param("sssidsi", $itinerary_id);
+        $stmt->execute();
+        $num_affected_rows = $stmt->affected_rows;
+        $stmt->close();
+        return $num_affected_rows > 0;
+    }
+
+    //not finished yet
+    /**
+     * Updating dynamic
+     * @param String $task_id id of the task
+     * @param String $task task text
+     * @param String $status task status
+     */
+    public function updateItinerary2($itinerary_fields, $itinerary_id) {
+
+        $q= "UPDATE places SET ";
+        foreach ($itinerary_fields as $key => $value) {
+            $q .= "{$key} = {$value}, ";
+        }
+
+        $nq = substr($q, 0, count($q)-1);
+
+        $nq .= "WHERE itinerary_id = {$itinerary_id} LIMIT 1";
+
+        $stmt = $this->conn->prepare($nq);
+        
+        $stmt->execute();
+        $num_affected_rows = $stmt->affected_rows;
+        $stmt->close();
+        return $num_affected_rows > 0;
+    }
+
+    //not finished yet
+    /**
+     * Deleting a itinerary
+     * @param String $itinerary_id id of the itinerary to delete
+     */
+    public function deleteItinerary($itinerary_id) {
+        $stmt = $this->conn->prepare("DELETE FROM itinerary WHERE itinerary_id = ?");
+        $stmt->bind_param("i", $itinerary_id);
+        $stmt->execute();
+        $num_affected_rows = $stmt->affected_rows;
+        $stmt->close();
+        return $num_affected_rows > 0;
+    }
+
     /* ------------- `tasks` table method ------------------ */
 
     /**
