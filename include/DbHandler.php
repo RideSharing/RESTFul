@@ -221,7 +221,7 @@ class DbHandler {
      * @param String $api_key user api key
      */
     public function getUserId($api_key) {
-        $stmt = $this->conn->prepare("SELECT id FROM user WHERE api_key = ?");
+        $stmt = $this->conn->prepare("SELECT user_id FROM user WHERE api_key = ?");
         $stmt->bind_param("s", $api_key);
         if ($stmt->execute()) {
             $stmt->bind_result($user_id);
@@ -242,7 +242,7 @@ class DbHandler {
      * @return boolean
      */
     public function isValidApiKey($api_key) {
-        $stmt = $this->conn->prepare("SELECT id from user WHERE api_key = ?");
+        $stmt = $this->conn->prepare("SELECT user_id from user WHERE api_key = ?");
         $stmt->bind_param("s", $api_key);
         $stmt->execute();
         $stmt->store_result();
@@ -262,12 +262,24 @@ class DbHandler {
 
     //not finished yet
     public function createItinerary($driver_id, $start_address, $end_address, $leave_day, $duration, $cost, $description) {
-        $q = "INSERT INTO itinerary(driver_id, start_address, end_address, leave_day, duration, cost, description, status)
-                VALUES(?,?,?,?,?,?,?,?)";
+        $q = "INSERT INTO itinerary(driver_id, start_address, end_address, leave_date, duration, cost, description, status) ";
+                $q .= " VALUES(?,?,?,?,?,?,?,". ITINERARY_STATUS_NOTACCEPT.")";
         $stmt = $this->conn->prepare($q);
-        $stmt->bind_param("isssidsi",$driver_id, $start_address, $end_address, $leave_day, $duration, $cost, $description, ITINERARY_STATUS_NOTACCEPT);//////
+        $stmt->bind_param("isssids",$driver_id, $start_address, $end_address, $leave_day, $duration, $cost, $description);
+        
         $result = $stmt->execute();
         $stmt->close();
+
+        if ($result) {
+            $new_itinerary_id = $this->conn->insert_id;
+            
+            // Itinerary successfully inserted
+            return $new_itinerary_id;
+            
+        } else {
+            echo $q;
+            return NULL;
+        }
 
         // Check for successful insertion
         if ($result) {

@@ -184,15 +184,15 @@ $app->post('/itinerary', 'authenticate', function() use ($app) {
             $description = $app->request->post('description');
 
             global $user_id;
-            $db = new DbHandler($user_id, $start_address, $end_address, $leave_day, $duration, $cost, $description);
+            $db = new DbHandler();
 
             // creating new itinerary
-            $task_id = $db->createItinerary();
+            $itinerary_id = $db->createItinerary($user_id, $start_address, $end_address, $leave_day, $duration, $cost, $description);
 
-            if ($task_id != NULL) {
+            if ($itinerary_id != NULL) {
                 $response["error"] = false;
                 $response["message"] = "Itinerary created successfully";
-                $response["task_id"] = $task_id;
+                $response["itinerary_id"] = $itinerary_id;
                 echoRespnse(201, $response);
             } else {
                 $response["error"] = true;
@@ -201,7 +201,28 @@ $app->post('/itinerary', 'authenticate', function() use ($app) {
             }            
         });
 
+/**
+ * Deleting itinerary. Users can delete only their itineraries
+ * method DELETE
+ * url /itinerary
+ */
+$app->delete('/itinerary/:id', 'authenticate', function($task_id) use($app) {
+            global $user_id;
 
+            $db = new DbHandler();
+            $response = array();
+            $result = $db->deleteItinerary($user_id, $task_id);
+            if ($result) {
+                // itinerary deleted successfully
+                $response["error"] = false;
+                $response["message"] = "Itinerary deleted succesfully";
+            } else {
+                // itinerary failed to delete
+                $response["error"] = true;
+                $response["message"] = "Itinerary failed to delete. Please try again!";
+            }
+            echoRespnse(200, $response);
+        });
 
 
 /**
