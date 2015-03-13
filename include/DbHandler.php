@@ -4,7 +4,7 @@
  * Class to handle all db operations
  * This class will have CRUD methods for database tables
  *
- * @author Ravi Tamada
+ * @author Halley Team
  * @link URL Tutorial link
  */
 class DbHandler {
@@ -294,6 +294,11 @@ class DbHandler {
     /* ------------- `itinerary` table method ------------------ */
 
     //not finished yet
+    /**
+     * Creating new itinerary
+     * @param Integer $driver_id user id to whom itinerary belongs to
+     * @param String $start_address, $end_address, $leave_day, $duration, $cost, $description are itinerary's properties
+     */
     public function createItinerary($driver_id, $start_address, $end_address, $leave_day, $duration, $cost, $description) {
         $q = "INSERT INTO itinerary(driver_id, start_address, end_address, leave_date, duration, cost, description, status) ";
                 $q .= " VALUES(?,?,?,?,?,?,?,". ITINERARY_STATUS_NOTACCEPT.")";
@@ -328,7 +333,7 @@ class DbHandler {
     //not finished yet
     /**
      * Fetching single itinerary
-     * @param String $itinerary_id id of the itinerary
+     * @param Integer $itinerary_id id of the itinerary
      */
     public function getItinerary($itinerary_id) {
         $q = "SELECT * FROM itinerary WHERE itinerary_id = ?";
@@ -363,8 +368,7 @@ class DbHandler {
 
     //not finished yet
     /**
-     * Fetching single itinerary
-     * @param String $itinerary_id id of the itinerary
+     * Fetching all itineraries
      */
     public function getAllItineraries() {
         $q = "SELECT * FROM itinerary";
@@ -377,8 +381,8 @@ class DbHandler {
 
     //not finished yet
     /**
-     * Fetching single itinerary
-     * @param String $itinerary_id id of the itinerary
+     * Fetching all itineraries of one driver
+     * @param Integer $driver_id id of the driver
      */
     public function getDriverItineraries($driver_id) {
         $q = "SELECT * FROM itinerary WHERE driver_id = ?";
@@ -392,8 +396,8 @@ class DbHandler {
 
     //not finished yet
     /**
-     * Fetching single itinerary
-     * @param String $itinerary_id id of the itinerary
+     * Fetching all itineraries of one customer
+     * @param Integer $customer_id id of the customer
      */
     public function getCustomerItineraries($customer_id) {
         $q = "SELECT * FROM itinerary WHERE customer_id = ?";
@@ -408,7 +412,7 @@ class DbHandler {
     //not finished yet
     /**
      * Updating itinerary before accept
-     * @param String $task_id id of the task
+     * @param Integer $task_id id of the task
      * @param String $task task text
      * @param String $status task status
      */
@@ -425,10 +429,9 @@ class DbHandler {
 
     //not finished yet
     /**
-     * Updating dynamic
-     * @param String $task_id id of the task
-     * @param String $task task text
-     * @param String $status task status
+     * Updating itinerary
+     * @param Aray $itinerary_fields properties of the itinerary
+     * @param Integer $itinerary_id id of the itinerary
      */
     public function updateItinerary2($itinerary_fields, $itinerary_id) {
 
@@ -471,121 +474,6 @@ class DbHandler {
         $num_affected_rows = $stmt->affected_rows;
         $stmt->close();
         return $num_affected_rows > 0;
-    }
-
-    /* ------------- `tasks` table method ------------------ */
-
-    /**
-     * Creating new task
-     * @param String $user_id user id to whom task belongs to
-     * @param String $task task text
-     */
-    public function createTask($user_id, $task) {
-        $stmt = $this->conn->prepare("INSERT INTO tasks(task) VALUES(?)");
-        $stmt->bind_param("s", $task);
-        $result = $stmt->execute();
-        $stmt->close();
-
-        if ($result) {
-            // task row created
-            // now assign the task to user
-            $new_task_id = $this->conn->insert_id;
-            $res = $this->createUserTask($user_id, $new_task_id);
-            if ($res) {
-                // task created successfully
-                return $new_task_id;
-            } else {
-                // task failed to create
-                return NULL;
-            }
-        } else {
-            // task failed to create
-            return NULL;
-        }
-    }
-
-    /**
-     * Fetching single task
-     * @param String $task_id id of the task
-     */
-    public function getTask($task_id, $user_id) {
-        $stmt = $this->conn->prepare("SELECT t.id, t.task, t.status, t.created_at from tasks t, user_tasks ut WHERE t.id = ? AND ut.task_id = t.id AND ut.user_id = ?");
-        $stmt->bind_param("ii", $task_id, $user_id);
-        if ($stmt->execute()) {
-            $res = array();
-            $stmt->bind_result($id, $task, $status, $created_at);
-            // TODO
-            // $task = $stmt->get_result()->fetch_assoc();
-            $stmt->fetch();
-            $res["id"] = $id;
-            $res["task"] = $task;
-            $res["status"] = $status;
-            $res["created_at"] = $created_at;
-            $stmt->close();
-            return $res;
-        } else {
-            return NULL;
-        }
-    }
-
-    /**
-     * Fetching all user tasks
-     * @param String $user_id id of the user
-     */
-    public function getAllUserTasks($user_id) {
-        $stmt = $this->conn->prepare("SELECT t.* FROM tasks t, user_tasks ut WHERE t.id = ut.task_id AND ut.user_id = ?");
-        $stmt->bind_param("i", $user_id);
-        $stmt->execute();
-        $tasks = $stmt->get_result();
-        $stmt->close();
-        return $tasks;
-    }
-
-    /**
-     * Updating task
-     * @param String $task_id id of the task
-     * @param String $task task text
-     * @param String $status task status
-     */
-    public function updateTask($user_id, $task_id, $task, $status) {
-        $stmt = $this->conn->prepare("UPDATE tasks t, user_tasks ut set t.task = ?, t.status = ? WHERE t.id = ? AND t.id = ut.task_id AND ut.user_id = ?");
-        $stmt->bind_param("siii", $task, $status, $task_id, $user_id);
-        $stmt->execute();
-        $num_affected_rows = $stmt->affected_rows;
-        $stmt->close();
-        return $num_affected_rows > 0;
-    }
-
-    /**
-     * Deleting a task
-     * @param String $task_id id of the task to delete
-     */
-    public function deleteTask($user_id, $task_id) {
-        $stmt = $this->conn->prepare("DELETE t FROM tasks t, user_tasks ut WHERE t.id = ? AND ut.task_id = t.id AND ut.user_id = ?");
-        $stmt->bind_param("ii", $task_id, $user_id);
-        $stmt->execute();
-        $num_affected_rows = $stmt->affected_rows;
-        $stmt->close();
-        return $num_affected_rows > 0;
-    }
-
-    /* ------------- `user_tasks` table method ------------------ */
-
-    /**
-     * Function to assign a task to user
-     * @param String $user_id id of the user
-     * @param String $task_id id of the task
-     */
-    public function createUserTask($user_id, $task_id) {
-        $stmt = $this->conn->prepare("INSERT INTO user_tasks(user_id, task_id) values(?, ?)");
-        $stmt->bind_param("ii", $user_id, $task_id);
-        $result = $stmt->execute();
-
-        if (false === $result) {
-            die('execute() failed: ' . htmlspecialchars($stmt->error));
-        }
-        $stmt->close();
-        return $result;
     }
 }
 

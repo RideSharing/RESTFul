@@ -337,48 +337,6 @@ $app->get('/itineraries', 'authenticate', function() {
         });
 
 /**
- * Listing all itineraries of particual user
- * method GET
- * url /itineraries          
- */
-$app->get('/itineraries', 'authenticate', function() {
-            global $user_id;
-            $response = array();
-            $db = new DbHandler();
-
-            // fetching all user tasks
-            $result = $db->getAllItineraries();
-
-            $response["error"] = false;
-            $response["itineraries"] = array();
-
-            // looping through result and preparing tasks array
-            while ($itinerary = $result->fetch_assoc()) {
-                $tmp = array();
-                $tmp["itinerary_id"] = $itinerary["itinerary_id"];
-                $tmp["driver_id"] = $itinerary["driver_id"];
-                $tmp["customer_id"] = $itinerary["customer_id"];
-                $tmp["start_address"] = $itinerary["start_address"];
-                $tmp["pick_up_address"] = $itinerary["pick_up_address"];
-                $tmp["drop_address"] = $itinerary["drop_address"];
-                $tmp["end_address"] = $itinerary["end_address"];
-                $tmp["leave_date"] = $itinerary["leave_date"];
-                $tmp["duration"] = $itinerary["duration"];
-                $tmp["cost"] = $itinerary["cost"];
-                $tmp["description"] = $itinerary["description"];
-                $tmp["status"] = $itinerary["status"];
-                $tmp["created_at"] = $itinerary["created_at"];
-                array_push($response["itineraries"], $tmp);
-            }
-
-            print_r($response);
-
-            //echo $response;
-            echoRespnse(200, $response);
-
-        });
-
-/**
  * Listing all itineraries of driver
  * method GET
  * url /itineraries          
@@ -393,6 +351,8 @@ $app->get('/itineraries/driver/:driver_id', 'authenticate', function($driver_id)
 
             $response["error"] = false;
             $response["itineraries"] = array();
+
+            print_r($car_id);
 
             // looping through result and preparing tasks array
             while ($itinerary = $result->fetch_assoc()) {
@@ -470,7 +430,7 @@ $app->put('/itinerary/:id', 'authenticate', function($itinerary_id) use($app) {
             global $user_id;
             $itinerary_fields = array();           
             
-            /**$itinerary_fields['customer_id'] = $app->request->put('customer_id');
+            /*$itinerary_fields['customer_id'] = $app->request->put('customer_id');
             $itinerary_fields['start_address'] = $app->request->put('start_address');
             $itinerary_fields['pick_up_address'] = $app->request->put('pick_up_address');
             $itinerary_fields['drop_address'] = $app->request->put('drop_address');
