@@ -383,7 +383,7 @@ class DbHandler {
     public function getDriverItineraries($driver_id) {
         $q = "SELECT * FROM itinerary WHERE driver_id = ?";
         $stmt = $this->conn->prepare($q);
-        $stmt->bind_param("i".$driver_id);
+        $stmt->bind_param("i",$driver_id);
         $stmt->execute();
         $itineraries = $stmt->get_result();
         $stmt->close();
@@ -398,7 +398,7 @@ class DbHandler {
     public function getCustomerItineraries($customer_id) {
         $q = "SELECT * FROM itinerary WHERE customer_id = ?";
         $stmt = $this->conn->prepare($q);
-        $stmt->bind_param("i".$customer_id);
+        $stmt->bind_param("i",$customer_id);
         $stmt->execute();
         $itineraries = $stmt->get_result();
         $stmt->close();
@@ -432,16 +432,26 @@ class DbHandler {
      */
     public function updateItinerary2($itinerary_fields, $itinerary_id) {
 
-        $q= "UPDATE places SET ";
+        $q= "UPDATE itinerary SET ";
         foreach ($itinerary_fields as $key => $value) {
-            $q .= "{$key} = {$value}, ";
+            //check whether the value is numeric
+            if(!is_numeric($value)){
+                $q .= "{$key} = '{$value}', ";
+            } else {
+                $q .= "{$key} = {$value}, ";
+            }
+            
         }
 
-        $nq = substr($q, 0, count($q)-1);
+        $q = trim(($q));
 
-        $nq .= "WHERE itinerary_id = {$itinerary_id} LIMIT 1";
+        $nq = substr($q, 0, strlen($q) - 1 );
+
+        $nq .= " WHERE itinerary_id = {$itinerary_id} LIMIT 1";
 
         $stmt = $this->conn->prepare($nq);
+
+        print_r($nq);
         
         $stmt->execute();
         $num_affected_rows = $stmt->affected_rows;
