@@ -200,40 +200,6 @@ $app->put('/user', 'authenticate', function() use($app) {
             echoRespnse(200, $response);
         });
 
-//Route itinerary
-//
-//
-$app->post('/itinerary', 'authenticate', function() use ($app) {
-            // check for required params
-            //verifyRequiredParams(array('task'));
-
-            $response = array();
-            
-            $start_address = $app->request->post('start_address');
-            $end_address = $app->request->post('end_address');
-            $leave_day = $app->request->post('leave_day');
-            $duration = $app->request->post('duration');
-            $cost = $app->request->post('cost');
-            $description = $app->request->post('description');
-
-            global $user_id;
-            $db = new DbHandler($user_id, $start_address, $end_address, $leave_day, $duration, $cost, $description);
-
-            // creating new itinerary
-            $task_id = $db->createItinerary();
-
-            if ($task_id != NULL) {
-                $response["error"] = false;
-                $response["message"] = "Itinerary created successfully";
-                $response["task_id"] = $task_id;
-                echoRespnse(201, $response);
-            } else {
-                $response["error"] = true;
-                $response["message"] = "Failed to create itinerary. Please try again";
-                echoRespnse(200, $response);
-            }            
-        });
-
 /**
  * Deleting task. Users can delete only their tasks
  * method DELETE
@@ -257,33 +223,38 @@ $app->delete('/user/:user_id', 'authenticate', function($user_id) use($app) {
             echoRespnse(200, $response);
         });
 
-/**
- * Listing all tasks of particual user
- * method GET
- * url /tasks          
- */
-$app->get('/tasks', 'authenticate', function() {
-            global $user_id;
+//Route itinerary
+//
+//
+$app->post('/itinerary', 'authenticate', function() use ($app) {
+            // check for required params
+            //verifyRequiredParams(array('task'));
+
             $response = array();
+            
+            $start_address = $app->request->post('start_address');
+            $end_address = $app->request->post('end_address');
+            $leave_day = $app->request->post('leave_day');
+            $duration = $app->request->post('duration');
+            $cost = $app->request->post('cost');
+            $description = $app->request->post('description');
+
+            global $user_id;
             $db = new DbHandler();
 
-            // fetching all user tasks
-            $result = $db->getAllUserTasks($user_id);
+            // creating new itinerary
+            $itinerary_id = $db->createItinerary($user_id, $start_address, $end_address, $leave_day, $duration, $cost, $description);
 
-            $response["error"] = false;
-            $response["tasks"] = array();
-
-            // looping through result and preparing tasks array
-            while ($task = $result->fetch_assoc()) {
-                $tmp = array();
-                $tmp["id"] = $task["id"];
-                $tmp["task"] = $task["task"];
-                $tmp["status"] = $task["status"];
-                $tmp["createdAt"] = $task["created_at"];
-                array_push($response["tasks"], $tmp);
-            }
-
-            echoRespnse(200, $response);
+            if ($itinerary_id != NULL) {
+                $response["error"] = false;
+                $response["message"] = "Itinerary created successfully";
+                $response["itinerary_id"] = $itinerary_id;
+                echoRespnse(201, $response);
+            } else {
+                $response["error"] = true;
+                $response["message"] = "Failed to create itinerary. Please try again";
+                echoRespnse(200, $response);
+            }            
         });
 
 /**
@@ -292,20 +263,29 @@ $app->get('/tasks', 'authenticate', function() {
  * url /tasks/:id
  * Will return 404 if the task doesn't belongs to user
  */
-$app->get('/tasks/:id', function($task_id) {
+$app->get('/itinerary/:id', function($itinerary_id) {
             global $user_id;
             $response = array();
             $db = new DbHandler();
 
             // fetch task
-            $result = $db->getTask($task_id, $user_id);
+            $result = $db->getItinerary($itinerary_id);
 
             if ($result != NULL) {
                 $response["error"] = false;
-                $response["id"] = $result["id"];
-                $response["task"] = $result["task"];
+                $response["itinerary_id"] = $result["itinerary_id"];
+                $response["driver_id"] = $result["driver_id"];
+                $response["customer_id"] = $result["customer_id"];
+                $response["start_address"] = $result["start_address"];
+                $response["pick_up_address"] = $result["pick_up_address"];
+                $response["drop_address"] = $result["drop_address"];
+                $response["end_address"] = $result["end_address"];
+                $response["leave_date"] = $result["leave_date"];
+                $response["duration"] = $result["duration"];
+                $response["cost"] = $result["cost"];
+                $response["description"] = $result["description"];
                 $response["status"] = $result["status"];
-                $response["createdAt"] = $result["created_at"];
+                $response["created_at"] = $result["created_at"];
                 echoRespnse(200, $response);
             } else {
                 $response["error"] = true;
@@ -315,86 +295,185 @@ $app->get('/tasks/:id', function($task_id) {
         });
 
 /**
- * Creating new task in db
- * method POST
- * params - name
- * url - /tasks/
+ * Listing all itineraries of particual user
+ * method GET
+ * url /itineraries          
  */
-$app->post('/tasks', 'authenticate', function() use ($app) {
-            // check for required params
-            verifyRequiredParams(array('task'));
-
-            $response = array();
-            $task = $app->request->post('task');
-
+$app->get('/itineraries', 'authenticate', function() {
             global $user_id;
+            $response = array();
             $db = new DbHandler();
 
-            // creating new task
-            $task_id = $db->createTask($user_id, $task);
+            // fetching all user tasks
+            $result = $db->getAllItineraries();
 
-            if ($task_id != NULL) {
-                $response["error"] = false;
-                $response["message"] = "Task created successfully";
-                $response["task_id"] = $task_id;
-                echoRespnse(201, $response);
-            } else {
-                $response["error"] = true;
-                $response["message"] = "Failed to create task. Please try again";
-                echoRespnse(200, $response);
-            }            
+            $response["error"] = false;
+            $response["itineraries"] = array();
+
+            // looping through result and preparing tasks array
+            while ($itinerary = $result->fetch_assoc()) {
+                $tmp = array();
+                $tmp["itinerary_id"] = $itinerary["itinerary_id"];
+                $tmp["driver_id"] = $itinerary["driver_id"];
+                $tmp["customer_id"] = $itinerary["customer_id"];
+                $tmp["start_address"] = $itinerary["start_address"];
+                $tmp["pick_up_address"] = $itinerary["pick_up_address"];
+                $tmp["drop_address"] = $itinerary["drop_address"];
+                $tmp["end_address"] = $itinerary["end_address"];
+                $tmp["leave_date"] = $itinerary["leave_date"];
+                $tmp["duration"] = $itinerary["duration"];
+                $tmp["cost"] = $itinerary["cost"];
+                $tmp["description"] = $itinerary["description"];
+                $tmp["status"] = $itinerary["status"];
+                $tmp["created_at"] = $itinerary["created_at"];
+                array_push($response["itineraries"], $tmp);
+            }
+
+            echoRespnse(200, $response);
         });
 
 /**
- * Updating existing task
+ * Listing all itineraries of driver
+ * method GET
+ * url /itineraries          
+ */
+$app->get('/itineraries/driver/:driver_id', 'authenticate', function($driver_id) {
+            global $user_id;
+            $response = array();
+            $db = new DbHandler();
+
+            // fetching all user tasks
+            $result = $db->getDriverItineraries($driver_id);
+
+            $response["error"] = false;
+            $response["itineraries"] = array();
+
+            // looping through result and preparing tasks array
+            while ($itinerary = $result->fetch_assoc()) {
+                $tmp = array();
+                $tmp["itinerary_id"] = $itinerary["itinerary_id"];
+                $tmp["driver_id"] = $itinerary["driver_id"];
+                $tmp["customer_id"] = $itinerary["customer_id"];
+                $tmp["start_address"] = $itinerary["start_address"];
+                $tmp["pick_up_address"] = $itinerary["pick_up_address"];
+                $tmp["drop_address"] = $itinerary["drop_address"];
+                $tmp["end_address"] = $itinerary["end_address"];
+                $tmp["leave_date"] = $itinerary["leave_date"];
+                $tmp["duration"] = $itinerary["duration"];
+                $tmp["cost"] = $itinerary["cost"];
+                $tmp["description"] = $itinerary["description"];
+                $tmp["status"] = $itinerary["status"];
+                $tmp["created_at"] = $itinerary["created_at"];
+                array_push($response["itineraries"], $tmp);
+            }
+
+            echoRespnse(200, $response);
+        });
+
+/**
+ * Listing all itineraries of driver
+ * method GET
+ * url /itineraries          
+ */
+$app->get('/itineraries/customer/:customer_id', 'authenticate', function($customer_id) {
+            global $user_id;
+            $response = array();
+            $db = new DbHandler();
+
+            // fetching all user tasks
+            $result = $db->getCustomerItineraries($customer_id);
+
+            $response["error"] = false;
+            $response["itineraries"] = array();
+
+            // looping through result and preparing tasks array
+            while ($itinerary = $result->fetch_assoc()) {
+                $tmp = array();
+                $tmp["itinerary_id"] = $itinerary["itinerary_id"];
+                $tmp["driver_id"] = $itinerary["driver_id"];
+                $tmp["customer_id"] = $itinerary["customer_id"];
+                $tmp["start_address"] = $itinerary["start_address"];
+                $tmp["pick_up_address"] = $itinerary["pick_up_address"];
+                $tmp["drop_address"] = $itinerary["drop_address"];
+                $tmp["end_address"] = $itinerary["end_address"];
+                $tmp["leave_date"] = $itinerary["leave_date"];
+                $tmp["duration"] = $itinerary["duration"];
+                $tmp["cost"] = $itinerary["cost"];
+                $tmp["description"] = $itinerary["description"];
+                $tmp["status"] = $itinerary["status"];
+                $tmp["created_at"] = $itinerary["created_at"];
+                array_push($response["itineraries"], $tmp);
+            }
+
+            echoRespnse(200, $response);
+        });
+
+/**
+ * Updating existing itinerary
  * method PUT
  * params task, status
- * url - /tasks/:id
+ * url - /itinerary/:id
  */
-$app->put('/tasks/:id', 'authenticate', function($task_id) use($app) {
+$app->put('/itinerary/:id', 'authenticate', function($itinerary_id) use($app) {
             // check for required params
-            verifyRequiredParams(array('task', 'status'));
+            //verifyRequiredParams(array('task', 'status'));
 
-            global $user_id;            
-            $task = $app->request->put('task');
-            $status = $app->request->put('status');
+            global $user_id;
+            $itinerary_fields = array();           
+            
+            $itinerary_fields['customer_id'] = $app->request->put('customer_id');
+            $itinerary_fields['start_address'] = $app->request->put('start_address');
+            $itinerary_fields['pick_up_address'] = $app->request->put('pick_up_address');
+            $itinerary_fields['drop_address'] = $app->request->put('drop_address');
+            $itinerary_fields['end_address'] = $app->request->put('end_address');
+            $itinerary_fields['leave_date'] = $app->request->put('leave_date');
+            $itinerary_fields['duration'] = $app->request->put('duration');
+            $itinerary_fields['cost'] = $app->request->put('cost');
+            $itinerary_fields['description'] = $app->request->put('description');
+            $itinerary_fields['status'] = $app->request->put('status');
+            $end_address = $app->request->post('end_address');
+            $leave_day = $app->request->post('leave_day');
+            $duration = $app->request->post('duration');
+            $cost = $app->request->post('cost');
+            $description = $app->request->post('description');
 
             $db = new DbHandler();
             $response = array();
 
             // updating task
-            $result = $db->updateTask($user_id, $task_id, $task, $status);
+            $result = $db->updateItinerary2($itinerary_fields, $itinerary_id);
             if ($result) {
                 // task updated successfully
                 $response["error"] = false;
-                $response["message"] = "Task updated successfully";
+                $response["message"] = "Itinerary updated successfully";
             } else {
                 // task failed to update
                 $response["error"] = true;
-                $response["message"] = "Task failed to update. Please try again!";
+                $response["message"] = "Itinerary failed to update. Please try again!";
             }
             echoRespnse(200, $response);
         });
 
+//not finished yet: bi phat sau khi delete khi da duoc accepted
 /**
- * Deleting task. Users can delete only their tasks
+ * Deleting itinerary. Users can delete only their itineraries
  * method DELETE
- * url /tasks
+ * url /itinerary
  */
-$app->delete('/tasks/:id', 'authenticate', function($task_id) use($app) {
+$app->delete('/itinerary/:id', 'authenticate', function($itinerary_id) use($app) {
             global $user_id;
 
             $db = new DbHandler();
             $response = array();
-            $result = $db->deleteTask($user_id, $task_id);
+            $result = $db->deleteItinerary($itinerary_id);
             if ($result) {
-                // task deleted successfully
+                // itinerary deleted successfully
                 $response["error"] = false;
-                $response["message"] = "Task deleted succesfully";
+                $response["message"] = "Itinerary deleted succesfully";
             } else {
-                // task failed to delete
+                // itinerary failed to delete
                 $response["error"] = true;
-                $response["message"] = "Task failed to delete. Please try again!";
+                $response["message"] = "Itinerary failed to delete. Please try again!";
             }
             echoRespnse(200, $response);
         });
