@@ -66,7 +66,6 @@ $app->post('/user', function() use ($app) {
 
             // validating email address
             validateEmail($email);
-
             // validating password
             validatePassword($password);
 
@@ -74,9 +73,6 @@ $app->post('/user', function() use ($app) {
             $res = $db->createUser($email, $password);
 
             if ($res == USER_CREATED_SUCCESSFULLY) {
-                $response["error"] = false;
-                $response["message"] = "Đăng kí thành công. Vui lòng kích hoạt tài khoản qua email bạn vừa đăng kí!";
-
                 $user = $db->getUserByEmail($email);
                 $activation_code = $user["api_key"];
 
@@ -85,7 +81,10 @@ $app->post('/user', function() use ($app) {
                                 <a href='http://localhost/RESTFul/v1/user/". $activation_code.
                                 "'>Kích hoạt tài khoản</a>";
 
-                sendMail($email, $content_mail);
+                // sendMail($email, $content_mail);
+
+                $response["error"] = false;
+                $response["message"] = "Đăng kí thành công. Vui lòng kích hoạt tài khoản qua email bạn vừa đăng kí!";
             } else if ($res == USER_CREATE_FAILED) {
                 $response["error"] = true;
                 $response["message"] = "Xin lỗi! Có lỗi xảy ra trong quá trình đăng kí.";
@@ -167,43 +166,6 @@ $app->post('/login', function() use ($app) {
             echoRespnse(200, $response);
         });
 
-//Route itinerary
-//
-//
-$app->post('/itinerary', 'authenticate', function() use ($app) {
-            // check for required params
-            //verifyRequiredParams(array('task'));
-
-            $response = array();
-            
-            $start_address = $app->request->post('start_address');
-            $end_address = $app->request->post('end_address');
-            $leave_day = $app->request->post('leave_day');
-            $duration = $app->request->post('duration');
-            $cost = $app->request->post('cost');
-            $description = $app->request->post('description');
-
-            global $user_id;
-            $db = new DbHandler($user_id, $start_address, $end_address, $leave_day, $duration, $cost, $description);
-
-            // creating new itinerary
-            $task_id = $db->createItinerary();
-
-            if ($task_id != NULL) {
-                $response["error"] = false;
-                $response["message"] = "Itinerary created successfully";
-                $response["task_id"] = $task_id;
-                echoRespnse(201, $response);
-            } else {
-                $response["error"] = true;
-                $response["message"] = "Failed to create itinerary. Please try again";
-                echoRespnse(200, $response);
-            }            
-        });
-
-
-
-
 /**
  * Updating user
  * method PUT
@@ -236,6 +198,40 @@ $app->put('/user', 'authenticate', function() use($app) {
                 $response["message"] = "Cập nhật thông tin thất bại. Vui lòng thử lại!";
             }
             echoRespnse(200, $response);
+        });
+
+//Route itinerary
+//
+//
+$app->post('/itinerary', 'authenticate', function() use ($app) {
+            // check for required params
+            //verifyRequiredParams(array('task'));
+
+            $response = array();
+            
+            $start_address = $app->request->post('start_address');
+            $end_address = $app->request->post('end_address');
+            $leave_day = $app->request->post('leave_day');
+            $duration = $app->request->post('duration');
+            $cost = $app->request->post('cost');
+            $description = $app->request->post('description');
+
+            global $user_id;
+            $db = new DbHandler($user_id, $start_address, $end_address, $leave_day, $duration, $cost, $description);
+
+            // creating new itinerary
+            $task_id = $db->createItinerary();
+
+            if ($task_id != NULL) {
+                $response["error"] = false;
+                $response["message"] = "Itinerary created successfully";
+                $response["task_id"] = $task_id;
+                echoRespnse(201, $response);
+            } else {
+                $response["error"] = true;
+                $response["message"] = "Failed to create itinerary. Please try again";
+                echoRespnse(200, $response);
+            }            
         });
 
 /**
@@ -442,8 +438,8 @@ function validateEmail($email) {
     $app = \Slim\Slim::getInstance();
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $response["error"] = true;
-        $response["message"] = 'Email address is not valid';
-        echoRespnse(400, $response);
+        $response["message"] = 'Email không hợp lệ!';
+        echoRespnse(200, $response);
         $app->stop();
     }
 }
@@ -454,17 +450,17 @@ function validateEmail($email) {
 function validatePassword($password) {
     $app = \Slim\Slim::getInstance();
 
-    if (strlen( ($password) < '6') || (strlen($password) > '12') ) {
+    if ((strlen($password) < '6') || (strlen($password) > '12')) {
         $response["error"] = true;
         $response["message"] = 'Độ dài mật khẩu phải nằm trong khoảng 6 đến 12 kí tự!';
-        echoRespnse(400, $response);
+        echoRespnse(200, $response);
         $app->stop();
     } 
 
     if (preg_match('#[\\s]#', $password)) {
         $response["error"] = true;
         $response["message"] = 'Mật khẩu không được có khoảng trống!';
-        echoRespnse(400, $response);
+        echoRespnse(200, $response);
         $app->stop();
     } 
 }
