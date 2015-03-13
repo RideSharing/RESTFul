@@ -336,12 +336,21 @@ class DbHandler {
         $stmt->bind_param("i",$itinerary_id);
         if ($stmt->execute()) {
             $res = array();
-            $stmt->bind_result($id, $task, $status, $created_at);
+            $stmt->bind_result($itinerary_id, $driver_id, $customer_id, $start_address, $pick_up_address, $drop_address, $end_address, $leave_date, $duration, $cost, $description, $status, $created_at);
             // TODO
             // $task = $stmt->get_result()->fetch_assoc();
             $stmt->fetch();
-            $res["id"] = $id;
-            $res["task"] = $task;
+            $res["itinerary_id"] = $itinerary_id;
+            $res["driver_id"] = $driver_id;
+            $res["customer_id"] = $customer_id;
+            $res["start_address"] = $start_address;
+            $res["pick_up_address"] = $pick_up_address;
+            $res["drop_address"] = $drop_address;
+            $res["end_address"] = $end_address;
+            $res["leave_date"] = $leave_date;
+            $res["duration"] = $duration;
+            $res["cost"] = $cost;
+            $res["description"] = $description;
             $res["status"] = $status;
             $res["created_at"] = $created_at;
             $stmt->close();
@@ -353,18 +362,47 @@ class DbHandler {
     }
 
     //not finished yet
+    /**
+     * Fetching single itinerary
+     * @param String $itinerary_id id of the itinerary
+     */
     public function getAllItineraries() {
-        # code...
+        $q = "SELECT * FROM itinerary";
+        $stmt = $this->conn->prepare($q);
+        $stmt->execute();
+        $itineraries = $stmt->get_result();
+        $stmt->close();
+        return $itineraries;
     }
 
     //not finished yet
+    /**
+     * Fetching single itinerary
+     * @param String $itinerary_id id of the itinerary
+     */
     public function getDriverItineraries($driver_id) {
-        # code...
+        $q = "SELECT * FROM itinerary WHERE driver_id = ?";
+        $stmt = $this->conn->prepare($q);
+        $stmt->bind_param("i".$driver_id);
+        $stmt->execute();
+        $itineraries = $stmt->get_result();
+        $stmt->close();
+        return $itineraries;
     }
 
     //not finished yet
+    /**
+     * Fetching single itinerary
+     * @param String $itinerary_id id of the itinerary
+     */
     public function getCustomerItineraries($customer_id) {
-        # code...
+        $q = "SELECT * FROM itinerary WHERE customer_id = ?";
+        $stmt = $this->conn->prepare($q);
+        $stmt->bind_param("i".$customer_id);
+        $stmt->execute();
+        $itineraries = $stmt->get_result();
+        $stmt->close();
+        return $itineraries;
     }
 
     //not finished yet
