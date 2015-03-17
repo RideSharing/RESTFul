@@ -81,16 +81,16 @@ $app->post('/user', function() use ($app) {
                                 <a href='http://localhost/RESTFul/v1/user/". $activation_code.
                                 "'>Kích hoạt tài khoản</a>";
 
-                // sendMail($email, $content_mail);
+                sendMail($email, $content_mail);
 
                 $response["error"] = false;
                 $response["message"] = "Đăng kí thành công. Vui lòng kích hoạt tài khoản qua email bạn vừa đăng kí!";
-            } else if ($res == USER_CREATE_FAILED) {
-                $response["error"] = true;
-                $response["message"] = "Xin lỗi! Có lỗi xảy ra trong quá trình đăng kí.";
             } else if ($res == USER_ALREADY_EXISTED) {
                 $response["error"] = true;
                 $response["message"] = "Xin lỗi! email bạn đăng kí đã tồn tại.";
+            } else if ($res == USER_CREATE_FAILED) {
+                $response["error"] = true;
+                $response["message"] = "Xin lỗi! Có lỗi xảy ra trong quá trình đăng kí.";
             }
             // echo json response
             echoRespnse(201, $response);
@@ -201,18 +201,20 @@ $app->put('/user', 'authenticate', function() use($app) {
         });
 
 /**
- * Deleting task. Users can delete only their tasks
+ * Deleting user.
  * method DELETE
- * url /tasks
+ * url /user
  */
 $app->delete('/user/:user_id', 'authenticate', function($user_id) use($app) {
             global $user_id;
 
             $db = new DbHandler();
             $response = array();
-            $result = $db->deleteTask($user_id, $task_id);
+
+            $result = $db->deleteUser($user_id);
+
             if ($result) {
-                // task deleted successfully
+                // user deleted successfully
                 $response["error"] = false;
                 $response["message"] = "Xóa người dùng thành công!";
             } else {
@@ -553,12 +555,12 @@ function sendMail($receiver_mail, $content) {
     $mail               = new PHPMailer();
     $body               = $content;
     $body               = eregi_replace("[\]",'',$body);
-    $mail->IsSMTP();
+    $mail->IsSMTP();                            // telling the class to use SMTP
 
     $mail->SMTPAuth     = true;                  // enable SMTP authentication
-    $mail->SMTPSecure   = "ssl";                 // sets the prefix to the servier
+    $mail->SMTPSecure   = "tls";                 // sets the prefix to the servier
     $mail->Host         = "smtp.gmail.com";      // sets GMAIL as the SMTP server
-    $mail->Port         = 465;                   // set the SMTP port for the GMAIL server
+    $mail->Port         = 587;                   // set the SMTP port for the GMAIL server
     $mail->Username     = "thanhbkdn92@gmail.com";  // GMAIL username
     $mail->Password     = "thanhkdt123";            // GMAIL password
 
@@ -566,12 +568,10 @@ function sendMail($receiver_mail, $content) {
 
     $mail->Subject    = "Activate account"; //Subject
 
-    $mail->AltBody    = "Để xem tin này, vui lòng bật tương thích chế độ hiển thị mã HTML!"; // optional, comment out and test
-
     $mail->MsgHTML($body);
 
     $address = $receiver_mail; //Receiver
-    $mail->AddAddress($address, "Test"); //Send to?
+    $mail->AddAddress($address, "Guest"); //Send to?
 
     // $mail->AddAttachment("dinhkem/02.jpg");      // Attach
     // $mail->AddAttachment("dinhkem/200_100.jpg"); // Attach
