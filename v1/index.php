@@ -331,7 +331,11 @@ $app->get('/itineraries', 'authenticate', function() {
                 array_push($response["itineraries"], $tmp);
             }
 
+            print_r($response);
+
+            //echo $response;
             echoRespnse(200, $response);
+
         });
 
 /**
@@ -349,6 +353,8 @@ $app->get('/itineraries/driver/:driver_id', 'authenticate', function($driver_id)
 
             $response["error"] = false;
             $response["itineraries"] = array();
+
+            print_r($car_id);
 
             // looping through result and preparing tasks array
             while ($itinerary = $result->fetch_assoc()) {
@@ -368,6 +374,8 @@ $app->get('/itineraries/driver/:driver_id', 'authenticate', function($driver_id)
                 $tmp["created_at"] = $itinerary["created_at"];
                 array_push($response["itineraries"], $tmp);
             }
+
+            print_r($response);
 
             echoRespnse(200, $response);
         });
@@ -410,6 +418,7 @@ $app->get('/itineraries/customer/:customer_id', 'authenticate', function($custom
             echoRespnse(200, $response);
         });
 
+//not finished yet: updated when accepted
 /**
  * Updating existing itinerary
  * method PUT
@@ -423,7 +432,7 @@ $app->put('/itinerary/:id', 'authenticate', function($itinerary_id) use($app) {
             global $user_id;
             $itinerary_fields = array();           
             
-            $itinerary_fields['customer_id'] = $app->request->put('customer_id');
+            /*$itinerary_fields['customer_id'] = $app->request->put('customer_id');
             $itinerary_fields['start_address'] = $app->request->put('start_address');
             $itinerary_fields['pick_up_address'] = $app->request->put('pick_up_address');
             $itinerary_fields['drop_address'] = $app->request->put('drop_address');
@@ -437,13 +446,20 @@ $app->put('/itinerary/:id', 'authenticate', function($itinerary_id) use($app) {
             $leave_day = $app->request->post('leave_day');
             $duration = $app->request->post('duration');
             $cost = $app->request->post('cost');
-            $description = $app->request->post('description');
+            $description = $app->request->post('description');*/
+
+            $request_params = array();
+            $request_params = $_REQUEST;
+            // Handling PUT request params
+            if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
+                $app = \Slim\Slim::getInstance();
+                parse_str($app->request()->getBody(), $request_params);
+            }
 
             $db = new DbHandler();
             $response = array();
-
             // updating task
-            $result = $db->updateItinerary2($itinerary_fields, $itinerary_id);
+            $result = $db->updateItinerary2($request_params, $itinerary_id);
             if ($result) {
                 // task updated successfully
                 $response["error"] = false;
