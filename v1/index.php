@@ -10,12 +10,14 @@ $app = new \Slim\Slim();
 
 // User id from db - Global Variable
 $user_id = NULL;
+// Staff id from db - Global Variable
+$staff_id = NULL;
 
 /**
- * Adding Middle Layer to authenticate every request
+ * Adding Middle Layer to authenticate User every request
  * Checking if the request has valid api key in the 'Authorization' header
  */
-function authenticate(\Slim\Route $route) {
+function authenticateUser(\Slim\Route $route) {
     // Getting request headers
     $headers = apache_request_headers();
     $response = array();
@@ -28,7 +30,7 @@ function authenticate(\Slim\Route $route) {
         // get the api key
         $api_key = $headers['Authorization'];
         // validating api key
-        if (!$db->isValidApiKey($api_key)) {
+        if (!$db->isValidApiKey($api_key,"user")) {
             // api key is not present in users table
             $response["error"] = true;
             $response["message"] = "Access Denied. Invalid Api key";
@@ -38,6 +40,43 @@ function authenticate(\Slim\Route $route) {
             global $user_id;
             // get user primary key id
             $user_id = $db->getUserId($api_key);
+        }
+    } else {
+        // api key is missing in header
+        $response["error"] = true;
+        $response["message"] = "Api key is misssing";
+        echoRespnse(400, $response);
+        $app->stop();
+    }
+}
+
+/**
+ * Adding Middle Layer to authenticate Staff every request
+ * Checking if the request has valid api key in the 'Authorization' header
+ */
+function authenticateStaff(\Slim\Route $route) {
+    // Getting request headers
+    $headers = apache_request_headers();
+    $response = array();
+    $app = \Slim\Slim::getInstance();
+
+    // Verifying Authorization Header
+    if (isset($headers['Authorization'])) {
+        $db = new DbHandler();
+
+        // get the api key
+        $api_key = $headers['Authorization'];
+        // validating api key
+        if (!$db->isValidApiKey($api_key,"staff")) {
+            // api key is not present in users table
+            $response["error"] = true;
+            $response["message"] = "Access Denied. Invalid Api key";
+            echoRespnse(401, $response);
+            $app->stop();
+        } else {
+            global $staff_id;
+            // get user primary key id
+            $staff_id = $db->getStaffId($api_key);
         }
     } else {
         // api key is missing in header
@@ -126,7 +165,7 @@ $app->get('/user/:activation_code', function($activation_code) {
  * method - POST
  * params - email, password
  */
-$app->post('/login', function() use ($app) {
+$app->post('/user/login', function() use ($app) {
             // check for required params
             verifyRequiredParams(array('email', 'password'));
 
@@ -136,34 +175,62 @@ $app->post('/login', function() use ($app) {
             $response = array();
 
             $db = new DbHandler();
+
+            $res = $db->checkLogin($email, $password);
             // check for correct email and password
-            if ($db->checkLogin($email, $password)) {
+            if ($res == LOGIN_SUCCESSFULL) {
                 // get the user by email
                 $user = $db->getUserByEmail($email);
 
                 if ($user != NULL) {
                     $response["error"] = false;
-                    $response['email'] = $user['email'];
                     $response['apiKey'] = $user['api_key'];
-                    $response['fullname'] = $user['fullname'];
-                    $response['phone'] = $user['phone'];
-                    $response['personalID'] = $user['personalID'];
-                    $response['personalID_img'] = $user['personalID_img'];
-                    $response['link_avatar'] = $user['link_avatar'];
-                    $response['created_at'] = $user['created_at'];
-                    $response['status'] = $user['status'];
                 } else {
                     // unknown error occurred
                     $response['error'] = true;
                     $response['message'] = "Có lỗi xảy ra! Vui lòng thử lại.";
                 }
-            } else {
-                // user credentials are wrong
+            } elseif ($res == WRONG_PASSWORD || $res == USER_NOT_REGISTER) {
                 $response['error'] = true;
-                $response['message'] = 'Đăng nhập thất bại! Sai email hoặc mật khẩu.';
+                $response['message'] = "Sai email hoặc mật khẩu!";
+            } elseif ($res == USER_NOT_ACTIVATE) {
+                $response['error'] = true;
+                $response['message'] = "Tài khoản chưa được kích hoạt. Vui lòng kích hoạt tài khoản!";
             }
 
             echoRespnse(200, $response);
+        });
+
+/**
+ * Get user information
+ * method GET
+ * url /user
+ */
+$app->get('/user', 'authenticateUser', function() {
+            global $user_id;
+            $response = array();
+            $db = new DbHandler();
+
+            // fetch task
+            $result = $db->getUserByUserID($user_id);
+
+            if ($result != NULL) {
+                $response["error"] = false;
+                $response['email'] = $result['email'];
+                $response['apiKey'] = $result['api_key'];
+                $response['fullname'] = $result['fullname'];
+                $response['phone'] = $result['phone'];
+                $response['personalID'] = $result['personalID'];
+                $response['personalID_img'] = $result['personalID_img'];
+                $response['link_avatar'] = $result['link_avatar'];
+                $response['created_at'] = $result['created_at'];
+                $response['status'] = $result['status'];
+                echoRespnse(200, $response);
+            } else {
+                $response["error"] = true;
+                $response["message"] = "The requested resource doesn't exists";
+                echoRespnse(404, $response);
+            }
         });
 
 /**
@@ -172,7 +239,7 @@ $app->post('/login', function() use ($app) {
  * params task, status
  * url - /user
  */
-$app->put('/user', 'authenticate', function() use($app) {
+$app->put('/user', 'authenticateUser', function() use($app) {
             // check for required params
             verifyRequiredParams(array('fullname', 'phone', 'personalID', 'personalID_img', 'link_avatar'));
 
@@ -201,11 +268,44 @@ $app->put('/user', 'authenticate', function() use($app) {
         });
 
 /**
+ * Change password
+ * method PUT
+ * params password
+ * url - /user
+ */
+$app->put('/user/password', 'authenticateUser', function() use($app) {
+            // check for required params
+            verifyRequiredParams(array('password'));
+
+            global $user_id;            
+
+            $password = $app->request->put('password');
+
+            validatePassword($password);
+
+            $db = new DbHandler();
+            $response = array();
+
+            // updating task
+            $result = $db->changePassword($user_id, $password);
+            if ($result) {
+                // task updated successfully
+                $response["error"] = false;
+                $response["message"] = "Thay đổi mật khẩu thành công!";
+            } else {
+                // task failed to update
+                $response["error"] = true;
+                $response["message"] = "Thay đổi mật khẩu thất bại. Vui lòng thử lại!";
+            }
+            echoRespnse(200, $response);
+        });
+
+/**
  * Deleting user.
  * method DELETE
  * url /user
  */
-$app->delete('/user/:user_id', 'authenticate', function($user_id) use($app) {
+$app->delete('/user', 'authenticateUser', function() use($app) {
             global $user_id;
 
             $db = new DbHandler();
@@ -225,10 +325,146 @@ $app->delete('/user/:user_id', 'authenticate', function($user_id) use($app) {
             echoRespnse(200, $response);
         });
 
+/**
+ * Staff Registration
+ * url - /staff
+ * method - POST
+ * params - email, password
+ */
+$app->post('/staff', function() use ($app) {
+            // check for required params
+            verifyRequiredParams(array('email'));
+
+            $response = array();
+
+            // reading post params
+            $role = $app->request->post('role');
+            $email = $app->request->post('email');
+            $fullname = $app->request->post('fullname');
+            $personalID = $app->request->post('personalID');
+
+            // validating email address
+            validateEmail($email);
+
+            $db = new DbHandler();
+            $res = $db->createStaff($role, $email, $fullname, $personalID);
+
+            if ($res == STAFF_CREATED_SUCCESSFULLY) {
+                $response["error"] = false;
+                $response["message"] = "Đăng kí thành công. Vui lòng kích hoạt tài khoản qua email bạn vừa đăng kí!";
+            } else if ($res == STAFF_ALREADY_EXISTED) {
+                $response["error"] = true;
+                $response["message"] = "Xin lỗi! email bạn đăng kí đã tồn tại.";
+            } else if ($res == STAFF_CREATE_FAILED) {
+                $response["error"] = true;
+                $response["message"] = "Xin lỗi! Có lỗi xảy ra trong quá trình đăng kí.";
+            }
+            // echo json response
+            echoRespnse(201, $response);
+        });
+
+/**
+ * User Login
+ * url - /user
+ * method - POST
+ * params - email, password
+ */
+$app->post('/staff/login', function() use ($app) {
+            // check for required params
+            verifyRequiredParams(array('email', 'password'));
+
+            // reading post params
+            $email = $app->request()->post('email');
+            $password = $app->request()->post('password');
+            $response = array();
+
+            $db = new DbHandler();
+
+            $res = $db->checkLoginStaff($email, $password);
+            // check for correct email and password
+            if ($res == LOGIN_SUCCESSFULL) {
+                // get the user by email
+                $staff = $db->getStaffByEmail($email);
+
+                if ($staff != NULL) {
+                    $response["error"] = false;
+                    $response['apiKey'] = $staff['api_key'];
+                } else {
+                    // unknown error occurred
+                    $response['error'] = true;
+                    $response['message'] = "Có lỗi xảy ra! Vui lòng thử lại.";
+                }
+            } elseif ($res == WRONG_PASSWORD || $res == STAFF_NOT_REGISTER) {
+                $response['error'] = true;
+                $response['message'] = "Sai email hoặc mật khẩu!";
+            }
+
+            echoRespnse(200, $response);
+        });
+
+/**
+ * Get user information
+ * method GET
+ * url /user
+ */
+$app->get('/staff/user', 'authenticateStaff', function() {
+            $response = array();
+            $db = new DbHandler();
+
+            $response['error'] = false;
+            $response['users'] = array();
+
+            // fetch task
+            $result = $db->getListUser();
+
+            while ($user = $result->fetch_assoc()) {
+                array_push($response['users'], $user);               
+            }
+
+            echoRespnse(200, $response);
+        });
+
+/**
+ * Listing single task of particual user
+ * method GET
+ * url /tasks/:id
+ * Will return 404 if the task doesn't belongs to user
+ */
+$app->get('/itinerary/:id', function($itinerary_id) {
+            global $user_id;
+            $response = array();
+            $db = new DbHandler();
+
+            // fetch task
+            $result = $db->getItinerary($itinerary_id);
+
+            if ($result != NULL) {
+                $response["error"] = false;
+                $response["itinerary_id"] = $result["itinerary_id"];
+                $response["driver_id"] = $result["driver_id"];
+                $response["customer_id"] = $result["customer_id"];
+                $response["start_address"] = $result["start_address"];
+                $response["pick_up_address"] = $result["pick_up_address"];
+                $response["drop_address"] = $result["drop_address"];
+                $response["end_address"] = $result["end_address"];
+                $response["leave_date"] = $result["leave_date"];
+                $response["duration"] = $result["duration"];
+                $response["cost"] = $result["cost"];
+                $response["description"] = $result["description"];
+                $response["status"] = $result["status"];
+                $response["created_at"] = $result["created_at"];
+                echoRespnse(200, $response);
+            } else {
+                $response["error"] = true;
+                $response["message"] = "The requested resource doesn't exists";
+                echoRespnse(404, $response);
+            }
+        });
+
 //Route itinerary
 //
 //
-$app->post('/itinerary', 'authenticate', function() use ($app) {
+$app->post('/itinerary', 'authenticateUser', function() use ($app) {
             // check for required params
             //verifyRequiredParams(array('task'));
 
@@ -301,7 +537,7 @@ $app->get('/itinerary/:id', function($itinerary_id) {
  * method GET
  * url /itineraries          
  */
-$app->get('/itineraries', 'authenticate', function() {
+$app->get('/itineraries', 'authenticateUser', function() {
             global $user_id;
             $response = array();
             $db = new DbHandler();
@@ -343,7 +579,7 @@ $app->get('/itineraries', 'authenticate', function() {
  * method GET
  * url /itineraries          
  */
-$app->get('/itineraries/driver/:driver_id', 'authenticate', function($driver_id) {
+$app->get('/itineraries/driver/:driver_id', 'authenticateUser', function($driver_id) {
             global $user_id;
             $response = array();
             $db = new DbHandler();
@@ -385,7 +621,7 @@ $app->get('/itineraries/driver/:driver_id', 'authenticate', function($driver_id)
  * method GET
  * url /itineraries          
  */
-$app->get('/itineraries/customer/:customer_id', 'authenticate', function($customer_id) {
+$app->get('/itineraries/customer/:customer_id', 'authenticateUser', function($customer_id) {
             global $user_id;
             $response = array();
             $db = new DbHandler();
@@ -425,7 +661,7 @@ $app->get('/itineraries/customer/:customer_id', 'authenticate', function($custom
  * params task, status
  * url - /itinerary/:id
  */
-$app->put('/itinerary/:id', 'authenticate', function($itinerary_id) use($app) {
+$app->put('/itinerary/:id', 'authenticateUser', function($itinerary_id) use($app) {
             // check for required params
             //verifyRequiredParams(array('task', 'status'));
 
@@ -478,7 +714,7 @@ $app->put('/itinerary/:id', 'authenticate', function($itinerary_id) use($app) {
  * method DELETE
  * url /itinerary
  */
-$app->delete('/itinerary/:id', 'authenticate', function($itinerary_id) use($app) {
+$app->delete('/itinerary/:id', 'authenticateUser', function($itinerary_id) use($app) {
             global $user_id;
 
             $db = new DbHandler();

@@ -120,13 +120,13 @@ class DbHandler {
      */
     public function checkLogin($email, $password) {
         // fetching user by email
-        $stmt = $this->conn->prepare("SELECT password FROM user WHERE email = ?");
+        $stmt = $this->conn->prepare("SELECT password, status FROM user WHERE email = ?");
 
         $stmt->bind_param("s", $email);
 
         $stmt->execute();
 
-        $stmt->bind_result($password_hash);
+        $stmt->bind_result($password_hash, $status);
 
         $stmt->store_result();
 
@@ -139,17 +139,21 @@ class DbHandler {
             $stmt->close();
 
             if (PassHash::check_password($password_hash, $password)) {
-                // User password is correct
-                return TRUE;
+                //Check status of user
+                if ($status > 1) {
+                    return LOGIN_SUCCESSFULL;
+                } else {
+                    // User password is correct
+                    return USER_NOT_ACTIVATE;
+                }
             } else {
                 // user password is incorrect
-                return FALSE;
+                return WRONG_PASSWORD;
             }
         } else {
             $stmt->close();
-
             // user not existed with the email
-            return FALSE;
+            return USER_NOT_REGISTER;
         }
     }
 
@@ -199,18 +203,47 @@ class DbHandler {
     }
 
     /**
-     * Fetching user api key
-     * @param String $user_id user id primary key in user table
+     * Fetching user by email
+     * @param String $email User email id
      */
-    public function getApiKeyById($user_id) {
-        $stmt = $this->conn->prepare("SELECT api_key FROM user WHERE id = ?");
-        $stmt->bind_param("i", $user_id);
+    public function getUserByUserID($user_id) {
+        $stmt = $this->conn->prepare("SELECT email, api_key, fullname, phone, personalID, 
+                                        personalID_img, link_avatar, status, created_at FROM user WHERE user_id = ?");
+        $stmt->bind_param("s", $user_id);
         if ($stmt->execute()) {
-            // $api_key = $stmt->get_result()->fetch_assoc();
-            // TODO
-            $stmt->bind_result($api_key);
+            // $user = $stmt->get_result()->fetch_assoc();
+            $stmt->bind_result($email, $api_key, $fullname, $phone, $personalID, $personalID_img,
+                                    $link_avatar, $status, $created_at);
+            $stmt->fetch();
+            $user = array();
+            $user["email"] = $email;
+            $user["api_key"] = $api_key;
+            $user["fullname"] = $fullname;
+            $user["phone"] = $phone;
+            $user["personalID"] = $personalID;
+            $user["personalID_img"] = $personalID_img;
+            $user["link_avatar"] = $link_avatar;
+            $user["status"] = $status;
+            $user["created_at"] = $created_at;
             $stmt->close();
-            return $api_key;
+            return $user;
+        } else {
+            return NULL;
+        }
+    }
+
+    /**
+     * Fetching user by email
+     * @param String $email User email id
+     */
+    public function getListUser() {
+        $stmt = $this->conn->prepare("SELECT email, api_key, fullname, phone, personalID, 
+                                        personalID_img, link_avatar, status, created_at FROM user");
+        if ($stmt->execute()) {
+            // $user = $stmt->get_result()->fetch_assoc();
+            $users = $stmt->get_result();
+            $stmt->close();
+            return $users;
         } else {
             return NULL;
         }
@@ -236,6 +269,24 @@ class DbHandler {
     }
 
     /**
+     * Change password
+     * @param String $user_id id of user
+     * @param String $password Password
+     */
+    public function changePassword($user_id, $password) {
+        // Generating password hash
+        $password_hash = PassHash::hash($password);
+
+        $stmt = $this->conn->prepare("UPDATE user set password = ?
+                                        WHERE user_id = ?");
+        $stmt->bind_param("si", $password_hash, $user_id);
+        $stmt->execute();
+        $num_affected_rows = $stmt->affected_rows;
+        $stmt->close();
+        return $num_affected_rows > 0;
+    }
+
+    /**
      * Updating user
      * @param String $user_id id of user
      * @param String $fullname Fullname
@@ -256,7 +307,7 @@ class DbHandler {
     }
 
     /**
-     * Deleting user
+     * Delete user
      * @param String $user_id id of user
      */
     public function deleteUser($user_id, $task_id) {
@@ -268,15 +319,127 @@ class DbHandler {
         return $num_affected_rows > 0;
     }
 
+    /* ------------- `staff` table method ------------------ */
+
     /**
-     * Validating user api key
-     * If the api key is there in db, it is a valid key
-     * @param String $api_key user api key
+     * Creating new staff
+     * @param String $fullname Staff full name
+     * @param String $email Staff login email id
+     * @param String $personalID Staff personal ID
+     */
+    public function createStaff($role, $email, $fullname, $personalID) {
+        require_once 'PassHash.php';
+
+        // First check if user already existed in db
+        if (!$this->isStaffExists($email)) {
+            // Generating password hash
+            $password_hash = PassHash::hash($email);
+
+            // Generating API key
+            $api_key = $this->generateApiKey();
+
+            $sql_query = "INSERT INTO staff(email, password, api_key, role, fullname, personalID) 
+                            values(?, ?, ?, ?, ?, ?)";
+
+            // insert query
+            if ($stmt = $this->conn->prepare($sql_query)) {
+                $stmt->bind_param("sssiss", $email, $password_hash, $api_key, $role==NULL?ROLE_STAFF:$role,
+                                    $fullname==NULL?' ':$fullname, $personalID==NULL?' ':$personalID);
+                $result = $stmt->execute();
+                echo $personalID;
+            } else {
+                var_dump($this->conn->error);
+            }
+
+            $stmt->close();
+
+            // Check for successful insertion
+            if ($result) {
+                // User successfully inserted
+                return STAFF_CREATED_SUCCESSFULLY;
+            } else {
+                // Failed to create user
+                return STAFF_CREATE_FAILED;
+            }
+        } else {
+            // User with same email already existed in the db
+            return STAFF_ALREADY_EXISTED;
+        }
+    }
+
+    /**
+     * Checking staff login
+     * @param String $email staff login email id
+     * @param String $password staff login password
+     * @return boolean User login status success/fail
+     */
+    public function checkLoginStaff($email, $password) {
+        // fetching staff by email
+        $stmt = $this->conn->prepare("SELECT password, role FROM staff WHERE email = ?");
+
+        $stmt->bind_param("s", $email);
+
+        $stmt->execute();
+
+        $stmt->bind_result($password_hash, $role);
+
+        $stmt->store_result();
+
+        if ($stmt->num_rows > 0) {
+            // Found user with the email
+            // Now verify the password
+
+            $stmt->fetch();
+
+            $stmt->close();
+
+            if (PassHash::check_password($password_hash, $password)) {
+                return LOGIN_SUCCESSFULL;
+            } else {
+                // staff password is incorrect
+                return WRONG_PASSWORD;
+            }
+        } else {
+            $stmt->close();
+            // staff not existed with the email
+            return STAFF_NOT_REGISTER;
+        }
+    }
+
+    /**
+     * Fetching staff by email
+     * @param String $email Staff email id
+     */
+    public function getStaffByEmail($email) {
+        $stmt = $this->conn->prepare("SELECT role, email, api_key, fullname, personalID, created_at 
+                                        FROM staff WHERE email = ?");
+        $stmt->bind_param("s", $email);
+        if ($stmt->execute()) {
+            // $user = $stmt->get_result()->fetch_assoc();
+            $stmt->bind_result($role, $email, $api_key, $fullname,$personalID, $created_at);
+            $stmt->fetch();
+            $staff = array();
+            $staff["role"] = $role;
+            $staff["email"] = $email;
+            $staff["api_key"] = $api_key;
+            $staff["fullname"] = $fullname;
+            $staff["personalID"] = $personalID;
+            $staff["created_at"] = $created_at;
+            $stmt->close();
+            return $staff;
+        } else {
+            return NULL;
+        }
+    }
+
+    /**
+     * Checking for duplicate user by email address
+     * @param String $email email to check in db
      * @return boolean
      */
-    public function isValidApiKey($api_key) {
-        $stmt = $this->conn->prepare("SELECT user_id from user WHERE api_key = ?");
-        $stmt->bind_param("s", $api_key);
+    private function isStaffExists($email) {
+        $stmt = $this->conn->prepare("SELECT staff_id from staff WHERE email = ?");
+        $stmt->bind_param("s", $email);
         $stmt->execute();
         $stmt->store_result();
         $num_rows = $stmt->num_rows;
@@ -285,10 +448,22 @@ class DbHandler {
     }
 
     /**
-     * Generating random Unique MD5 String for user Api key
+     * Fetching staff id by api key
+     * @param String $api_key staff api key
      */
-    private function generateApiKey() {
-        return md5(uniqid(rand(), true));
+    public function getStaffId($api_key) {
+        $stmt = $this->conn->prepare("SELECT staff_id FROM staff WHERE api_key = ?");
+        $stmt->bind_param("s", $api_key);
+        if ($stmt->execute()) {
+            $stmt->bind_result($staff_id);
+            $stmt->fetch();
+            // TODO
+            // $user_id = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+            return $staff_id;
+        } else {
+            return NULL;
+        }
     }
 
     /* ------------- `itinerary` table method ------------------ */
@@ -474,6 +649,49 @@ class DbHandler {
         $num_affected_rows = $stmt->affected_rows;
         $stmt->close();
         return $num_affected_rows > 0;
+    }
+
+    /* ------------- Utility method ------------------ */
+
+    /**
+     * Fetching api key
+     * @param String $id id primary key in table
+     */
+    public function getApiKeyById($id, $page) {
+        $stmt = $this->conn->prepare("SELECT api_key FROM ".$page." WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        if ($stmt->execute()) {
+            // $api_key = $stmt->get_result()->fetch_assoc();
+            // TODO
+            $stmt->bind_result($api_key);
+            $stmt->close();
+            return $api_key;
+        } else {
+            return NULL;
+        }
+    }
+
+    /**
+     * Validating user api key
+     * If the api key is there in db, it is a valid key
+     * @param String $api_key user api key
+     * @return boolean
+     */
+    public function isValidApiKey($api_key, $page) {
+        $stmt = $this->conn->prepare("SELECT ".$page."_id from ".$page." WHERE api_key = ?");
+        $stmt->bind_param("s", $api_key);
+        $stmt->execute();
+        $stmt->store_result();
+        $num_rows = $stmt->num_rows;
+        $stmt->close();
+        return $num_rows > 0;
+    }
+
+    /**
+     * Generating random Unique MD5 String for user Api key
+     */
+    private function generateApiKey() {
+        return md5(uniqid(rand(), true));
     }
 }
 
