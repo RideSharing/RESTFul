@@ -302,6 +302,19 @@ class DbHandler {
         $stmt->bind_param("sssssi", $fullname, $phone, $personalID, $personalID_img, $link_avatar, $user_id);
         $stmt->execute();
         $num_affected_rows = $stmt->affected_rows;
+
+        $stmt = $this->conn->prepare("SELECT fullname, phone, personalID, 
+                                        personalID_img, link_avatar, status FROM user WHERE user_id = ?");
+        $stmt->bind_param("s", $user_id);
+        if ($stmt->execute()) {
+            $stmt->bind_result($fullname, $phone, $personalID, $personalID_img, $link_avatar, $status);
+            $stmt->fetch();
+            if ($status < 7 && $status > 2) {
+                $status = 2;
+                if (!$fullname == NULL) $status++;
+            }
+        }
+
         $stmt->close();
         return $num_affected_rows > 0;
     }
