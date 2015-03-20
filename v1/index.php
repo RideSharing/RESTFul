@@ -472,16 +472,18 @@ $app->post('/itinerary', 'authenticateUser', function() use ($app) {
             
             $start_address = $app->request->post('start_address');
             $end_address = $app->request->post('end_address');
-            $leave_day = $app->request->post('leave_day');
+            $leave_date = $app->request->post('leave_date');
             $duration = $app->request->post('duration');
             $cost = $app->request->post('cost');
             $description = $app->request->post('description');
+
+            //echo $start_address;
 
             global $user_id;
             $db = new DbHandler();
 
             // creating new itinerary
-            $itinerary_id = $db->createItinerary($user_id, $start_address, $end_address, $leave_day, $duration, $cost, $description);
+            $itinerary_id = $db->createItinerary($user_id, $start_address, $end_address, $leave_date, $duration, $cost, $description);
 
             if ($itinerary_id != NULL) {
                 $response["error"] = false;
