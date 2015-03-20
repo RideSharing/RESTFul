@@ -233,6 +233,26 @@ class DbHandler {
     }
 
     /**
+     * Fetching user field by user_id
+     * @param String $field User User field want to get
+     * @param String $user_id User id
+     */
+    public function getUserByField($user_id, $field) {
+
+        $stmt = $this->conn->prepare("SELECT ".$field." FROM user WHERE user_id = ?");
+        $stmt->bind_param("s", $user_id);
+        if ($stmt->execute()) {
+            // $user = $stmt->get_result()->fetch_assoc();
+            $stmt->bind_result($field);
+            $stmt->fetch();
+            $stmt->close();
+            return $field;
+        } else {
+            return NULL;
+        }
+    }
+
+    /**
      * Fetching user by email
      * @param String $email User email id
      */
@@ -310,7 +330,9 @@ class DbHandler {
             $stmt->bind_result($fullname, $phone, $personalID, $personalID_img, $link_avatar, $status);
             $stmt->fetch();
             if ($status < 7 && $status > 2) {
-                $status = 2;
+                if ($personalID_img != NULL) $status = 3;
+                if (!$fullname == NULL) $status++;
+                if (!$fullname == NULL) $status++;
                 if (!$fullname == NULL) $status++;
             }
         }

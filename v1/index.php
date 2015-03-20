@@ -117,7 +117,7 @@ $app->post('/user', function() use ($app) {
 
                 $content_mail = "Chào bạn,<br>
                                 Vui lòng nhấn vào đường link sau để kích hoạt tài khoản:
-                                <a href='http://localhost/RESTFul/v1/user/". $activation_code.
+                                <a href='http://localhost/RESTFul/v1/user/active". $activation_code.
                                 "'>Kích hoạt tài khoản</a>";
 
                 sendMail($email, $content_mail);
@@ -141,7 +141,7 @@ $app->post('/user', function() use ($app) {
  * method - GET
  * params - activation_code
  */
-$app->get('/user/:activation_code', function($activation_code) {
+$app->get('/user/active/:activation_code', function($activation_code) {
             $response = array();
 
             $db = new DbHandler();
@@ -225,6 +225,30 @@ $app->get('/user', 'authenticateUser', function() {
                 $response['link_avatar'] = $result['link_avatar'];
                 $response['created_at'] = $result['created_at'];
                 $response['status'] = $result['status'];
+                echoRespnse(200, $response);
+            } else {
+                $response["error"] = true;
+                $response["message"] = "The requested resource doesn't exists";
+                echoRespnse(404, $response);
+            }
+        });
+
+/**
+ * Get user information
+ * method GET
+ * url /user
+ */
+$app->get('/user/:field', 'authenticateUser', function($field) {
+            global $user_id;
+            $response = array();
+            $db = new DbHandler();
+
+            // fetch task
+            $result = $db->getUserByField($user_id, $field);
+
+            if ($result != NULL) {
+                $response["error"] = false;
+                $response[$field] = $result;
                 echoRespnse(200, $response);
             } else {
                 $response["error"] = true;
