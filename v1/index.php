@@ -329,7 +329,7 @@ $app->put('/user/password', 'authenticateUser', function() use($app) {
  * method DELETE
  * url /user
  */
-$app->delete('/user', 'authenticateUser', function() use($app) {
+$app->delete('/user', 'authenticateUser', function() {
             global $user_id;
 
             $db = new DbHandler();
@@ -445,6 +445,61 @@ $app->get('/staff/user', 'authenticateStaff', function() {
                 array_push($response['users'], $user);               
             }
 
+            echoRespnse(200, $response);
+        });
+
+/**
+ * Get user information
+ * method GET
+ * url /staff/user
+ */
+$app->get('/staff/user/:user_id', 'authenticateStaff', function($user_id) {
+            $response = array();
+            $db = new DbHandler();
+
+            // fetch task
+            $result = $db->getUserByUserID($user_id);
+
+            if ($result != NULL) {
+                $response["error"] = false;
+                $response['email'] = $result['email'];
+                $response['apiKey'] = $result['api_key'];
+                $response['fullname'] = $result['fullname'];
+                $response['phone'] = $result['phone'];
+                $response['personalID'] = $result['personalID'];
+                $response['personalID_img'] = $result['personalID_img'];
+                $response['link_avatar'] = $result['link_avatar'];
+                $response['created_at'] = $result['created_at'];
+                $response['status'] = $result['status'];
+                echoRespnse(200, $response);
+            } else {
+                $response["error"] = true;
+                $response["message"] = "The requested resource doesn't exists";
+                echoRespnse(404, $response);
+            }
+        });
+
+/**
+ * Deleting user.
+ * method DELETE
+ * url /staff/user
+ */
+$app->delete('/staff/user/:user_id', 'authenticateStaff', function($user_id) {
+
+            $db = new DbHandler();
+            $response = array();
+
+            $result = $db->deleteUser($user_id);
+
+            if ($result) {
+                // user deleted successfully
+                $response["error"] = false;
+                $response["message"] = "Xóa người dùng thành công!";
+            } else {
+                // task failed to delete
+                $response["error"] = true;
+                $response["message"] = "Xóa người dùng thất bại. Vui lòng thử lại!";
+            }
             echoRespnse(200, $response);
         });
 
@@ -782,7 +837,7 @@ function verifyRequiredParams($required_fields) {
         $response = array();
         $app = \Slim\Slim::getInstance();
         $response["error"] = true;
-        $response["message"] = 'Required field(s) ' . substr($error_fields, 0, -2) . ' is missing or empty';
+        $response["message"] = 'Bạn chưa nhập ' . substr($error_fields, 0, -2) . ' !';
         echoRespnse(400, $response);
         $app->stop();
     }

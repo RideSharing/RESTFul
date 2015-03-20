@@ -257,7 +257,7 @@ class DbHandler {
      * @param String $email User email id
      */
     public function getListUser() {
-        $stmt = $this->conn->prepare("SELECT email, api_key, fullname, phone, personalID, 
+        $stmt = $this->conn->prepare("SELECT user_id, email, api_key, fullname, phone, personalID, 
                                         personalID_img, link_avatar, status, created_at FROM user");
         if ($stmt->execute()) {
             // $user = $stmt->get_result()->fetch_assoc();
