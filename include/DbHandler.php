@@ -509,14 +509,12 @@ class DbHandler {
      * @param Integer $driver_id user id to whom itinerary belongs to
      * @param String $start_address, $end_address, $leave_day, $duration, $cost, $description are itinerary's properties
      */
-    public function createItinerary($driver_id, $start_address, $end_address, $leave_day, $duration, $cost, $description) {
+    public function createItinerary($driver_id, $start_address, $end_address, $leave_date, $duration, $cost, $description) {
         $q = "INSERT INTO itinerary(driver_id, start_address, end_address, leave_date, duration, cost, description, status) ";
                 $q .= " VALUES(?,?,?,?,?,?,?,". ITINERARY_STATUS_NOTACCEPT.")";
         $stmt = $this->conn->prepare($q);
 
-        echo $q;
-
-        $stmt->bind_param("isssids",$driver_id, $start_address, $end_address, $leave_day, $duration, $cost, $description);
+        $stmt->bind_param("isssids",$driver_id, $start_address, $end_address, $leave_date, $duration, $cost, $description);
         
         $result = $stmt->execute();
         $stmt->close();
@@ -528,7 +526,7 @@ class DbHandler {
             return $new_itinerary_id;
             
         } else {
-            echo $q;
+            //echo $q;
             return NULL;
         }
 
