@@ -491,6 +491,9 @@ class DbHandler {
         $q = "INSERT INTO itinerary(driver_id, start_address, end_address, leave_date, duration, cost, description, status) ";
                 $q .= " VALUES(?,?,?,?,?,?,?,". ITINERARY_STATUS_NOTACCEPT.")";
         $stmt = $this->conn->prepare($q);
+
+        echo $q;
+
         $stmt->bind_param("isssids",$driver_id, $start_address, $end_address, $leave_day, $duration, $cost, $description);
         
         $result = $stmt->execute();
@@ -529,7 +532,11 @@ class DbHandler {
         $stmt->bind_param("i",$itinerary_id);
         if ($stmt->execute()) {
             $res = array();
-            $stmt->bind_result($itinerary_id, $driver_id, $customer_id, $start_address, $pick_up_address, $drop_address, $end_address, $leave_date, $duration, $cost, $description, $status, $created_at);
+            $stmt->bind_result($itinerary_id, $driver_id, $customer_id, $start_address, $start_address_lat, $start_address_long,
+                $pick_up_address, $pick_up_address_lat, $pick_up_address_long,
+                $drop_address, $drop_address_lat, $drop_address_long,
+                $end_address, $end_address_lat, $end_address_long,
+                $leave_date, $duration, $cost, $description, $status, $created_at);
             // TODO
             // $task = $stmt->get_result()->fetch_assoc();
             $stmt->fetch();
