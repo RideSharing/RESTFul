@@ -12,6 +12,9 @@ $app = new \Slim\Slim();
 $user_id = NULL;
 // Staff id from db - Global Variable
 $staff_id = NULL;
+//Restricted user field
+$restricted_user_field = array('user_id', 'email', 'api_key', 'created_at', 'status');
+
 
 /**
  * Adding Middle Layer to authenticate User every request
@@ -292,6 +295,42 @@ $app->put('/user', 'authenticateUser', function() use($app) {
         });
 
 /**
+ * Update user information
+ * method PUT
+ * url /user
+ */
+$app->put('/user/:field', 'authenticateUser', function($field) use($app) {
+            global $restricted_user_field;
+            if (!in_array($field, $restricted_user_field)) {
+                // check for required params
+                verifyRequiredParams(array('value'));
+                global $user_id;
+                $value = $app->request->put('value');
+
+                $response = array();
+                $db = new DbHandler();
+
+                // fetch user
+                $result = $db->updateUserField($user_id, $field, $value);
+
+                if ($result) {
+                    // user updated successfully
+                    $response["error"] = false;
+                    $response["message"] = "Cập nhật thông tin thành công!";
+                } else {
+                    // user failed to update
+                    $response["error"] = true;
+                    $response["message"] = "Cập nhật thông tin thất bại. Vui lòng thử lại!";
+                }
+            } else {
+                $response["error"] = true;
+                $response["message"] = "Cập nhật thông tin thất bại. Vui lòng thử lại!";
+            }
+            
+            echoRespnse(200, $response);
+        });
+
+/**
  * Change password
  * method PUT
  * params password
@@ -427,7 +466,7 @@ $app->post('/staff/login', function() use ($app) {
         });
 
 /**
- * Get user information
+ * Get all user information
  * method GET
  * url /user
  */

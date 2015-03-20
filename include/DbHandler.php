@@ -238,15 +238,33 @@ class DbHandler {
      * @param String $user_id User id
      */
     public function getUserByField($user_id, $field) {
-
-        $stmt = $this->conn->prepare("SELECT ".$field." FROM user WHERE user_id = ?");
-        $stmt->bind_param("s", $user_id);
+        $stmt = $this->conn->prepare("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+                                        WHERE TABLE_SCHEMA = 'rs' AND TABLE_NAME = 'user'");
         if ($stmt->execute()) {
-            // $user = $stmt->get_result()->fetch_assoc();
-            $stmt->bind_result($field);
-            $stmt->fetch();
-            $stmt->close();
-            return $field;
+            $fields = $stmt->get_result();
+        }
+
+        $fieldIsExitInTable = false;
+
+        while ($row = $fields->fetch_assoc()) {
+                if ($row['COLUMN_NAME'] == $field) {
+                    $fieldIsExitInTable = true;
+                    break;
+                }           
+        }
+
+        if ($fieldIsExitInTable) {
+            $stmt = $this->conn->prepare("SELECT ".$field." FROM user WHERE user_id = ?");
+            $stmt->bind_param("s", $user_id);
+            if ($stmt->execute()) {
+                // $user = $stmt->get_result()->fetch_assoc();
+                $stmt->bind_result($field);
+                $stmt->fetch();
+                $stmt->close();
+                return $field;
+            } else {
+                return NULL;
+            }
         } else {
             return NULL;
         }
@@ -342,12 +360,47 @@ class DbHandler {
     }
 
     /**
+     * Update user field by user_id
+     * @param String $field User field want to update
+     * @param String $user_id User id
+     */
+    public function updateUserField($user_id, $field, $value) {
+        $stmt = $this->conn->prepare("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+                                        WHERE TABLE_SCHEMA = 'rs' AND TABLE_NAME = 'user'");
+        if ($stmt->execute()) {
+            $fields = $stmt->get_result();
+        }
+
+        $fieldIsExitInTable = false;
+
+        while ($row = $fields->fetch_assoc()) {
+                if ($row['COLUMN_NAME'] == $field) {
+                    $fieldIsExitInTable = true;
+                    break;
+                }           
+        }
+
+        if ($fieldIsExitInTable) {
+            $stmt = $this->conn->prepare("UPDATE user set ".$field." = ? WHERE user_id = ?");
+            $stmt->bind_param("ss", $value, $user_id);
+            $stmt->execute();
+
+            $num_affected_rows = $stmt->affected_rows;
+
+            $stmt->close();
+            return $num_affected_rows > 0;
+        } else {
+            return false;
+        }
+    }
+
+    /**
      * Delete user
      * @param String $user_id id of user
      */
-    public function deleteUser($user_id, $task_id) {
-        $stmt = $this->conn->prepare("DELETE t FROM tasks t, user_tasks ut WHERE t.id = ? AND ut.task_id = t.id AND ut.user_id = ?");
-        $stmt->bind_param("ii", $task_id, $user_id);
+    public function deleteUser($user_id) {
+        $stmt = $this->conn->prepare("DELETE FROM user WHERE user_id = ?");
+        $stmt->bind_param("i", $user_id);
         $stmt->execute();
         $num_affected_rows = $stmt->affected_rows;
         $stmt->close();
