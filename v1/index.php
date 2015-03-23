@@ -231,7 +231,7 @@ $app->get('/user', 'authenticateUser', function() {
                 echoRespnse(200, $response);
             } else {
                 $response["error"] = true;
-                $response["message"] = "The requested resource doesn't exists";
+                $response["message"] = "Đường dẫn bạn yêu cầu không tồn tại!";
                 echoRespnse(404, $response);
             }
         });
@@ -255,7 +255,7 @@ $app->get('/user/:field', 'authenticateUser', function($field) {
                 echoRespnse(200, $response);
             } else {
                 $response["error"] = true;
-                $response["message"] = "The requested resource doesn't exists";
+                $response["message"] = "Đường dẫn bạn yêu cầu không tồn tại!";
                 echoRespnse(404, $response);
             }
         });
@@ -310,8 +310,14 @@ $app->put('/user/:field', 'authenticateUser', function($field) use($app) {
                 $response = array();
                 $db = new DbHandler();
 
-                // fetch user
-                $result = $db->updateUserField($user_id, $field, $value);
+                if ($field == 'password') {
+                    validatePassword($value);
+
+                    $result = $db->changePassword($user_id, $value);
+                } else {
+                    // fetch user
+                    $result = $db->updateUserField($user_id, $field, $value);
+                }
 
                 if ($result) {
                     // user updated successfully
@@ -327,39 +333,6 @@ $app->put('/user/:field', 'authenticateUser', function($field) use($app) {
                 $response["message"] = "Cập nhật thông tin thất bại. Vui lòng thử lại!";
             }
             
-            echoRespnse(200, $response);
-        });
-
-/**
- * Change password
- * method PUT
- * params password
- * url - /user
- */
-$app->put('/user/password', 'authenticateUser', function() use($app) {
-            // check for required params
-            verifyRequiredParams(array('password'));
-
-            global $user_id;            
-
-            $password = $app->request->put('password');
-
-            validatePassword($password);
-
-            $db = new DbHandler();
-            $response = array();
-
-            // updating task
-            $result = $db->changePassword($user_id, $password);
-            if ($result) {
-                // task updated successfully
-                $response["error"] = false;
-                $response["message"] = "Thay đổi mật khẩu thành công!";
-            } else {
-                // task failed to update
-                $response["error"] = true;
-                $response["message"] = "Thay đổi mật khẩu thất bại. Vui lòng thử lại!";
-            }
             echoRespnse(200, $response);
         });
 
@@ -414,7 +387,7 @@ $app->post('/staff', function() use ($app) {
 
             if ($res == STAFF_CREATED_SUCCESSFULLY) {
                 $response["error"] = false;
-                $response["message"] = "Đăng kí thành công. Vui lòng kích hoạt tài khoản qua email bạn vừa đăng kí!";
+                $response["message"] = "Tạo nhân viên mới thành công!";
             } else if ($res == STAFF_ALREADY_EXISTED) {
                 $response["error"] = true;
                 $response["message"] = "Xin lỗi! email bạn đăng kí đã tồn tại.";
@@ -470,6 +443,36 @@ $app->post('/staff/login', function() use ($app) {
  * method GET
  * url /user
  */
+$app->get('/staff', 'authenticateStaff', function() {
+            global $staff_id;
+
+            $response = array();
+            $db = new DbHandler();
+
+            // fetch task
+            $result = $db->getStaffByStaffID($staff_id);
+
+            if ($result != NULL) {
+                $response["error"] = false;
+                $response['role'] = $result['role'];
+                $response['email'] = $result['email'];
+                $response['apiKey'] = $result['api_key'];
+                $response['fullname'] = $result['fullname'];
+                $response['personalID'] = $result['personalID'];
+                $response['created_at'] = $result['created_at'];
+                echoRespnse(200, $response);
+            } else {
+                $response["error"] = true;
+                $response["message"] = "Đường dẫn bạn yêu cầu không tồn tại!";
+                echoRespnse(404, $response);
+            }
+        });
+
+/**
+ * Get all user information
+ * method GET
+ * url /user
+ */
 $app->get('/staff/user', 'authenticateStaff', function() {
             $response = array();
             $db = new DbHandler();
@@ -516,6 +519,105 @@ $app->get('/staff/user/:user_id', 'authenticateStaff', function($user_id) {
                 $response["message"] = "The requested resource doesn't exists";
                 echoRespnse(404, $response);
             }
+        });
+
+/**
+ * Get user information
+ * method GET
+ * url /user
+ */
+$app->get('/staff/user/:user_id/:field', 'authenticateStaff', function($user_id, $field) {
+            $response = array();
+            $db = new DbHandler();
+
+            // fetch task
+            $result = $db->getUserByField($user_id, $field);
+
+            if ($result != NULL) {
+                $response["error"] = false;
+                $response[$field] = $result;
+                echoRespnse(200, $response);
+            } else {
+                $response["error"] = true;
+                $response["message"] = "Đường dẫn bạn yêu cầu không tồn tại!";
+                echoRespnse(404, $response);
+            }
+        });
+
+/**
+ * Updating user
+ * method PUT
+ * params task, status
+ * url - /user
+ */
+$app->put('/staff/user/:user_id', 'authenticateStaff', function($user_id) use($app) {
+            // check for required params
+            verifyRequiredParams(array('fullname', 'phone', 'personalID', 'personalID_img', 'link_avatar'));
+         
+            $fullname = $app->request->put('fullname');
+            $phone = $app->request->put('phone');
+            $personalID = $app->request->put('personalID');
+            $personalID_img = $app->request->put('personalID_img');
+            $link_avatar = $app->request->put('link_avatar');
+
+            $db = new DbHandler();
+            $response = array();
+
+            // updating task
+            $result = $db->updateUser($user_id, $fullname, $phone, $personalID, $personalID_img, $link_avatar);
+            if ($result) {
+                // task updated successfully
+                $response["error"] = false;
+                $response["message"] = "Cập nhật thông tin thành công!";
+            } else {
+                // task failed to update
+                $response["error"] = true;
+                $response["message"] = "Cập nhật thông tin thất bại. Vui lòng thử lại!";
+            }
+            echoRespnse(200, $response);
+        });
+
+/**
+ * Update user information
+ * method PUT
+ * url /user
+ */
+$app->put('/staff/user/:user_id/:field', 'authenticateStaff', function($user_id, $field) use($app) {
+            global $restricted_user_field;
+
+            if (!in_array($field, $restricted_user_field)) {
+                // check for required params
+                verifyRequiredParams(array('value'));
+
+                $value = $app->request->put('value');
+
+                $response = array();
+                $db = new DbHandler();
+
+                if ($field == 'password') {
+                    validatePassword($value);
+
+                    $result = $db->changePassword($user_id, $value);
+                } else {
+                    // fetch user
+                    $result = $db->updateUserField($user_id, $field, $value);
+                }
+
+                if ($result) {
+                    // user updated successfully
+                    $response["error"] = false;
+                    $response["message"] = "Cập nhật thông tin thành công!";
+                } else {
+                    // user failed to update
+                    $response["error"] = true;
+                    $response["message"] = "Cập nhật thông tin thất bại. Vui lòng thử lại!";
+                }
+            } else {
+                $response["error"] = true;
+                $response["message"] = "Cập nhật thông tin thất bại. Vui lòng thử lại!";
+            }
+            
+            echoRespnse(200, $response);
         });
 
 /**
@@ -903,7 +1005,8 @@ function validateEmail($email) {
 function validatePassword($password) {
     $app = \Slim\Slim::getInstance();
 
-    if ((strlen($password) < '6') || (strlen($password) > '12')) {
+    if ((strlen($password) < 6) || (strlen($password) > 12)) {
+
         $response["error"] = true;
         $response["message"] = 'Độ dài mật khẩu phải nằm trong khoảng 6 đến 12 kí tự!';
         echoRespnse(200, $response);

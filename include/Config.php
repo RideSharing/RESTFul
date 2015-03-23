@@ -20,11 +20,6 @@ define('ITINERARY_CREATE_FAILED', 6);
 define('USER_ACTIVATED_SUCCESSFULLY', 7);
 define('USER_ACTIVATE_FAILED', 8);
 
-define('USER_NOT_REGISTER', 9);
-define('USER_NOT_ACTIVATE', 10);
-define('USER_ACTIVATED', 11);
-define('USER_UPDATED_PROFILE', 12);
-
 define('WRONG_PASSWORD', 13);
 define('LOGIN_SUCCESSFULL', 14);
 
@@ -35,4 +30,9 @@ define('STAFF_NOT_REGISTER', 18);
 
 define('ROLE_ADMIN',0);
 define('ROLE_STAFF',1);
+
+define('USER_NOT_REGISTER', 0);
+define('USER_NOT_ACTIVATE', 1);
+define('USER_ACTIVATED', 2);
+define('USER_UPDATED_PROFILE', 3);
 ?>

@@ -312,6 +312,7 @@ class DbHandler {
      * @param String $password Password
      */
     public function changePassword($user_id, $password) {
+
         // Generating password hash
         $password_hash = PassHash::hash($password);
 
@@ -434,7 +435,6 @@ class DbHandler {
                 $stmt->bind_param("sssiss", $email, $password_hash, $api_key, $role==NULL?ROLE_STAFF:$role,
                                     $fullname==NULL?' ':$fullname, $personalID==NULL?' ':$personalID);
                 $result = $stmt->execute();
-                echo $personalID;
             } else {
                 var_dump($this->conn->error);
             }
@@ -502,6 +502,32 @@ class DbHandler {
         $stmt = $this->conn->prepare("SELECT role, email, api_key, fullname, personalID, created_at 
                                         FROM staff WHERE email = ?");
         $stmt->bind_param("s", $email);
+        if ($stmt->execute()) {
+            // $user = $stmt->get_result()->fetch_assoc();
+            $stmt->bind_result($role, $email, $api_key, $fullname,$personalID, $created_at);
+            $stmt->fetch();
+            $staff = array();
+            $staff["role"] = $role;
+            $staff["email"] = $email;
+            $staff["api_key"] = $api_key;
+            $staff["fullname"] = $fullname;
+            $staff["personalID"] = $personalID;
+            $staff["created_at"] = $created_at;
+            $stmt->close();
+            return $staff;
+        } else {
+            return NULL;
+        }
+    }
+
+    /**
+     * Fetching staff by staff id
+     * @param String $staff_id Staff id
+     */
+    public function getStaffByStaffID($staff_id) {
+        $stmt = $this->conn->prepare("SELECT role, email, api_key, fullname, personalID, created_at 
+                                        FROM staff WHERE staff_id = ?");
+        $stmt->bind_param("s", $staff_id);
         if ($stmt->execute()) {
             // $user = $stmt->get_result()->fetch_assoc();
             $stmt->bind_result($role, $email, $api_key, $fullname,$personalID, $created_at);
