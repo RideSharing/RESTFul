@@ -120,13 +120,13 @@ class DbHandler {
      */
     public function checkLogin($email, $password) {
         // fetching user by email
-        $stmt = $this->conn->prepare("SELECT password, status FROM user WHERE email = ?");
+        $stmt = $this->conn->prepare("SELECT password, status, locked FROM user WHERE email = ?");
 
         $stmt->bind_param("s", $email);
 
         $stmt->execute();
 
-        $stmt->bind_result($password_hash, $status);
+        $stmt->bind_result($password_hash, $status, $locked);
 
         $stmt->store_result();
 
@@ -141,7 +141,11 @@ class DbHandler {
             if (PassHash::check_password($password_hash, $password)) {
                 //Check status of user
                 if ($status > 1) {
-                    return LOGIN_SUCCESSFULL;
+                    if (!$locked) {
+                        return LOGIN_SUCCESSFULL;
+                    } else {
+                        return USER_LOCKED;
+                    }
                 } else {
                     // User password is correct
                     return USER_NOT_ACTIVATE;
@@ -178,12 +182,12 @@ class DbHandler {
      */
     public function getUserByEmail($email) {
         $stmt = $this->conn->prepare("SELECT email, api_key, fullname, phone, personalID, 
-                                        personalID_img, link_avatar, status, created_at FROM user WHERE email = ?");
+                                        personalID_img, link_avatar, status, created_at, locked FROM user WHERE email = ?");
         $stmt->bind_param("s", $email);
         if ($stmt->execute()) {
             // $user = $stmt->get_result()->fetch_assoc();
             $stmt->bind_result($email, $api_key, $fullname, $phone, $personalID, $personalID_img,
-                                    $link_avatar, $status, $created_at);
+                                    $link_avatar, $status, $created_at, $locked);
             $stmt->fetch();
             $user = array();
             $user["email"] = $email;
@@ -195,6 +199,7 @@ class DbHandler {
             $user["link_avatar"] = $link_avatar;
             $user["status"] = $status;
             $user["created_at"] = $created_at;
+            $user["locked"] = $locked;
             $stmt->close();
             return $user;
         } else {
@@ -208,12 +213,12 @@ class DbHandler {
      */
     public function getUserByUserID($user_id) {
         $stmt = $this->conn->prepare("SELECT email, api_key, fullname, phone, personalID, 
-                                        personalID_img, link_avatar, status, created_at FROM user WHERE user_id = ?");
+                                        personalID_img, link_avatar, status, created_at, locked FROM user WHERE user_id = ?");
         $stmt->bind_param("s", $user_id);
         if ($stmt->execute()) {
             // $user = $stmt->get_result()->fetch_assoc();
             $stmt->bind_result($email, $api_key, $fullname, $phone, $personalID, $personalID_img,
-                                    $link_avatar, $status, $created_at);
+                                    $link_avatar, $status, $created_at, $locked);
             $stmt->fetch();
             $user = array();
             $user["email"] = $email;
@@ -225,6 +230,7 @@ class DbHandler {
             $user["link_avatar"] = $link_avatar;
             $user["status"] = $status;
             $user["created_at"] = $created_at;
+            $user["locked"] = $locked;
             $stmt->close();
             return $user;
         } else {
@@ -254,7 +260,8 @@ class DbHandler {
         }
 
         if ($fieldIsExitInTable) {
-            $stmt = $this->conn->prepare("SELECT ".$field." FROM user WHERE user_id = ?");
+            $qry = "SELECT ".$field." FROM user WHERE user_id = ?";
+            $stmt = $this->conn->prepare($qry);
             $stmt->bind_param("s", $user_id);
             if ($stmt->execute()) {
                 // $user = $stmt->get_result()->fetch_assoc();
@@ -276,7 +283,7 @@ class DbHandler {
      */
     public function getListUser() {
         $stmt = $this->conn->prepare("SELECT user_id, email, api_key, fullname, phone, personalID, 
-                                        personalID_img, link_avatar, status, created_at FROM user");
+                                        personalID_img, link_avatar, status, created_at, locked FROM user");
         if ($stmt->execute()) {
             // $user = $stmt->get_result()->fetch_assoc();
             $users = $stmt->get_result();
@@ -334,11 +341,11 @@ class DbHandler {
      * @param String $personalID_img Personal Identification Image
      * @param String $link_avatar Link Avartar
      */
-    public function updateUser($user_id, $fullname, $phone, $personalID, $personalID_img, $link_avatar) {
+    public function updateUser($user_id, $fullname, $phone, $personalID, $personalID_img, $link_avatar, $locked) {
         $stmt = $this->conn->prepare("UPDATE user set fullname = ?, phone = ?, personalID = ?,
-                                        personalID_img = ?, link_avatar = ?
+                                        personalID_img = ?, link_avatar = ?, locked = ?
                                         WHERE user_id = ?");
-        $stmt->bind_param("sssssi", $fullname, $phone, $personalID, $personalID_img, $link_avatar, $user_id);
+        $stmt->bind_param("sssssii", $fullname, $phone, $personalID, $personalID_img, $link_avatar, $user_id, $locked);
         $stmt->execute();
         $num_affected_rows = $stmt->affected_rows;
 
@@ -406,6 +413,22 @@ class DbHandler {
         $num_affected_rows = $stmt->affected_rows;
         $stmt->close();
         return $num_affected_rows > 0;
+    }
+
+    /**
+     * Validating user api key
+     * If the api key is there in db, it is a valid key
+     * @param String $api_key user api key
+     * @return boolean
+     */
+    public function isLockUser($api_key) {
+        $stmt = $this->conn->prepare("SELECT user_id from user WHERE api_key = ? AND locked=true");
+        $stmt->bind_param("s", $api_key);
+        $stmt->execute();
+        $stmt->store_result();
+        $num_rows = $stmt->num_rows;
+        $stmt->close();
+        return $num_rows > 0;
     }
 
     /* ------------- `staff` table method ------------------ */

@@ -13,7 +13,7 @@ $user_id = NULL;
 // Staff id from db - Global Variable
 $staff_id = NULL;
 //Restricted user field
-$restricted_user_field = array('user_id', 'email', 'api_key', 'created_at', 'status');
+$restricted_user_field = array('user_id', 'email', 'api_key', 'created_at', 'status', 'personalID');
 
 
 /**
@@ -33,10 +33,10 @@ function authenticateUser(\Slim\Route $route) {
         // get the api key
         $api_key = $headers['Authorization'];
         // validating api key
-        if (!$db->isValidApiKey($api_key,"user")) {
+        if (!$db->isValidApiKey($api_key,"user") || $db->isLockUser($api_key)) {
             // api key is not present in users table
             $response["error"] = true;
-            $response["message"] = "Access Denied. Invalid Api key";
+            $response["message"] = "Access Denied.";
             echoRespnse(401, $response);
             $app->stop();
         } else {
@@ -199,6 +199,13 @@ $app->post('/user/login', function() use ($app) {
             } elseif ($res == USER_NOT_ACTIVATE) {
                 $response['error'] = true;
                 $response['message'] = "Tài khoản chưa được kích hoạt. Vui lòng kích hoạt tài khoản!";
+            } elseif($res == USER_LOCKED) {
+                $response['error'] = true;
+                $response['message'] = "Tài khoản của bạn đang bị khóa!";
+            }
+            else{
+                $response['error'] = true;
+                $response['message'] = "Có lỗi xảy ra trong quá trình đăng nhập!";
             }
 
             echoRespnse(200, $response);
@@ -228,6 +235,7 @@ $app->get('/user', 'authenticateUser', function() {
                 $response['link_avatar'] = $result['link_avatar'];
                 $response['created_at'] = $result['created_at'];
                 $response['status'] = $result['status'];
+                $response['locked'] = $result['locked'];
                 echoRespnse(200, $response);
             } else {
                 $response["error"] = true;
@@ -249,7 +257,7 @@ $app->get('/user/:field', 'authenticateUser', function($field) {
             // fetch task
             $result = $db->getUserByField($user_id, $field);
 
-            if ($result != NULL) {
+            if ($result != NULL || $field == 'locked') {
                 $response["error"] = false;
                 $response[$field] = $result;
                 echoRespnse(200, $response);
@@ -268,7 +276,7 @@ $app->get('/user/:field', 'authenticateUser', function($field) {
  */
 $app->put('/user', 'authenticateUser', function() use($app) {
             // check for required params
-            verifyRequiredParams(array('fullname', 'phone', 'personalID', 'personalID_img', 'link_avatar'));
+            verifyRequiredParams(array('fullname', 'phone', 'personalID', 'personalID_img', 'link_avatar', 'locked'));
 
             global $user_id;            
             $fullname = $app->request->put('fullname');
@@ -276,12 +284,13 @@ $app->put('/user', 'authenticateUser', function() use($app) {
             $personalID = $app->request->put('personalID');
             $personalID_img = $app->request->put('personalID_img');
             $link_avatar = $app->request->put('link_avatar');
+            $locked = $app->request->put('locked');
 
             $db = new DbHandler();
             $response = array();
 
             // updating task
-            $result = $db->updateUser($user_id, $fullname, $phone, $personalID, $personalID_img, $link_avatar);
+            $result = $db->updateUser($user_id, $fullname, $phone, $personalID, $personalID_img, $link_avatar, $locked);
             if ($result) {
                 // task updated successfully
                 $response["error"] = false;
@@ -513,6 +522,7 @@ $app->get('/staff/user/:user_id', 'authenticateStaff', function($user_id) {
                 $response['link_avatar'] = $result['link_avatar'];
                 $response['created_at'] = $result['created_at'];
                 $response['status'] = $result['status'];
+                $response['locked'] = $result['locked'];
                 echoRespnse(200, $response);
             } else {
                 $response["error"] = true;
@@ -552,19 +562,20 @@ $app->get('/staff/user/:user_id/:field', 'authenticateStaff', function($user_id,
  */
 $app->put('/staff/user/:user_id', 'authenticateStaff', function($user_id) use($app) {
             // check for required params
-            verifyRequiredParams(array('fullname', 'phone', 'personalID', 'personalID_img', 'link_avatar'));
+            verifyRequiredParams(array('fullname', 'phone', 'personalID', 'personalID_img', 'link_avatar', 'locked'));
          
             $fullname = $app->request->put('fullname');
             $phone = $app->request->put('phone');
             $personalID = $app->request->put('personalID');
             $personalID_img = $app->request->put('personalID_img');
             $link_avatar = $app->request->put('link_avatar');
+            $locked = $app->request->put('locked');
 
             $db = new DbHandler();
             $response = array();
 
             // updating task
-            $result = $db->updateUser($user_id, $fullname, $phone, $personalID, $personalID_img, $link_avatar);
+            $result = $db->updateUser($user_id, $fullname, $phone, $personalID, $personalID_img, $link_avatar, $locked);
             if ($result) {
                 // task updated successfully
                 $response["error"] = false;
