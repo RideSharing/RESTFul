@@ -611,12 +611,19 @@ class DbHandler {
      * @param Integer $driver_id user id to whom itinerary belongs to
      * @param String $start_address, $end_address, $leave_day, $duration, $cost, $description are itinerary's properties
      */
-    public function createItinerary($driver_id, $start_address, $end_address, $leave_date, $duration, $cost, $description) {
-        $q = "INSERT INTO itinerary(driver_id, start_address, end_address, leave_date, duration, cost, description, status) ";
-                $q .= " VALUES(?,?,?,?,?,?,?,". ITINERARY_STATUS_NOTACCEPT.")";
+    public function createItinerary($driver_id, $start_address, $start_address_lat,$start_address_long,
+             $end_address, $end_address_lat, $end_address_long, $pick_up_address, $pick_up_address_lat, $pick_up_address_long,
+             $drop_address, $drop_address_lat, $drop_address_long, $leave_date, $duration, $cost, $description) {
+        $q = "INSERT INTO itinerary(driver_id, start_address, start_address_lat, start_address_long, 
+            end_address, end_address_lat, end_address_long, pick_up_address, pick_up_address_lat, pick_up_address_long, 
+            drop_address, drop_address_lat, drop_address_long, leave_date, duration, cost, description, status) ";
+                $q .= " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,". ITINERARY_STATUS_NOTACCEPT.")";
         $stmt = $this->conn->prepare($q);
 
-        $stmt->bind_param("isssids",$driver_id, $start_address, $end_address, $leave_date, $duration, $cost, $description);
+        $stmt->bind_param("isddsddsddsddsids",
+            $driver_id, $start_address, $start_address_lat, $start_address_long, 
+            $end_address, $end_address_lat, $end_address_long, $pick_up_address, $pick_up_address_lat, $pick_up_address_long,
+            $drop_address, $drop_address_lat, $drop_address_long, $leave_date, $duration, $cost, $description);
         
         $result = $stmt->execute();
         $stmt->close();

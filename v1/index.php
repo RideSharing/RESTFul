@@ -697,12 +697,23 @@ $app->get('/itinerary/:id', function($itinerary_id) {
 //
 $app->post('/itinerary', 'authenticateUser', function() use ($app) {
             // check for required params
-            //verifyRequiredParams(array('task'));
+            verifyRequiredParams(array('start_address','start_address_lat','start_address_long','end_address',
+                'end_address_lat','end_address_long','leave_date','duration','cost'));
 
             $response = array();
             
             $start_address = $app->request->post('start_address');
+            $start_address_lat = $app->request->post('start_address_lat');
+            $start_address_long = $app->request->post('start_address_long');
             $end_address = $app->request->post('end_address');
+            $end_address_lat = $app->request->post('end_address_lat');
+            $end_address_long = $app->request->post('end_address_long');
+            $pick_up_address = $app->request->post('pick_up_address');
+            $pick_up_address_lat = $app->request->post('pick_up_address_lat');
+            $pick_up_address_long = $app->request->post('pick_up_address_long');
+            $drop_address = $app->request->post('drop_address');
+            $drop_address_lat = $app->request->post('drop_address_lat');
+            $drop_address_long = $app->request->post('drop_address_long');
             $leave_date = $app->request->post('leave_date');
             $duration = $app->request->post('duration');
             $cost = $app->request->post('cost');
@@ -714,7 +725,9 @@ $app->post('/itinerary', 'authenticateUser', function() use ($app) {
             $db = new DbHandler();
 
             // creating new itinerary
-            $itinerary_id = $db->createItinerary($user_id, $start_address, $end_address, $leave_date, $duration, $cost, $description);
+            $itinerary_id = $db->createItinerary($user_id, $start_address, $start_address_lat,$start_address_long,
+             $end_address, $end_address_lat, $end_address_long, $pick_up_address, $pick_up_address_lat, $pick_up_address_long,
+             $drop_address, $drop_address_lat, $drop_address_long, $leave_date, $duration, $cost, $description);
 
             if ($itinerary_id != NULL) {
                 $response["error"] = false;
