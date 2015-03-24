@@ -371,6 +371,173 @@ $app->delete('/user', 'authenticateUser', function() {
         });
 
 /**
+ * Driver Registration
+ * url - /driver
+ * method - POST
+ * params - driver
+ */
+$app->post('/driver', 'authenticateUser', function() use ($app) {
+            global $user_id;
+
+            $response = array();
+
+            // reading post params
+            $driver_license = $app->request->post('driver_license');
+            $driver_license_img = $app->request->post('driver_license_img');
+
+            $db = new DbHandler();
+            $res = $db->createDriver($user_id, $driver_license, $driver_license_img);
+
+            if ($res == DRIVER_CREATED_SUCCESSFULLY) {
+                $response["error"] = false;
+                $response["message"] = "Đăng kí thành công!";
+            } else if ($res == DRIVER_ALREADY_EXISTED) {
+                $response["error"] = true;
+                $response["message"] = "Bạn đã đăng kí làm lái xe!";
+            } else if ($res == DRIVER_CREATE_FAILED) {
+                $response["error"] = true;
+                $response["message"] = "Xin lỗi! Có lỗi xảy ra trong quá trình đăng kí.";
+            }
+            // echo json response
+            echoRespnse(201, $response);
+        });
+
+/**
+ * Get driver information
+ * method GET
+ * url /driver
+ */
+$app->get('/driver', 'authenticateUser', function() {
+            global $user_id;
+            $response = array();
+            $db = new DbHandler();
+
+            // fetch task
+            $result = $db->getDriverByUserID($user_id);
+
+            if ($result != NULL) {
+                $response["error"] = false;
+                $response['driver_license'] = $result['driver_license'];
+                $response['driver_license_img'] = $result['driver_license_img'];
+                echoRespnse(200, $response);
+            } else {
+                $response["error"] = true;
+                $response["message"] = "Đường dẫn bạn yêu cầu không tồn tại!";
+                echoRespnse(404, $response);
+            }
+        });
+
+/**
+ * Get user information
+ * method GET
+ * url /user
+ */
+$app->get('/driver/:field', 'authenticateUser', function($field) {
+            global $user_id;
+            $response = array();
+            $db = new DbHandler();
+
+            // fetch task
+            $result = $db->getDriverByField($user_id, $field);
+
+            if ($result != NULL) {
+                $response["error"] = false;
+                $response[$field] = $result;
+                echoRespnse(200, $response);
+            } else {
+                $response["error"] = true;
+                $response["message"] = "Đường dẫn bạn yêu cầu không tồn tại!";
+                echoRespnse(404, $response);
+            }
+        });
+
+/**
+ * Updating user
+ * method PUT
+ * params task, status
+ * url - /user
+ */
+$app->put('/driver', 'authenticateUser', function() use($app) {
+            // check for required params
+            verifyRequiredParams(array('driver_license', 'driver_license_img'));
+
+            global $user_id;            
+            $driver_license = $app->request->put('driver_license');
+            $driver_license_img = $app->request->put('driver_license_img');
+
+            $db = new DbHandler();
+            $response = array();
+
+            // updating task
+            $result = $db->updateDriver($user_id, $driver_license, $driver_license_img);
+            if ($result) {
+                // task updated successfully
+                $response["error"] = false;
+                $response["message"] = "Cập nhật thông tin thành công!";
+            } else {
+                // task failed to update
+                $response["error"] = true;
+                $response["message"] = "Cập nhật thông tin thất bại. Vui lòng thử lại!";
+            }
+            echoRespnse(200, $response);
+        });
+
+/**
+ * Update user information
+ * method PUT
+ * url /user
+ */
+$app->put('/driver/:field', 'authenticateUser', function($field) use($app) {
+            // check for required params
+            verifyRequiredParams(array('value'));
+            global $user_id;
+            $value = $app->request->put('value');
+
+            $response = array();
+            $db = new DbHandler();
+
+            // fetch user
+            $result = $db->updateDriverField($user_id, $field, $value);
+
+            if ($result) {
+                // user updated successfully
+                $response["error"] = false;
+                $response["message"] = "Cập nhật thông tin thành công!";
+            } else {
+                // user failed to update
+                $response["error"] = true;
+                $response["message"] = "Cập nhật thông tin thất bại. Vui lòng thử lại!";
+            }
+            
+            echoRespnse(200, $response);
+        });
+
+/**
+ * Deleting user.
+ * method DELETE
+ * url /user
+ */
+$app->delete('/driver', 'authenticateUser', function() {
+            global $user_id;
+
+            $db = new DbHandler();
+            $response = array();
+
+            $result = $db->deleteDriver($user_id);
+
+            if ($result) {
+                // user deleted successfully
+                $response["error"] = false;
+                $response["message"] = "Xóa tài xế thành công!";
+            } else {
+                // task failed to delete
+                $response["error"] = true;
+                $response["message"] = "Xóa tài xế thất bại. Vui lòng thử lại!";
+            }
+            echoRespnse(200, $response);
+        });
+
+/**
  * Staff Registration
  * url - /staff
  * method - POST
