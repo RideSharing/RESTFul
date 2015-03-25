@@ -339,7 +339,20 @@ class DbHandler {
                                         personalID_img = ?, link_avatar = ?, locked = ?
                                         WHERE user_id = ?");
 
-        $stmt->bind_param("sssssii", $fullname, $phone, $personalID, $personalID_img, $link_avatar, $user_id, $locked);
+        $stmt->bind_param("sssssii", $fullname, $phone, $personalID, $personalID_img, $link_avatar, $locked, $user_id);
+        $stmt->execute();
+
+        $num_affected_rows = $stmt->affected_rows;
+
+        $stmt->close();
+        return $num_affected_rows > 0;
+    }
+
+    public function updateUser1($user_id, $status, $locked) {
+        $stmt = $this->conn->prepare("UPDATE user set status = ?, locked = ?
+                                        WHERE user_id = ?");
+
+        $stmt->bind_param("iii", $status, $locked, $user_id);
         $stmt->execute();
 
         $num_affected_rows = $stmt->affected_rows;
@@ -371,7 +384,7 @@ class DbHandler {
 
         if ($fieldIsExitInTable) {
             $stmt = $this->conn->prepare("UPDATE user set ".$field." = ? WHERE user_id = ?");
-            $stmt->bind_param("ss", $value, $user_id);
+            $stmt->bind_param("si", $value, $user_id);
             $stmt->execute();
 
             $num_affected_rows = $stmt->affected_rows;

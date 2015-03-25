@@ -729,20 +729,16 @@ $app->get('/staff/user/:user_id/:field', 'authenticateStaff', function($user_id,
  */
 $app->put('/staff/user/:user_id', 'authenticateStaff', function($user_id) use($app) {
             // check for required params
-            verifyRequiredParams(array('fullname', 'phone', 'personalID', 'personalID_img', 'link_avatar', 'locked'));
-         
-            $fullname = $app->request->put('fullname');
-            $phone = $app->request->put('phone');
-            $personalID = $app->request->put('personalID');
-            $personalID_img = $app->request->put('personalID_img');
-            $link_avatar = $app->request->put('link_avatar');
+            verifyRequiredParams(array('status', 'locked'));
+        
+            $status = $app->request->put('status');
             $locked = $app->request->put('locked');
 
             $db = new DbHandler();
             $response = array();
 
             // updating task
-            $result = $db->updateUser($user_id, $fullname, $phone, $personalID, $personalID_img, $link_avatar, $locked);
+            $result = $db->updateUser1($user_id, $status, $locked);
             if ($result) {
                 // task updated successfully
                 $response["error"] = false;
