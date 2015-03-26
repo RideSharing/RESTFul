@@ -13,7 +13,7 @@ $user_id = NULL;
 // Staff id from db - Global Variable
 $staff_id = NULL;
 //Restricted user field
-$restricted_user_field = array('user_id', 'email', 'api_key', 'created_at', 'status', 'personalID');
+$restricted_user_field = array('user_id', 'email', 'api_key', 'created_at', 'status');
 
 
 /**
@@ -276,7 +276,7 @@ $app->get('/user/:field', 'authenticateUser', function($field) {
  */
 $app->put('/user', 'authenticateUser', function() use($app) {
             // check for required params
-            verifyRequiredParams(array('fullname', 'phone', 'personalID', 'personalID_img', 'link_avatar', 'locked'));
+            verifyRequiredParams(array('fullname', 'phone', 'personalID', 'personalID_img', 'link_avatar'));
 
             global $user_id;            
             $fullname = $app->request->put('fullname');
@@ -284,13 +284,12 @@ $app->put('/user', 'authenticateUser', function() use($app) {
             $personalID = $app->request->put('personalID');
             $personalID_img = $app->request->put('personalID_img');
             $link_avatar = $app->request->put('link_avatar');
-            $locked = $app->request->put('locked');
 
             $db = new DbHandler();
             $response = array();
 
             // updating task
-            $result = $db->updateUser($user_id, $fullname, $phone, $personalID, $personalID_img, $link_avatar, $locked);
+            $result = $db->updateUser($user_id, $fullname, $phone, $personalID, $personalID_img, $link_avatar);
             if ($result) {
                 // task updated successfully
                 $response["error"] = false;
@@ -987,7 +986,7 @@ $app->get('/itineraries', 'authenticateUser', function() {
                 $tmp["end_address_long"] = $itinerary["end_address_long"];
                 $tmp["leave_date"] = $itinerary["leave_date"];
                 $tmp["duration"] = $itinerary["duration"];
-                $response["distance"] = $result["distance"];
+                $tmp["distance"] = $itinerary["distance"];
                 $tmp["cost"] = $itinerary["cost"];
                 $tmp["description"] = $itinerary["description"];
                 $tmp["status"] = $itinerary["status"];
@@ -995,7 +994,7 @@ $app->get('/itineraries', 'authenticateUser', function() {
                 array_push($response["itineraries"], $tmp);
             }
 
-            print_r($response);
+            //print_r($response);
 
             //echo $response;
             echoRespnse(200, $response);

@@ -334,12 +334,12 @@ class DbHandler {
      * @param String $personalID_img Personal Identification Image
      * @param String $link_avatar Link Avartar
      */
-    public function updateUser($user_id, $fullname, $phone, $personalID, $personalID_img, $link_avatar, $locked) {
+    public function updateUser($user_id, $fullname, $phone, $personalID, $personalID_img, $link_avatar) {
         $stmt = $this->conn->prepare("UPDATE user set fullname = ?, phone = ?, personalID = ?,
-                                        personalID_img = ?, link_avatar = ?, locked = ?
+                                        personalID_img = ?, link_avatar = ?
                                         WHERE user_id = ?");
 
-        $stmt->bind_param("sssssii", $fullname, $phone, $personalID, $personalID_img, $link_avatar, $locked, $user_id);
+        $stmt->bind_param("sssssi", $fullname, $phone, $personalID, $personalID_img, $link_avatar, $user_id);
         $stmt->execute();
 
         $num_affected_rows = $stmt->affected_rows;
