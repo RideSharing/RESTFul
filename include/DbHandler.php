@@ -788,17 +788,17 @@ class DbHandler {
      */
     public function createItinerary($driver_id, $start_address, $start_address_lat,$start_address_long,
              $end_address, $end_address_lat, $end_address_long, $pick_up_address, $pick_up_address_lat, $pick_up_address_long,
-             $drop_address, $drop_address_lat, $drop_address_long, $leave_date, $duration, $cost, $description) {
+             $drop_address, $drop_address_lat, $drop_address_long, $leave_date, $duration, $cost, $description, $distance) {
         $q = "INSERT INTO itinerary(driver_id, start_address, start_address_lat, start_address_long, 
             end_address, end_address_lat, end_address_long, pick_up_address, pick_up_address_lat, pick_up_address_long, 
-            drop_address, drop_address_lat, drop_address_long, leave_date, duration, cost, description, status) ";
-                $q .= " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,". ITINERARY_STATUS_NOTACCEPT.")";
+            drop_address, drop_address_lat, drop_address_long, leave_date, duration, cost, description, distance, status) ";
+                $q .= " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,". ITINERARY_STATUS_NOTACCEPT.")";
         $stmt = $this->conn->prepare($q);
 
-        $stmt->bind_param("isddsddsddsddsids",
+        $stmt->bind_param("isddsddsddsddsidsd",
             $driver_id, $start_address, $start_address_lat, $start_address_long, 
             $end_address, $end_address_lat, $end_address_long, $pick_up_address, $pick_up_address_lat, $pick_up_address_long,
-            $drop_address, $drop_address_lat, $drop_address_long, $leave_date, $duration, $cost, $description);
+            $drop_address, $drop_address_lat, $drop_address_long, $leave_date, $duration, $cost, $description, $distance);
         
         $result = $stmt->execute();
         $stmt->close();
@@ -840,7 +840,7 @@ class DbHandler {
                 $pick_up_address, $pick_up_address_lat, $pick_up_address_long,
                 $drop_address, $drop_address_lat, $drop_address_long,
                 $end_address, $end_address_lat, $end_address_long,
-                $leave_date, $duration, $cost, $description, $status, $created_at);
+                $leave_date, $duration, $distance, $cost, $description, $status, $created_at);
             // TODO
             // $task = $stmt->get_result()->fetch_assoc();
             $stmt->fetch();
@@ -848,11 +848,20 @@ class DbHandler {
             $res["driver_id"] = $driver_id;
             $res["customer_id"] = $customer_id;
             $res["start_address"] = $start_address;
+            $res["start_address_lat"] = $start_address_lat;
+            $res["start_address_long"] = $start_address_long;
             $res["pick_up_address"] = $pick_up_address;
+            $res["pick_up_address_lat"] = $pick_up_address_lat;
+            $res["pick_up_address_long"] = $pick_up_address_long;
             $res["drop_address"] = $drop_address;
+            $res["drop_address_lat"] = $drop_address_lat;
+            $res["drop_address_long"] = $drop_address_long;
             $res["end_address"] = $end_address;
+            $res["end_address_lat"] = $end_address_lat;
+            $res["end_address_long"] = $end_address_long;
             $res["leave_date"] = $leave_date;
             $res["duration"] = $duration;
+            $res["distance"] = $distance;
             $res["cost"] = $cost;
             $res["description"] = $description;
             $res["status"] = $status;
