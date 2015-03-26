@@ -1224,7 +1224,7 @@ function sendMail($receiver_mail, $content) {
     $mail->Host         = "smtp.gmail.com";      // sets GMAIL as the SMTP server
     $mail->Port         = 587;                   // set the SMTP port for the GMAIL server
     $mail->Username     = "thanhbkdn92@gmail.com";  // GMAIL username
-    $mail->Password     = "thanhkdt123";            // GMAIL password
+    $mail->Password     = "thanhkdt123@";            // GMAIL password
 
     $mail->SetFrom('thanhbkdn92@gmail.com', 'Ride Sharing Verification Team'); //Sender
 
