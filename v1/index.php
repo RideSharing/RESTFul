@@ -824,7 +824,7 @@ $app->delete('/staff/user/:user_id', 'authenticateStaff', function($user_id) {
  * url /tasks/:id
  * Will return 404 if the task doesn't belongs to user
  */
-$app->get('/itinerary/:id', function($itinerary_id) {
+/*$app->get('/itinerary/:id', function($itinerary_id) {
             global $user_id;
             $response = array();
             $db = new DbHandler();
@@ -853,7 +853,7 @@ $app->get('/itinerary/:id', function($itinerary_id) {
                 $response["message"] = "The requested resource doesn't exists";
                 echoRespnse(404, $response);
             }
-        });
+        });*/
 
 //Route itinerary
 //
@@ -861,7 +861,7 @@ $app->get('/itinerary/:id', function($itinerary_id) {
 $app->post('/itinerary', 'authenticateUser', function() use ($app) {
             // check for required params
             verifyRequiredParams(array('start_address','start_address_lat','start_address_long','end_address',
-                'end_address_lat','end_address_long','leave_date','duration','cost'));
+                'end_address_lat','end_address_long','leave_date','duration','cost', 'distance'));
 
             $response = array();
             
@@ -881,6 +881,7 @@ $app->post('/itinerary', 'authenticateUser', function() use ($app) {
             $duration = $app->request->post('duration');
             $cost = $app->request->post('cost');
             $description = $app->request->post('description');
+            $distance = $app->request->post('distance');
 
             //echo $start_address;
 
@@ -890,7 +891,7 @@ $app->post('/itinerary', 'authenticateUser', function() use ($app) {
             // creating new itinerary
             $itinerary_id = $db->createItinerary($user_id, $start_address, $start_address_lat,$start_address_long,
              $end_address, $end_address_lat, $end_address_long, $pick_up_address, $pick_up_address_lat, $pick_up_address_long,
-             $drop_address, $drop_address_lat, $drop_address_long, $leave_date, $duration, $cost, $description);
+             $drop_address, $drop_address_lat, $drop_address_long, $leave_date, $duration, $cost, $description, $distance);
 
             if ($itinerary_id != NULL) {
                 $response["error"] = false;
@@ -924,11 +925,20 @@ $app->get('/itinerary/:id', function($itinerary_id) {
                 $response["driver_id"] = $result["driver_id"];
                 $response["customer_id"] = $result["customer_id"];
                 $response["start_address"] = $result["start_address"];
+                $response["start_address_lat"] = $result["start_address_lat"];
+                $response["start_address_long"] = $result["start_address_long"];
                 $response["pick_up_address"] = $result["pick_up_address"];
+                $response["pick_up_address_lat"] = $result["pick_up_address_lat"];
+                $response["pick_up_address_long"] = $result["pick_up_address_long"];
                 $response["drop_address"] = $result["drop_address"];
+                $response["drop_address_lat"] = $result["drop_address_lat"];
+                $response["drop_address_long"] = $result["drop_address_long"];
                 $response["end_address"] = $result["end_address"];
+                $response["end_address_lat"] = $result["end_address_lat"];
+                $response["end_address_long"] = $result["end_address_long"];
                 $response["leave_date"] = $result["leave_date"];
                 $response["duration"] = $result["duration"];
+                $response["distance"] = $result["distance"];
                 $response["cost"] = $result["cost"];
                 $response["description"] = $result["description"];
                 $response["status"] = $result["status"];
@@ -964,11 +974,20 @@ $app->get('/itineraries', 'authenticateUser', function() {
                 $tmp["driver_id"] = $itinerary["driver_id"];
                 $tmp["customer_id"] = $itinerary["customer_id"];
                 $tmp["start_address"] = $itinerary["start_address"];
+                $tmp["start_address_lat"] = $itinerary["start_address_lat"];
+                $tmp["start_address_long"] = $itinerary["start_address_long"];
                 $tmp["pick_up_address"] = $itinerary["pick_up_address"];
+                $tmp["pick_up_address_lat"] = $itinerary["pick_up_address_lat"];
+                $tmp["pick_up_address_long"] = $itinerary["pick_up_address_long"];
                 $tmp["drop_address"] = $itinerary["drop_address"];
+                $tmp["drop_address_lat"] = $itinerary["drop_address_lat"];
+                $tmp["drop_address_long"] = $itinerary["drop_address_long"];
                 $tmp["end_address"] = $itinerary["end_address"];
+                $tmp["end_address_lat"] = $itinerary["end_address_lat"];
+                $tmp["end_address_long"] = $itinerary["end_address_long"];
                 $tmp["leave_date"] = $itinerary["leave_date"];
                 $tmp["duration"] = $itinerary["duration"];
+                $response["distance"] = $result["distance"];
                 $tmp["cost"] = $itinerary["cost"];
                 $tmp["description"] = $itinerary["description"];
                 $tmp["status"] = $itinerary["status"];
