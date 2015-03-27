@@ -211,6 +211,36 @@ $app->post('/user/login', function() use ($app) {
             echoRespnse(200, $response);
         });
 
+$app->get('/forgotpass/:email', function($email) {
+            $response = array();
+
+            $db = new DbHandler();
+
+            if ($db->isUserExists($email)) {
+                $res = $db->getUserByEmail($email);
+
+                if (isset($res)) {
+                    $content_mail = "Chào bạn,<br>
+                                Vui lòng nhấn vào đường link sau để đổi mật khẩu:
+                                <a href='http://localhost/WebAdmin/forgotpass.php?api_key=". $res['api_key'].
+                                "'>Đổi mật khẩu</a>";
+
+                    sendMail($email, $content_mail);
+
+                    $response["error"] = false;
+                    $response["message"] = "Một email vừa được gửi đến địa chỉ email bạn nhập. Vui lòng làm theo hướng dẫn để lấy lại mật khẩu";
+                } else {
+                    $response["error"] = true;
+                    $response["message"] = "Xin lỗi! Có lỗi xảy ra, vui lòng thử lại sau.";
+                } 
+            } else {
+                $response["error"] = true;
+                $response["message"] = "Email bạn nhập không chính xác!";
+            }
+            // echo json response
+            echoRespnse(200, $response);
+        });
+
 /**
  * Get user information
  * method GET

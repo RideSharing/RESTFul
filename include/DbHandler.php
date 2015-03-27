@@ -159,7 +159,7 @@ class DbHandler {
      * @param String $email email to check in db
      * @return boolean
      */
-    private function isUserExists($email) {
+    public function isUserExists($email) {
         $stmt = $this->conn->prepare("SELECT user_id from user WHERE email = ?");
         $stmt->bind_param("s", $email);
         $stmt->execute();
@@ -897,13 +897,19 @@ class DbHandler {
     }
 
     public function getAverageRatingofDriver($driver_id){
-        $q = "SELECT AVG(rating) AS average_rating FROM rating WHERE driver_id = ?"
+        $q = "SELECT AVG(rating) AS average_rating FROM rating WHERE user_id = ?";
         $stmt = $this->conn->prepare($q);
         $stmt->bind_param("i",$driver_id);
         $stmt->execute();
-        $average_rating = $stmt->get_result();
-        return $average_rating;
 
+        $stmt->bind_result($average_rating);
+            $stmt->close();
+
+        if($average_rating == null){
+            return 0;
+        } else {
+            return $average_rating;
+        }
     }
 
     //not finished yet
