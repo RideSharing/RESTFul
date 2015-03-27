@@ -887,6 +887,25 @@ class DbHandler {
         return $itineraries;
     }
 
+    public function getAllItinerariesWithDriverInfo() {
+        $q = "SELECT * FROM itinerary, driver, user WHERE itinerary.driver_id = driver.user_id AND driver.user_id = user.user_id";
+        $stmt = $this->conn->prepare($q);
+        $stmt->execute();
+        $itineraries = $stmt->get_result();
+        $stmt->close();
+        return $itineraries;
+    }
+
+    public function getAverageRatingofDriver($driver_id){
+        $q = "SELECT AVG(rating) AS average_rating FROM rating WHERE driver_id = ?"
+        $stmt = $this->conn->prepare($q);
+        $stmt->bind_param("i",$driver_id);
+        $stmt->execute();
+        $average_rating = $stmt->get_result();
+        return $average_rating;
+
+    }
+
     //not finished yet
     /**
      * Fetching all itineraries of one driver

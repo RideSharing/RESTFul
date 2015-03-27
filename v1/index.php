@@ -961,7 +961,7 @@ $app->get('/itineraries', 'authenticateUser', function() {
             $db = new DbHandler();
 
             // fetching all user tasks
-            $result = $db->getAllItineraries();
+            $result = $db->getAllItinerariesWithDriverInfo();
 
             $response["error"] = false;
             $response["itineraries"] = array();
@@ -969,6 +969,8 @@ $app->get('/itineraries', 'authenticateUser', function() {
             // looping through result and preparing tasks array
             while ($itinerary = $result->fetch_assoc()) {
                 $tmp = array();
+
+                //itinerary info
                 $tmp["itinerary_id"] = $itinerary["itinerary_id"];
                 $tmp["driver_id"] = $itinerary["driver_id"];
                 $tmp["customer_id"] = $itinerary["customer_id"];
@@ -991,6 +993,21 @@ $app->get('/itineraries', 'authenticateUser', function() {
                 $tmp["description"] = $itinerary["description"];
                 $tmp["status"] = $itinerary["status"];
                 $tmp["created_at"] = $itinerary["created_at"];
+
+                //driver info
+                $tmp["driver_license"] = $itinerary["driver_license"];
+                $tmp["driver_license_img"] = $itinerary["driver_license_img"];
+                
+                //user info
+                $tmp["user_id"] = $itinerary["user_id"];
+                $tmp["email"] = $itinerary["email"];
+                $tmp["fullname"] = $itinerary["fullname"];
+                $tmp["phone"] = $itinerary["phone"];
+                $tmp["personalID"] = $itinerary["personalID"];
+                $tmp["link_avatar"] = $itinerary["link_avatar"];
+
+                //rating
+                $tmp["average_rating"] = $db->getAverageRatingofDriver($itinerary["user_id"]);
                 array_push($response["itineraries"], $tmp);
             }
 
