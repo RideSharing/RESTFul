@@ -120,10 +120,10 @@ $app->post('/user', function() use ($app) {
 
                 $content_mail = "Chào bạn,<br>
                                 Vui lòng nhấn vào đường link sau để kích hoạt tài khoản:
-                                <a href='http://localhost/RESTFul/v1/active". $activation_code.
+                                <a href='http://192.168.10.74/WebApp/controller/register.php?active_key=". $activation_code.
                                 "'>Kích hoạt tài khoản</a>";
 
-                sendMail($email, $content_mail);
+                // sendMail($email, $content_mail);
 
                 $response["error"] = false;
                 $response["message"] = "Đăng kí thành công. Vui lòng kích hoạt tài khoản qua email bạn vừa đăng kí!";
@@ -1178,6 +1178,43 @@ $app->put('/itinerary/:id', 'authenticateUser', function($itinerary_id) use($app
                 // task failed to update
                 $response["error"] = true;
                 $response["message"] = "Itinerary failed to update. Please try again!";
+            }
+            echoRespnse(200, $response);
+        });
+
+/**
+ * Updating when itinerary is accepted
+ * method PUT
+ * params 
+ * url - /accept_itinerary/:id
+ */
+$app->put('/accept_itinerary/:id', 'authenticateUser', function($itinerary_id) use($app) {
+            // check for required params
+            //verifyRequiredParams(array('task', 'status'));
+
+            global $user_id;
+            //$itinerary_fields = array();           
+
+            //$request_params = array();
+            //$request_params = $_REQUEST;
+            // Handling PUT request params
+            /*if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
+                $app = \Slim\Slim::getInstance();
+                parse_str($app->request()->getBody(), $request_params);
+            }*/
+
+            $db = new DbHandler();
+            $response = array();
+            // updating task
+            $result = $db->updateAcceptedItinerary($itinerary_id, $user_id);
+            if ($result) {
+                // task updated successfully
+                $response["error"] = false;
+                $response["message"] = "Itinerary accepted updated successfully";
+            } else {
+                // task failed to update
+                $response["error"] = true;
+                $response["message"] = "Itinerary failed to accepted. Please try again!";
             }
             echoRespnse(200, $response);
         });
