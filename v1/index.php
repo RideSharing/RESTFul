@@ -120,7 +120,7 @@ $app->post('/user', function() use ($app) {
 
                 $content_mail = "Chào bạn,<br>
                                 Vui lòng nhấn vào đường link sau để kích hoạt tài khoản:
-                                <a href='http://localhost/RESTFul/v1/user/active". $activation_code.
+                                <a href='http://localhost/RESTFul/v1/active". $activation_code.
                                 "'>Kích hoạt tài khoản</a>";
 
                 sendMail($email, $content_mail);
@@ -144,7 +144,7 @@ $app->post('/user', function() use ($app) {
  * method - GET
  * params - activation_code
  */
-$app->get('/user/active/:activation_code', function($activation_code) {
+$app->get('/active/:activation_code', function($activation_code) {
             $response = array();
 
             $db = new DbHandler();
@@ -222,7 +222,7 @@ $app->get('/forgotpass/:email', function($email) {
                 if (isset($res)) {
                     $content_mail = "Chào bạn,<br>
                                 Vui lòng nhấn vào đường link sau để đổi mật khẩu:
-                                <a href='http://localhost/WebAdmin/forgotpass.php?api_key=". $res['api_key'].
+                                <a href='http://localhost/WebApp/forgotpass.php?api_key=". $res['api_key'].
                                 "'>Đổi mật khẩu</a>";
 
                     sendMail($email, $content_mail);
@@ -255,7 +255,7 @@ $app->get('/user', 'authenticateUser', function() {
             $result = $db->getUserByUserID($user_id);
 
             if ($result != NULL) {
-                $response["error"] = false;
+                $response['error'] = false;
                 $response['email'] = $result['email'];
                 $response['apiKey'] = $result['api_key'];
                 $response['fullname'] = $result['fullname'];
@@ -268,8 +268,8 @@ $app->get('/user', 'authenticateUser', function() {
                 $response['locked'] = $result['locked'];
                 echoRespnse(200, $response);
             } else {
-                $response["error"] = true;
-                $response["message"] = "Đường dẫn bạn yêu cầu không tồn tại!";
+                $response['error'] = true;
+                $response['message'] = 'Đường dẫn bạn yêu cầu không tồn tại!';
                 echoRespnse(404, $response);
             }
         });
@@ -322,12 +322,12 @@ $app->put('/user', 'authenticateUser', function() use($app) {
             $result = $db->updateUser($user_id, $fullname, $phone, $personalID, $personalID_img, $link_avatar);
             if ($result) {
                 // task updated successfully
-                $response["error"] = false;
-                $response["message"] = "Cập nhật thông tin thành công!";
+                $response['error'] = false;
+                $response['message'] = "Cập nhật thông tin thành công!";
             } else {
                 // task failed to update
-                $response["error"] = true;
-                $response["message"] = "Cập nhật thông tin thất bại. Vui lòng thử lại!";
+                $response['error'] = true;
+                $response['message'] = "Cập nhật thông tin thất bại. Vui lòng thử lại!";
             }
             echoRespnse(200, $response);
         });

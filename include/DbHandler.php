@@ -305,6 +305,7 @@ class DbHandler {
             return NULL;
         }
     }
+    
 
     /**
      * Change password
