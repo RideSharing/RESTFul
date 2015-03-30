@@ -848,6 +848,75 @@ $app->delete('/staff/user/:user_id', 'authenticateStaff', function($user_id) {
         });
 
 /**
+ * Listing all itineraries of particual user
+ * method GET
+ * url /itineraries          
+ */
+$app->get('/staff/itineraries', 'authenticateStaff', function() {
+            global $staff_id;
+            $response = array();
+            $db = new DbHandler();
+
+            // fetching all user tasks
+            $result = $db->getAllItinerariesWithDriverInfo();
+
+            $response["error"] = false;
+            $response["itineraries"] = array();
+
+            // looping through result and preparing tasks array
+            while ($itinerary = $result->fetch_assoc()) {
+                $tmp = array();
+
+                //itinerary info
+                $tmp["itinerary_id"] = $itinerary["itinerary_id"];
+                $tmp["driver_id"] = $itinerary["driver_id"];
+                $tmp["customer_id"] = $itinerary["customer_id"];
+                $tmp["start_address"] = $itinerary["start_address"];
+                $tmp["start_address_lat"] = $itinerary["start_address_lat"];
+                $tmp["start_address_long"] = $itinerary["start_address_long"];
+                $tmp["pick_up_address"] = $itinerary["pick_up_address"];
+                $tmp["pick_up_address_lat"] = $itinerary["pick_up_address_lat"];
+                $tmp["pick_up_address_long"] = $itinerary["pick_up_address_long"];
+                $tmp["drop_address"] = $itinerary["drop_address"];
+                $tmp["drop_address_lat"] = $itinerary["drop_address_lat"];
+                $tmp["drop_address_long"] = $itinerary["drop_address_long"];
+                $tmp["end_address"] = $itinerary["end_address"];
+                $tmp["end_address_lat"] = $itinerary["end_address_lat"];
+                $tmp["end_address_long"] = $itinerary["end_address_long"];
+                $tmp["leave_date"] = $itinerary["leave_date"];
+                $tmp["duration"] = $itinerary["duration"];
+                $tmp["distance"] = $itinerary["distance"];
+                $tmp["cost"] = $itinerary["cost"];
+                $tmp["description"] = $itinerary["description"];
+                $tmp["status"] = $itinerary["status"];
+                $tmp["created_at"] = $itinerary["created_at"];
+
+                //driver info
+                $tmp["driver_license"] = $itinerary["driver_license"];
+                $tmp["driver_license_img"] = $itinerary["driver_license_img"];
+                
+                //user info
+                $tmp["user_id"] = $itinerary["user_id"];
+                $tmp["email"] = $itinerary["email"];
+                $tmp["fullname"] = $itinerary["fullname"];
+                $tmp["phone"] = $itinerary["phone"];
+                $tmp["personalID"] = $itinerary["personalID"];
+                $tmp["link_avatar"] = $itinerary["link_avatar"];
+
+                //rating
+                $tmp["average_rating"] = $db->getAverageRatingofDriver($itinerary["user_id"]);
+                array_push($response["itineraries"], $tmp);
+            }
+
+            //print_r($response);
+
+            //echo $response;
+            echoRespnse(200, $response);
+
+        });
+
+
+/**
  * Listing single task of particual user
  * method GET
  * url /tasks/:id
