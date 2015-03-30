@@ -1002,10 +1002,11 @@ class DbHandler {
      * @param Integer $itinerary_id id of the itinerary
      */
     public function updateAcceptedItinerary($itinerary_id, $customer_id) {
-        $q = "UPDATE itinerary set customer_id = ?, status = ? 
+        $q = "UPDATE itinerary set customer_id = ?, status = 2 
                 WHERE itinerary_id = ?";
-        $stmt = $this->conn->prepare();
-        $stmt->bind_param("iii",$customer_id, 2, $itinerary_id);
+        $stmt = $this->conn->prepare($q);
+        echo $customer_id;
+        $stmt->bind_param("ii",$customer_id, $itinerary_id);
         $stmt->execute();
         $num_affected_rows = $stmt->affected_rows;
         $stmt->close();
