@@ -471,7 +471,7 @@ $app->get('/driver/:field', 'authenticateUser', function($field) {
             } else {
                 $response["error"] = true;
                 $response["message"] = "Đường dẫn bạn yêu cầu không tồn tại!";
-                echoRespnse(404, $response);
+                echoRespnse(200, $response);
             }
         });
 
