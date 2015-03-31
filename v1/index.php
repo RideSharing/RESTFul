@@ -120,10 +120,10 @@ $app->post('/user', function() use ($app) {
 
                 $content_mail = "Chào bạn,<br>
                                 Vui lòng nhấn vào đường link sau để kích hoạt tài khoản:
-                                <a href='http://localhost/RESTFul/v1/active". $activation_code.
+                                <a href='http://192.168.10.74/WebApp/controller/register.php?active_key=". $activation_code.
                                 "'>Kích hoạt tài khoản</a>";
 
-                sendMail($email, $content_mail);
+                // sendMail($email, $content_mail);
 
                 $response["error"] = false;
                 $response["message"] = "Đăng kí thành công. Vui lòng kích hoạt tài khoản qua email bạn vừa đăng kí!";
@@ -274,11 +274,6 @@ $app->get('/user', 'authenticateUser', function() {
             }
         });
 
-/**
- * Get user information
- * method GET
- * url /user
- */
 $app->get('/user/:field', 'authenticateUser', function($field) {
             global $user_id;
             $response = array();
@@ -916,6 +911,94 @@ $app->get('/staff/itineraries', 'authenticateStaff', function() {
         });
 
 
+$app->get('staff/itinerary/:id', 'authenticateStaff', function($itinerary_id) {
+            global $staff_id;
+            $response = array();
+            $db = new DbHandler();
+
+            // fetch task
+            $result = $db->getItinerary($itinerary_id);
+
+            if ($result != NULL) {
+                $response["error"] = false;
+                $response["itinerary_id"] = $result["itinerary_id"];
+                $response["driver_id"] = $result["driver_id"];
+                $response["customer_id"] = $result["customer_id"];
+                $response["start_address"] = $result["start_address"];
+                $response["start_address_lat"] = $result["start_address_lat"];
+                $response["start_address_long"] = $result["start_address_long"];
+                $response["pick_up_address"] = $result["pick_up_address"];
+                $response["pick_up_address_lat"] = $result["pick_up_address_lat"];
+                $response["pick_up_address_long"] = $result["pick_up_address_long"];
+                $response["drop_address"] = $result["drop_address"];
+                $response["drop_address_lat"] = $result["drop_address_lat"];
+                $response["drop_address_long"] = $result["drop_address_long"];
+                $response["end_address"] = $result["end_address"];
+                $response["end_address_lat"] = $result["end_address_lat"];
+                $response["end_address_long"] = $result["end_address_long"];
+                $response["leave_date"] = $result["leave_date"];
+                $response["duration"] = $result["duration"];
+                $response["distance"] = $result["distance"];
+                $response["cost"] = $result["cost"];
+                $response["description"] = $result["description"];
+                $response["status"] = $result["status"];
+                $response["created_at"] = $result["created_at"];
+                echoRespnse(200, $response);
+            } else {
+                $response["error"] = true;
+                $response["message"] = "The requested resource doesn't exists";
+                echoRespnse(404, $response);
+            }
+        });
+
+$app->put('staff/itinerary/:id', 'authenticateStaff', function($itinerary_id) use($app) {
+            // check for required params
+            //verifyRequiredParams(array('task', 'status'));
+
+            global $staff_id;
+            $itinerary_fields = array();
+
+            $request_params = array();
+            $request_params = $_REQUEST;
+            // Handling PUT request params
+            if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
+                $app = \Slim\Slim::getInstance();
+                parse_str($app->request()->getBody(), $request_params);
+            }
+
+            $db = new DbHandler();
+            $response = array();
+            // updating task
+            $result = $db->updateItinerary2($request_params, $itinerary_id);
+            if ($result) {
+                // task updated successfully
+                $response["error"] = false;
+                $response["message"] = "Itinerary updated successfully";
+            } else {
+                // task failed to update
+                $response["error"] = true;
+                $response["message"] = "Itinerary failed to update. Please try again!";
+            }
+            echoRespnse(200, $response);
+        });
+
+$app->delete('staff/itinerary/:id', 'authenticateStaff', function($itinerary_id) use($app) {
+            global $staff_id;
+
+            $db = new DbHandler();
+            $response = array();
+            $result = $db->deleteItinerary($itinerary_id);
+            if ($result) {
+                // itinerary deleted successfully
+                $response["error"] = false;
+                $response["message"] = "Itinerary deleted succesfully";
+            } else {
+                // itinerary failed to delete
+                $response["error"] = true;
+                $response["message"] = "Itinerary failed to delete. Please try again!";
+            }
+            echoRespnse(200, $response);
+        });
 /**
  * Listing single task of particual user
  * method GET
@@ -1291,6 +1374,43 @@ $app->put('/itinerary/:id', 'authenticateUser', function($itinerary_id) use($app
                 // task failed to update
                 $response["error"] = true;
                 $response["message"] = "Itinerary failed to update. Please try again!";
+            }
+            echoRespnse(200, $response);
+        });
+
+/**
+ * Updating when itinerary is accepted
+ * method PUT
+ * params 
+ * url - /accept_itinerary/:id
+ */
+$app->put('/accept_itinerary/:id', 'authenticateUser', function($itinerary_id) use($app) {
+            // check for required params
+            //verifyRequiredParams(array('task', 'status'));
+
+            global $user_id;
+            //$itinerary_fields = array();           
+
+            //$request_params = array();
+            //$request_params = $_REQUEST;
+            // Handling PUT request params
+            /*if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
+                $app = \Slim\Slim::getInstance();
+                parse_str($app->request()->getBody(), $request_params);
+            }*/
+
+            $db = new DbHandler();
+            $response = array();
+            // updating task
+            $result = $db->updateAcceptedItinerary($itinerary_id, $user_id);
+            if ($result) {
+                // task updated successfully
+                $response["error"] = false;
+                $response["message"] = "Itinerary accepted updated successfully";
+            } else {
+                // task failed to update
+                $response["error"] = true;
+                $response["message"] = "Itinerary failed to accepted. Please try again!";
             }
             echoRespnse(200, $response);
         });

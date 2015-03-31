@@ -996,6 +996,23 @@ class DbHandler {
         return $num_affected_rows > 0;
     }
 
+    /**
+     * Updating accepted itinerary
+     * @param Aray $itinerary_fields properties of the itinerary
+     * @param Integer $itinerary_id id of the itinerary
+     */
+    public function updateAcceptedItinerary($itinerary_id, $customer_id) {
+        $q = "UPDATE itinerary set customer_id = ?, status = 2 
+                WHERE itinerary_id = ?";
+        $stmt = $this->conn->prepare($q);
+        echo $customer_id;
+        $stmt->bind_param("ii",$customer_id, $itinerary_id);
+        $stmt->execute();
+        $num_affected_rows = $stmt->affected_rows;
+        $stmt->close();
+        return $num_affected_rows > 0;
+    }
+
     //not finished yet
     /**
      * Deleting a itinerary
