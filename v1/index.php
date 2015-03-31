@@ -1164,6 +1164,50 @@ $app->get('/itineraries/driver/:driver_id', 'authenticateUser', function($driver
  * method GET
  * url /itineraries          
  */
+$app->get('driver/itineraries', 'authenticateUser', function() {
+            global $user_id;
+
+            //echo $user_id;
+            $response = array();
+            $db = new DbHandler();
+
+            // fetching all user tasks
+            $result = $db->getDriverItineraries($user_id);
+
+            $response["error"] = false;
+            $response["itineraries"] = array();
+
+            //print_r($car_id);
+
+            // looping through result and preparing tasks array
+            while ($itinerary = $result->fetch_assoc()) {
+                $tmp = array();
+                $tmp["itinerary_id"] = $itinerary["itinerary_id"];
+                $tmp["driver_id"] = $itinerary["driver_id"];
+                $tmp["customer_id"] = $itinerary["customer_id"];
+                $tmp["start_address"] = $itinerary["start_address"];
+                $tmp["pick_up_address"] = $itinerary["pick_up_address"];
+                $tmp["drop_address"] = $itinerary["drop_address"];
+                $tmp["end_address"] = $itinerary["end_address"];
+                $tmp["leave_date"] = $itinerary["leave_date"];
+                $tmp["duration"] = $itinerary["duration"];
+                $tmp["cost"] = $itinerary["cost"];
+                $tmp["description"] = $itinerary["description"];
+                $tmp["status"] = $itinerary["status"];
+                $tmp["created_at"] = $itinerary["created_at"];
+                array_push($response["itineraries"], $tmp);
+            }
+
+            print_r($response);
+
+            echoRespnse(200, $response);
+        });
+
+/**
+ * Listing all itineraries of driver
+ * method GET
+ * url /itineraries          
+ */
 $app->get('/itineraries/customer/:customer_id', 'authenticateUser', function($customer_id) {
             global $user_id;
             $response = array();
