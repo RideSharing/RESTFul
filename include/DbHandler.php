@@ -443,11 +443,11 @@ class DbHandler {
             // insert query
             if ($stmt = $this->conn->prepare($sql_query)) {
                 $stmt->bind_param("iss", $user_id, $driver_license==NULL?'':$driver_license, $driver_license_img==NULL?'':$driver_license_img);
-
                 $result = $stmt->execute();
             } else {
                 var_dump($this->conn->error);
             }
+
 
             $stmt->close();
 
@@ -484,6 +484,20 @@ class DbHandler {
         } else {
             return NULL;
         }
+    }
+
+    /**
+     * Fetching user by email
+     * @param String $email User email id
+     */
+    public function isDriver($user_id) {
+        $stmt = $this->conn->prepare("SELECT user_id FROM driver WHERE user_id = ?");
+        $stmt->bind_param("s", $user_id);
+        $stmt->execute();
+        $stmt->store_result();
+        $num_rows = $stmt->num_rows;
+        $stmt->close();
+        return $num_rows > 0;
     }
 
     /**

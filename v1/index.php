@@ -188,6 +188,10 @@ $app->post('/user/login', function() use ($app) {
                 if ($user != NULL) {
                     $response["error"] = false;
                     $response['apiKey'] = $user['api_key'];
+
+                    $user_id = $db->getUserId($user['api_key']);
+
+                    $response['driver'] = $db->isDriver($user_id);
                 } else {
                     // unknown error occurred
                     $response['error'] = true;
@@ -401,8 +405,8 @@ $app->delete('/user', 'authenticateUser', function() {
  * params - driver
  */
 $app->post('/driver', 'authenticateUser', function() use ($app) {
+            verifyRequiredParams(array('driver_license', 'driver_license_img'));
             global $user_id;
-
             $response = array();
 
             // reading post params
@@ -911,8 +915,7 @@ $app->get('/staff/itineraries', 'authenticateStaff', function() {
         });
 
 
-$app->get('staff/itinerary/:id', 'authenticateStaff', function($itinerary_id) {
-            global $staff_id;
+$app->get('staff/itinerary/:id', function($itinerary_id) {
             $response = array();
             $db = new DbHandler();
 
@@ -982,9 +985,9 @@ $app->put('staff/itinerary/:id', 'authenticateStaff', function($itinerary_id) us
             echoRespnse(200, $response);
         });
 
-$app->delete('staff/itinerary/:id', 'authenticateStaff', function($itinerary_id) use($app) {
-            global $staff_id;
-
+$app->delete('/staff/itinerary/:id', function($itinerary_id) use($app) {
+            //global $staff_id;
+            echo "quay len";
             $db = new DbHandler();
             $response = array();
             $result = $db->deleteItinerary($itinerary_id);
@@ -999,6 +1002,7 @@ $app->delete('staff/itinerary/:id', 'authenticateStaff', function($itinerary_id)
             }
             echoRespnse(200, $response);
         });
+
 /**
  * Listing single task of particual user
  * method GET
@@ -1247,10 +1251,8 @@ $app->get('/itineraries/driver/:driver_id', 'authenticateUser', function($driver
  * method GET
  * url /itineraries          
  */
-$app->get('driver/itineraries', 'authenticateUser', function() {
+$app->get('/itineraries/driver', 'authenticateUser', function() {
             global $user_id;
-
-            //echo $user_id;
             $response = array();
             $db = new DbHandler();
 
@@ -1259,8 +1261,6 @@ $app->get('driver/itineraries', 'authenticateUser', function() {
 
             $response["error"] = false;
             $response["itineraries"] = array();
-
-            //print_r($car_id);
 
             // looping through result and preparing tasks array
             while ($itinerary = $result->fetch_assoc()) {
