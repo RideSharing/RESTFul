@@ -118,12 +118,12 @@ $app->post('/user', function() use ($app) {
                 $user = $db->getUserByEmail($email);
                 $activation_code = $user["api_key"];
 
-                $content_mail = "Chào bạn,<br>
-                                Vui lòng nhấn vào đường link sau để kích hoạt tài khoản:
+                $content_mail = "Chao ban,<br>
+                                Vui long nhan vao duong link sau de kich hoat tai khoan:
                                 <a href='http://192.168.10.74/WebApp/controller/register.php?active_key=". $activation_code.
-                                "'>Kích hoạt tài khoản</a>";
+                                "'>Kich hoat tai khoan</a>";
 
-                // sendMail($email, $content_mail);
+                sendMail($email, $content_mail);
 
                 $response["error"] = false;
                 $response["message"] = "Đăng kí thành công. Vui lòng kích hoạt tài khoản qua email bạn vừa đăng kí!";
@@ -224,10 +224,10 @@ $app->get('/forgotpass/:email', function($email) {
                 $res = $db->getUserByEmail($email);
 
                 if (isset($res)) {
-                    $content_mail = "Chào bạn,<br>
-                                Vui lòng nhấn vào đường link sau để đổi mật khẩu:
-                                <a href='http://localhost/WebApp/forgotpass.php?api_key=". $res['api_key'].
-                                "'>Đổi mật khẩu</a>";
+                    $content_mail = "Chao ban,<br>
+                                Vui long nhan vao duong link sau de doi mat khau:
+                                <a href='http://192.168.10.74/WebApp/forgotpass.php?api_key=". $res['api_key'].
+                                "'>Doi mat khau</a>";
 
                     sendMail($email, $content_mail);
 
@@ -1209,35 +1209,57 @@ $app->get('/itineraries', 'authenticateUser', function() {
  * method GET
  * url /itineraries          
  */
-$app->get('/itineraries/driver/:driver_id', 'authenticateUser', function($driver_id) {
+$app->get('/itineraries/driver/', 'authenticateUser', function() {
             global $user_id;
             $response = array();
             $db = new DbHandler();
 
             // fetching all user tasks
-            $result = $db->getDriverItineraries($driver_id);
+            $result = $db->getDriverItineraries($user_id);
 
             $response["error"] = false;
             $response["itineraries"] = array();
 
-            print_r($car_id);
+            //print_r($car_id);
 
             // looping through result and preparing tasks array
             while ($itinerary = $result->fetch_assoc()) {
                 $tmp = array();
+                //itinerary info
                 $tmp["itinerary_id"] = $itinerary["itinerary_id"];
                 $tmp["driver_id"] = $itinerary["driver_id"];
                 $tmp["customer_id"] = $itinerary["customer_id"];
                 $tmp["start_address"] = $itinerary["start_address"];
+                $tmp["start_address_lat"] = $itinerary["start_address_lat"];
+                $tmp["start_address_long"] = $itinerary["start_address_long"];
                 $tmp["pick_up_address"] = $itinerary["pick_up_address"];
+                $tmp["pick_up_address_lat"] = $itinerary["pick_up_address_lat"];
+                $tmp["pick_up_address_long"] = $itinerary["pick_up_address_long"];
                 $tmp["drop_address"] = $itinerary["drop_address"];
+                $tmp["drop_address_lat"] = $itinerary["drop_address_lat"];
+                $tmp["drop_address_long"] = $itinerary["drop_address_long"];
                 $tmp["end_address"] = $itinerary["end_address"];
+                $tmp["end_address_lat"] = $itinerary["end_address_lat"];
+                $tmp["end_address_long"] = $itinerary["end_address_long"];
                 $tmp["leave_date"] = $itinerary["leave_date"];
                 $tmp["duration"] = $itinerary["duration"];
+                $tmp["distance"] = $itinerary["distance"];
                 $tmp["cost"] = $itinerary["cost"];
                 $tmp["description"] = $itinerary["description"];
                 $tmp["status"] = $itinerary["status"];
                 $tmp["created_at"] = $itinerary["created_at"];
+
+                //driver info
+                $tmp["driver_license"] = $itinerary["driver_license"];
+                $tmp["driver_license_img"] = $itinerary["driver_license_img"];
+                
+                //user info
+                $tmp["user_id"] = $itinerary["user_id"];
+                $tmp["email"] = $itinerary["email"];
+                $tmp["fullname"] = $itinerary["fullname"];
+                $tmp["phone"] = $itinerary["phone"];
+                $tmp["personalID"] = $itinerary["personalID"];
+                $tmp["link_avatar"] = $itinerary["link_avatar"];
                 array_push($response["itineraries"], $tmp);
             }
 
@@ -1437,6 +1459,34 @@ $app->delete('/itinerary/:id', 'authenticateUser', function($itinerary_id) use($
                 $response["message"] = "Itinerary failed to delete. Please try again!";
             }
             echoRespnse(200, $response);
+        });
+
+$app->post('/feedback', function() use ($app) {
+            // check for required params
+            verifyRequiredParams(array('email', 'name', 'content'));
+
+            $response = array();
+
+            // reading post params
+            $email = $app->request->post('email');
+            $name = $app->request->post('name');
+            $content = $app->request->post('content');
+
+            // validating email address
+            validateEmail($email);
+
+            $db = new DbHandler();
+            $res = $db->createFeedback($email, $name, $content);
+
+            if ($res == USER_CREATED_FEEDBACK_SUCCESSFULLY) {
+                $response["error"] = false;
+                $response["message"] = "Cám ơn bạn đã gửi góp ý!";
+            } else if ($res == USER_CREATE_FEEDBACK_FAILED) {
+                $response["error"] = true;
+                $response["message"] = "Xin lỗi! Có lỗi xảy ra trong quá trình gửi góp ý.";
+            }
+            // echo json response
+            echoRespnse(201, $response);
         });
 
 /**

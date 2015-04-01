@@ -933,7 +933,8 @@ class DbHandler {
      * @param Integer $driver_id id of the driver
      */
     public function getDriverItineraries($driver_id) {
-        $q = "SELECT * FROM itinerary WHERE driver_id = ?";
+        $q = "SELECT * FROM itinerary, driver, user WHERE itinerary.driver_id = driver.user_id AND driver.user_id = user.user_id AND driver_id = ?";
+        //$q = "SELECT * FROM itinerary WHERE driver_id = ?";
         $stmt = $this->conn->prepare($q);
         $stmt->bind_param("i",$driver_id);
         $stmt->execute();
@@ -1039,6 +1040,31 @@ class DbHandler {
         $num_affected_rows = $stmt->affected_rows;
         $stmt->close();
         return $num_affected_rows > 0;
+    }
+
+    /* ------------- Feedback table ------------------ */
+
+    public function createFeedback($email, $name, $content) {
+        $sql_query = "INSERT INTO feedback(email, name, content) values(?, ?, ?)";
+
+        // insert query
+        if ($stmt = $this->conn->prepare($sql_query)) {
+            $stmt->bind_param("sss", $email, $name, $content);
+            $result = $stmt->execute();
+        } else {
+            var_dump($this->conn->error);
+        }
+
+        $stmt->close();
+
+        // Check for successful insertion
+        if ($result) {
+            // User successfully inserted
+            return USER_CREATED_FEEDBACK_SUCCESSFULLY;
+        } else {
+            // Failed to create user
+            return USER_CREATE_FEEDBACK_FAILED;
+        }
     }
 
     /* ------------- Utility method ------------------ */
