@@ -188,8 +188,12 @@ $app->post('/user/login', function() use ($app) {
                 if ($user != NULL) {
                     $response["error"] = false;
                     $response['apiKey'] = $user['api_key'];
+                    $response['customer_status'] = $user['status'];
 
                     $user_id = $db->getUserId($user['api_key']);
+
+                    $driver_status = $db->getDriverByField($user_id, 'status');
+                    $response['driver_status'] = $driver_status;
 
                     $response['driver'] = $db->isDriver($user_id);
                 } else {
@@ -1273,7 +1277,7 @@ $app->get('/itineraries/driver/', 'authenticateUser', function() {
  * method GET
  * url /itineraries          
  */
-$app->get('/itineraries/driver', 'authenticateUser', function() {
+/*$app->get('/itineraries/driver', 'authenticateUser', function() {
             global $user_id;
             $response = array();
             $db = new DbHandler();
@@ -1306,7 +1310,7 @@ $app->get('/itineraries/driver', 'authenticateUser', function() {
             print_r($response);
 
             echoRespnse(200, $response);
-        });
+        });*/
 
 /**
  * Listing all itineraries of driver
@@ -1356,25 +1360,8 @@ $app->get('/itineraries/customer/:customer_id', 'authenticateUser', function($cu
 $app->put('/itinerary/:id', 'authenticateUser', function($itinerary_id) use($app) {
             // check for required params
             //verifyRequiredParams(array('task', 'status'));
-
             global $user_id;
             $itinerary_fields = array();           
-            
-            /*$itinerary_fields['customer_id'] = $app->request->put('customer_id');
-            $itinerary_fields['start_address'] = $app->request->put('start_address');
-            $itinerary_fields['pick_up_address'] = $app->request->put('pick_up_address');
-            $itinerary_fields['drop_address'] = $app->request->put('drop_address');
-            $itinerary_fields['end_address'] = $app->request->put('end_address');
-            $itinerary_fields['leave_date'] = $app->request->put('leave_date');
-            $itinerary_fields['duration'] = $app->request->put('duration');
-            $itinerary_fields['cost'] = $app->request->put('cost');
-            $itinerary_fields['description'] = $app->request->put('description');
-            $itinerary_fields['status'] = $app->request->put('status');
-            $end_address = $app->request->post('end_address');
-            $leave_day = $app->request->post('leave_day');
-            $duration = $app->request->post('duration');
-            $cost = $app->request->post('cost');
-            $description = $app->request->post('description');*/
 
             $request_params = array();
             $request_params = $_REQUEST;
@@ -1401,12 +1388,12 @@ $app->put('/itinerary/:id', 'authenticateUser', function($itinerary_id) use($app
         });
 
 /**
- * Updating when itinerary is accepted
+ * Updating when itinerary is accepted by customer
  * method PUT
  * params 
  * url - /accept_itinerary/:id
  */
-$app->put('/accept_itinerary/:id', 'authenticateUser', function($itinerary_id) use($app) {
+$app->put('/customer_accept_itinerary/:id', 'authenticateUser', function($itinerary_id) use($app) {
             // check for required params
             //verifyRequiredParams(array('task', 'status'));
 
@@ -1437,6 +1424,117 @@ $app->put('/accept_itinerary/:id', 'authenticateUser', function($itinerary_id) u
             echoRespnse(200, $response);
         });
 
+/**
+ * Updating when itinerary is rejected by customer
+ * method PUT
+ * params 
+ * url - /accept_itinerary/:id
+ */
+$app->put('/customer_reject_itinerary/:id', 'authenticateUser', function($itinerary_id) use($app) {
+            // check for required params
+            //verifyRequiredParams(array('task', 'status'));
+
+            global $user_id;
+            //$itinerary_fields = array();           
+
+            //$request_params = array();
+            //$request_params = $_REQUEST;
+            // Handling PUT request params
+            /*if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
+                $app = \Slim\Slim::getInstance();
+                parse_str($app->request()->getBody(), $request_params);
+            }*/
+
+            $db = new DbHandler();
+            $response = array();
+            // updating task
+            $result = $db->updateAcceptedItinerary($itinerary_id, $user_id);
+            if ($result) {
+                // task updated successfully
+                $response["error"] = false;
+                $response["message"] = "Itinerary accepted updated successfully";
+            } else {
+                // task failed to update
+                $response["error"] = true;
+                $response["message"] = "Itinerary failed to accepted. Please try again!";
+            }
+            echoRespnse(200, $response);
+        });
+
+/**
+ * Updating when itinerary is accepted by driver
+ * method PUT
+ * params 
+ * url - /accept_itinerary/:id
+ */
+$app->put('/driver_accept_itinerary/:id', 'authenticateUser', function($itinerary_id) use($app) {
+            // check for required params
+            //verifyRequiredParams(array('task', 'status'));
+
+            global $user_id;
+            //$itinerary_fields = array();           
+
+            //$request_params = array();
+            //$request_params = $_REQUEST;
+            // Handling PUT request params
+            /*if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
+                $app = \Slim\Slim::getInstance();
+                parse_str($app->request()->getBody(), $request_params);
+            }*/
+
+            $db = new DbHandler();
+            $response = array();
+            // updating task
+            $result = $db->updateAcceptedItinerary($itinerary_id, $user_id);
+            if ($result) {
+                // task updated successfully
+                $response["error"] = false;
+                $response["message"] = "Itinerary accepted updated successfully";
+            } else {
+                // task failed to update
+                $response["error"] = true;
+                $response["message"] = "Itinerary failed to accepted. Please try again!";
+            }
+            echoRespnse(200, $response);
+        });
+
+/**
+ * Updating when itinerary is rejected by driver
+ * method PUT
+ * params 
+ * url - /accept_itinerary/:id
+ */
+$app->put('/driver_reject_itinerary/:id', 'authenticateUser', function($itinerary_id) use($app) {
+            // check for required params
+            //verifyRequiredParams(array('task', 'status'));
+
+            global $user_id;
+            //$itinerary_fields = array();           
+
+            //$request_params = array();
+            //$request_params = $_REQUEST;
+            // Handling PUT request params
+            /*if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
+                $app = \Slim\Slim::getInstance();
+                parse_str($app->request()->getBody(), $request_params);
+            }*/
+
+            $db = new DbHandler();
+            $response = array();
+            // updating task
+            $result = $db->updateAcceptedItinerary($itinerary_id, $user_id);
+            if ($result) {
+                // task updated successfully
+                $response["error"] = false;
+                $response["message"] = "Itinerary accepted updated successfully";
+            } else {
+                // task failed to update
+                $response["error"] = true;
+                $response["message"] = "Itinerary failed to accepted. Please try again!";
+            }
+            echoRespnse(200, $response);
+        });
+//not finished 
 //not finished yet: bi phat sau khi delete khi da duoc accepted
 /**
  * Deleting itinerary. Users can delete only their itineraries

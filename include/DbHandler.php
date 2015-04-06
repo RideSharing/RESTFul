@@ -337,7 +337,7 @@ class DbHandler {
      */
     public function updateUser($user_id, $fullname, $phone, $personalID, $personalID_img, $link_avatar) {
         $stmt = $this->conn->prepare("UPDATE user set fullname = ?, phone = ?, personalID = ?,
-                                        personalID_img = ?, link_avatar = ?, status = 3,
+                                        personalID_img = ?, link_avatar = ?, status = 3
                                         WHERE user_id = ?");
 
         $stmt->bind_param("sssssi", $fullname, $phone, $personalID, $personalID_img, $link_avatar, $user_id);

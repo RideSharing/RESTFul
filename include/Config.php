@@ -11,8 +11,11 @@ define('USER_CREATED_SUCCESSFULLY', 0);
 define('USER_CREATE_FAILED', 1);
 define('USER_ALREADY_EXISTED', 2);
 
-define('ITINERARY_STATUS_NOTACCEPT', 1);
-define('ITINERARY_STATUS_ACCEPTED', 2);
+//Itinerary status
+define('ITINERARY_STATUS_CREATED', 1);//luc tao hanh trinh
+define('ITINERARY_STATUS_CUSTOMER_ACCEPTED', 2);//co nguoi dk nhung driver chua accept
+define('ITINERARY_STATUS_DRIVER_ACCEPTED', 3);//driver accept
+define('ITINERARY_STATUS_ACCEPTED', 4);//hanh trinh da ket thuc
 
 define('ITINERARY_CREATED_SUCCESSFULLY', 5);
 define('ITINERARY_CREATE_FAILED', 6);
@@ -32,14 +35,21 @@ define('ROLE_ADMIN',0);
 define('ROLE_STAFF',1);
 
 define('USER_NOT_REGISTER', 0);
-define('USER_NOT_ACTIVATE', 1);
-define('USER_ACTIVATED', 2);
-define('USER_UPDATED_PROFILE', 3);
-define('USER_LOCKED', 4);
+define('USER_NOT_ACTIVATE', 1);//moi vua dk
+define('USER_ACTIVATED', 2); //da kich hoat tai khoan thong qua email
+define('USER_UPDATED_PROFILE', 3); //cap nhat thong tin tai khoan
+define('USER_ACCEPT_UPDATED_PROFILE', 3); //admin accepted thong tin tai khoan ==> duoc phep dk hanh trinh
+define('USER_LOCKED', 5);
 
 define('DRIVER_CREATED_SUCCESSFULLY', 19);
 define('DRIVER_CREATE_FAILED', 20);
 define('DRIVER_ALREADY_EXISTED', 21);
+
+define('DRIVER_NOT_ACCEPT', 1); //cap nhat thong tin nhung chua duoc comfirm
+define('DRIVER_ACCEPTED', 2); //da verify thanh driver
+
+define('VEHICLE_NOT_ACCEPT', 1);
+define('VEHICLE_ACCEPT', 2);
 
 define('USER_CREATED_FEEDBACK_SUCCESSFULLY', 22);
 define('USER_CREATE_FEEDBACK_FAILED', 23);
