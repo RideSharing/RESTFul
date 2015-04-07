@@ -1255,7 +1255,7 @@ $app->get('/itineraries/driver/:order', 'authenticateUser', function($order) {
 
                 //driver info
                 $tmp["driver_license"] = $itinerary["driver_license"];
-                $tmp["driver_license_img"] = $itinerary["driver_license_img"];
+                //$tmp["driver_license_img"] = $itinerary["driver_license_img"];
                 
                 //user info
                 $tmp["user_id"] = $itinerary["user_id"];
@@ -1263,7 +1263,7 @@ $app->get('/itineraries/driver/:order', 'authenticateUser', function($order) {
                 $tmp["fullname"] = $itinerary["fullname"];
                 $tmp["phone"] = $itinerary["phone"];
                 $tmp["personalID"] = $itinerary["personalID"];
-                $tmp["link_avatar"] = $itinerary["link_avatar"];
+                //$tmp["link_avatar"] = $itinerary["link_avatar"];
                 array_push($response["itineraries"], $tmp);
                 //print_r($itinerary);
                 //echoRespnse(200, $itinerary);
