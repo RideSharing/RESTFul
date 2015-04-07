@@ -1570,7 +1570,7 @@ function verifyRequiredParams($required_fields) {
         $app = \Slim\Slim::getInstance();
         $response["error"] = true;
         $response["message"] = 'Bạn chưa nhập ' . substr($error_fields, 0, -2) . ' !';
-        echoRespnse(400, $response);
+        echoRespnse(200, $response);
         $app->stop();
     }
 }
