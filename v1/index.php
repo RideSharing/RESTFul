@@ -1213,18 +1213,82 @@ $app->get('/itineraries', 'authenticateUser', function() {
  * method GET
  * url /itineraries          
  */
-$app->get('/itineraries/driver/', 'authenticateUser', function() {
+$app->get('/itineraries/driver/:order', 'authenticateUser', function($order) {
             global $user_id;
             $response = array();
             $db = new DbHandler();
 
             // fetching all user tasks
-            $result = $db->getDriverItineraries($user_id);
+            $result = $db->getDriverItineraries($user_id, $order);
 
             $response["error"] = false;
             $response["itineraries"] = array();
 
-            //print_r($car_id);
+            //print_r($result);
+
+            // looping through result and preparing tasks array
+            while ($itinerary = $result->fetch_assoc()) {
+                $tmp = array();
+                //itinerary info
+                $tmp["itinerary_id"] = $itinerary["itinerary_id"];
+                $tmp["driver_id"] = $itinerary["driver_id"];
+                $tmp["customer_id"] = $itinerary["customer_id"];
+                $tmp["start_address"] = $itinerary["start_address"];
+                $tmp["start_address_lat"] = $itinerary["start_address_lat"];
+                $tmp["start_address_long"] = $itinerary["start_address_long"];
+                $tmp["pick_up_address"] = $itinerary["pick_up_address"];
+                $tmp["pick_up_address_lat"] = $itinerary["pick_up_address_lat"];
+                $tmp["pick_up_address_long"] = $itinerary["pick_up_address_long"];
+                $tmp["drop_address"] = $itinerary["drop_address"];
+                $tmp["drop_address_lat"] = $itinerary["drop_address_lat"];
+                $tmp["drop_address_long"] = $itinerary["drop_address_long"];
+                $tmp["end_address"] = $itinerary["end_address"];
+                $tmp["end_address_lat"] = $itinerary["end_address_lat"];
+                $tmp["end_address_long"] = $itinerary["end_address_long"];
+                $tmp["leave_date"] = $itinerary["leave_date"];
+                $tmp["duration"] = $itinerary["duration"];
+                $tmp["distance"] = $itinerary["distance"];
+                $tmp["cost"] = $itinerary["cost"];
+                $tmp["description"] = $itinerary["description"];
+                $tmp["status"] = $itinerary["itinerary_status"];
+                $tmp["created_at"] = $itinerary["created_at"];
+
+                //driver info
+                $tmp["driver_license"] = $itinerary["driver_license"];
+                $tmp["driver_license_img"] = $itinerary["driver_license_img"];
+                
+                //user info
+                $tmp["user_id"] = $itinerary["user_id"];
+                $tmp["email"] = $itinerary["email"];
+                $tmp["fullname"] = $itinerary["fullname"];
+                $tmp["phone"] = $itinerary["phone"];
+                $tmp["personalID"] = $itinerary["personalID"];
+                $tmp["link_avatar"] = $itinerary["link_avatar"];
+                array_push($response["itineraries"], $tmp);
+                //print_r($itinerary);
+                //echoRespnse(200, $itinerary);
+            }
+            
+
+            print_r($response);
+
+            echoRespnse(200, $response);
+        });
+/**
+ * Listing all itineraries of customer
+ * method GET
+ * url /itineraries          
+ */
+$app->get('/itineraries/customer/:order', 'authenticateUser', function($order) {
+            global $user_id;
+            $response = array();
+            $db = new DbHandler();
+
+            // fetching all user tasks
+            $result = $db->getCustomerItineraries($user_id, $order);
+
+            $response["error"] = false;
+            $response["itineraries"] = array();
 
             // looping through result and preparing tasks array
             while ($itinerary = $result->fetch_assoc()) {
@@ -1268,85 +1332,6 @@ $app->get('/itineraries/driver/', 'authenticateUser', function() {
             }
 
             print_r($response);
-
-            echoRespnse(200, $response);
-        });
-
-/**
- * Listing all itineraries of driver
- * method GET
- * url /itineraries          
- */
-/*$app->get('/itineraries/driver', 'authenticateUser', function() {
-            global $user_id;
-            $response = array();
-            $db = new DbHandler();
-
-            // fetching all user tasks
-            $result = $db->getDriverItineraries($user_id);
-
-            $response["error"] = false;
-            $response["itineraries"] = array();
-
-            // looping through result and preparing tasks array
-            while ($itinerary = $result->fetch_assoc()) {
-                $tmp = array();
-                $tmp["itinerary_id"] = $itinerary["itinerary_id"];
-                $tmp["driver_id"] = $itinerary["driver_id"];
-                $tmp["customer_id"] = $itinerary["customer_id"];
-                $tmp["start_address"] = $itinerary["start_address"];
-                $tmp["pick_up_address"] = $itinerary["pick_up_address"];
-                $tmp["drop_address"] = $itinerary["drop_address"];
-                $tmp["end_address"] = $itinerary["end_address"];
-                $tmp["leave_date"] = $itinerary["leave_date"];
-                $tmp["duration"] = $itinerary["duration"];
-                $tmp["cost"] = $itinerary["cost"];
-                $tmp["description"] = $itinerary["description"];
-                $tmp["status"] = $itinerary["status"];
-                $tmp["created_at"] = $itinerary["created_at"];
-                array_push($response["itineraries"], $tmp);
-            }
-
-            print_r($response);
-
-            echoRespnse(200, $response);
-        });*/
-
-/**
- * Listing all itineraries of driver
- * method GET
- * url /itineraries          
- */
-$app->get('/itineraries/customer/:customer_id', 'authenticateUser', function($customer_id) {
-            global $user_id;
-            $response = array();
-            $db = new DbHandler();
-
-            // fetching all user tasks
-            $result = $db->getCustomerItineraries($customer_id);
-
-            $response["error"] = false;
-            $response["itineraries"] = array();
-
-            // looping through result and preparing tasks array
-            while ($itinerary = $result->fetch_assoc()) {
-                $tmp = array();
-                $tmp["itinerary_id"] = $itinerary["itinerary_id"];
-                $tmp["driver_id"] = $itinerary["driver_id"];
-                $tmp["customer_id"] = $itinerary["customer_id"];
-                $tmp["start_address"] = $itinerary["start_address"];
-                $tmp["pick_up_address"] = $itinerary["pick_up_address"];
-                $tmp["drop_address"] = $itinerary["drop_address"];
-                $tmp["end_address"] = $itinerary["end_address"];
-                $tmp["leave_date"] = $itinerary["leave_date"];
-                $tmp["duration"] = $itinerary["duration"];
-                $tmp["cost"] = $itinerary["cost"];
-                $tmp["description"] = $itinerary["description"];
-                $tmp["status"] = $itinerary["status"];
-                $tmp["created_at"] = $itinerary["created_at"];
-                array_push($response["itineraries"], $tmp);
-            }
-
             echoRespnse(200, $response);
         });
 
@@ -1411,15 +1396,15 @@ $app->put('/customer_accept_itinerary/:id', 'authenticateUser', function($itiner
             $db = new DbHandler();
             $response = array();
             // updating task
-            $result = $db->updateAcceptedItinerary($itinerary_id, $user_id);
+            $result = $db->updateCustomerAcceptedItinerary($itinerary_id, $user_id);
             if ($result) {
                 // task updated successfully
                 $response["error"] = false;
-                $response["message"] = "Itinerary accepted updated successfully";
+                $response["message"] = "Customer accepted itinerary successfully";
             } else {
                 // task failed to update
                 $response["error"] = true;
-                $response["message"] = "Itinerary failed to accepted. Please try again!";
+                $response["message"] = "Itinerary failed to accepted by customer. Please try again!";
             }
             echoRespnse(200, $response);
         });
@@ -1435,28 +1420,18 @@ $app->put('/customer_reject_itinerary/:id', 'authenticateUser', function($itiner
             //verifyRequiredParams(array('task', 'status'));
 
             global $user_id;
-            //$itinerary_fields = array();           
-
-            //$request_params = array();
-            //$request_params = $_REQUEST;
-            // Handling PUT request params
-            /*if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
-                $app = \Slim\Slim::getInstance();
-                parse_str($app->request()->getBody(), $request_params);
-            }*/
-
             $db = new DbHandler();
             $response = array();
             // updating task
-            $result = $db->updateAcceptedItinerary($itinerary_id, $user_id);
+            $result = $db->updateCustomerRejectedItinerary($itinerary_id);
             if ($result) {
                 // task updated successfully
                 $response["error"] = false;
-                $response["message"] = "Itinerary accepted updated successfully";
+                $response["message"] = "Customer rejected itinerary successfully";
             } else {
                 // task failed to update
                 $response["error"] = true;
-                $response["message"] = "Itinerary failed to accepted. Please try again!";
+                $response["message"] = "Itinerary failed to rejected by customer. Please try again!";
             }
             echoRespnse(200, $response);
         });
@@ -1472,28 +1447,18 @@ $app->put('/driver_accept_itinerary/:id', 'authenticateUser', function($itinerar
             //verifyRequiredParams(array('task', 'status'));
 
             global $user_id;
-            //$itinerary_fields = array();           
-
-            //$request_params = array();
-            //$request_params = $_REQUEST;
-            // Handling PUT request params
-            /*if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
-                $app = \Slim\Slim::getInstance();
-                parse_str($app->request()->getBody(), $request_params);
-            }*/
-
             $db = new DbHandler();
             $response = array();
             // updating task
-            $result = $db->updateAcceptedItinerary($itinerary_id, $user_id);
+            $result = $db->updateDriverAcceptedItinerary($itinerary_id);
             if ($result) {
                 // task updated successfully
                 $response["error"] = false;
-                $response["message"] = "Itinerary accepted updated successfully";
+                $response["message"] = "Driver accepted itinerary successfully";
             } else {
                 // task failed to update
                 $response["error"] = true;
-                $response["message"] = "Itinerary failed to accepted. Please try again!";
+                $response["message"] = "Itinerary failed to accepted by driver. Please try again!";
             }
             echoRespnse(200, $response);
         });
@@ -1509,28 +1474,19 @@ $app->put('/driver_reject_itinerary/:id', 'authenticateUser', function($itinerar
             //verifyRequiredParams(array('task', 'status'));
 
             global $user_id;
-            //$itinerary_fields = array();           
-
-            //$request_params = array();
-            //$request_params = $_REQUEST;
-            // Handling PUT request params
-            /*if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
-                $app = \Slim\Slim::getInstance();
-                parse_str($app->request()->getBody(), $request_params);
-            }*/
 
             $db = new DbHandler();
             $response = array();
             // updating task
-            $result = $db->updateAcceptedItinerary($itinerary_id, $user_id);
+            $result = $db->updateDrivereRectedItinerary($itinerary_id);
             if ($result) {
                 // task updated successfully
                 $response["error"] = false;
-                $response["message"] = "Itinerary accepted updated successfully";
+                $response["message"] = "Driver rejected successfully";
             } else {
                 // task failed to update
                 $response["error"] = true;
-                $response["message"] = "Itinerary failed to accepted. Please try again!";
+                $response["message"] = "Itinerary failed to rejected by driver. Please try again!";
             }
             echoRespnse(200, $response);
         });

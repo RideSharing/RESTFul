@@ -932,8 +932,19 @@ class DbHandler {
      * Fetching all itineraries of one driver
      * @param Integer $driver_id id of the driver
      */
-    public function getDriverItineraries($driver_id) {
-        $q = "SELECT * FROM itinerary, driver, user WHERE itinerary.driver_id = driver.user_id AND driver.user_id = user.user_id AND driver_id = ?";
+    public function getDriverItineraries($driver_id, $order) {
+        $q = "SELECT itinerary_id, i.driver_id, i.customer_id, start_address, start_address_lat, start_address_long,
+            pick_up_address, pick_up_address_lat, pick_up_address_long, drop_address, drop_address_lat, drop_address_long,
+            end_address, end_address_lat, end_address_long, leave_date, duration, distance, cost, description, i.status as itinerary_status, i.created_at,
+            driver_license, driver_license_img, u.user_id, u.email, u.fullname, u.phone, personalID, link_avatar ";
+        $q .=    "FROM itinerary as i, driver as d, user as u ";
+        $q .=     "WHERE i.driver_id = d.user_id AND d.user_id = u.user_id AND driver_id = ? ";
+
+        if(isset($order)){
+            $q .= "ORDER BY " .$order;
+        } else {
+            $q .= "ORDER BY itinerary_status";
+        }
         //$q = "SELECT * FROM itinerary WHERE driver_id = ?";
         $stmt = $this->conn->prepare($q);
         $stmt->bind_param("i",$driver_id);
@@ -948,8 +959,18 @@ class DbHandler {
      * Fetching all itineraries of one customer
      * @param Integer $customer_id id of the customer
      */
-    public function getCustomerItineraries($customer_id) {
-        $q = "SELECT * FROM itinerary WHERE customer_id = ?";
+    public function getCustomerItineraries($customer_id, $order) {
+        $q = "SELECT itinerary_id, i.driver_id, i.customer_id, start_address, start_address_lat, start_address_long,
+            pick_up_address, pick_up_address_lat, pick_up_address_long, drop_address, drop_address_lat, drop_address_long,
+            end_address, end_address_lat, end_address_long, leave_date, duration, distance, cost, description, i.status as itnerary_status, i.created_at,
+            driver_license, driver_license_img, u.user_id, u.email, u.fullname, u.phone, personalID, link_avatar ";
+        $q .=    "FROM itinerary as i, driver as d, user as u ";
+        $q .=     "WHERE i.driver_id = d.user_id AND d.user_id = u.user_id AND customer_id = ? ";
+        if(isset($order)){
+            $q .= "ORDER BY " .$order;
+        } else {
+            $q .= "ORDER BY itinerary_status";
+        }
         $stmt = $this->conn->prepare($q);
         $stmt->bind_param("i",$customer_id);
         $stmt->execute();
@@ -1011,17 +1032,82 @@ class DbHandler {
         return $num_affected_rows > 0;
     }
 
+    public function checkItineraryStatus($itinerary_id){
+        $q = "SELECT status FROM itinerary WHERE itinerary = ?";
+        $stmt = $this->conn->prepare($q);
+        $stmt->bind_param("i",$itinerary_id);
+        $stmt->execute();
+
+        $stmt->bind_result($status);
+            $stmt->close();
+
+        if($status == null){
+            return 0;
+        } else {
+            return $status;
+        }
+    }
+
     /**
-     * Updating accepted itinerary
+     * Updating accepted itinerary by customer
      * @param Aray $itinerary_fields properties of the itinerary
      * @param Integer $itinerary_id id of the itinerary
      */
-    public function updateAcceptedItinerary($itinerary_id, $customer_id) {
+    public function updateCustomerAcceptedItinerary($itinerary_id, $customer_id) {
+        //ITINERARY_STATUS_CUSTOMER_ACCEPTED
         $q = "UPDATE itinerary set customer_id = ?, status = 2 
                 WHERE itinerary_id = ?";
         $stmt = $this->conn->prepare($q);
         echo $customer_id;
         $stmt->bind_param("ii",$customer_id, $itinerary_id);
+        $stmt->execute();
+        $num_affected_rows = $stmt->affected_rows;
+        $stmt->close();
+        return $num_affected_rows > 0;
+    }
+
+    /**
+     * Updating rejected itinerary by customer
+     * @param Aray $itinerary_fields properties of the itinerary
+     * @param Integer $itinerary_id id of the itinerary
+     */
+    public function updateCustomerRejectedItinerary($itinerary_id) {
+        $q = "UPDATE itinerary set customer_id = null, status = 1 
+                WHERE itinerary_id = ?";
+        $stmt = $this->conn->prepare($q);
+        $stmt->bind_param("i", $itinerary_id);
+        $stmt->execute();
+        $num_affected_rows = $stmt->affected_rows;
+        $stmt->close();
+        return $num_affected_rows > 0;
+    }
+
+    /**
+     * Updating accepted itinerary by driver
+     * @param Aray $itinerary_fields properties of the itinerary
+     * @param Integer $itinerary_id id of the itinerary
+     */
+    public function updateDriverAcceptedItinerary($itinerary_id) {
+        $q = "UPDATE itinerary set status = 3 
+                WHERE itinerary_id = ?";
+        $stmt = $this->conn->prepare($q);
+        $stmt->bind_param("i", $itinerary_id);
+        $stmt->execute();
+        $num_affected_rows = $stmt->affected_rows;
+        $stmt->close();
+        return $num_affected_rows > 0;
+    }
+
+    /**
+     * Updating rejected itinerary by driver
+     * @param Aray $itinerary_fields properties of the itinerary
+     * @param Integer $itinerary_id id of the itinerary
+     */
+    public function updateDrivereRectedItinerary($itinerary_id) {
+        $q = "UPDATE itinerary set customer_id = null, status = 1 
+                WHERE itinerary_id = ?";
+        $stmt = $this->conn->prepare($q);
+        $stmt->bind_param("i", $itinerary_id);
         $stmt->execute();
         $num_affected_rows = $stmt->affected_rows;
         $stmt->close();
