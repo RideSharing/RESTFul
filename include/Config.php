@@ -15,7 +15,7 @@ define('USER_ALREADY_EXISTED', 2);
 define('ITINERARY_STATUS_CREATED', 1);//luc tao hanh trinh
 define('ITINERARY_STATUS_CUSTOMER_ACCEPTED', 2);//co nguoi dk nhung driver chua accept
 define('ITINERARY_STATUS_DRIVER_ACCEPTED', 3);//driver accept
-define('ITINERARY_STATUS_ACCEPTED', 4);//hanh trinh da ket thuc
+define('ITINERARY_STATUS_FINISHED', 4);//hanh trinh da ket thuc
 
 define('ITINERARY_CREATED_SUCCESSFULLY', 5);
 define('ITINERARY_CREATE_FAILED', 6);
@@ -38,7 +38,7 @@ define('USER_NOT_REGISTER', 0);
 define('USER_NOT_ACTIVATE', 1);//moi vua dk
 define('USER_ACTIVATED', 2); //da kich hoat tai khoan thong qua email
 define('USER_UPDATED_PROFILE', 3); //cap nhat thong tin tai khoan
-define('USER_ACCEPT_UPDATED_PROFILE', 3); //admin accepted thong tin tai khoan ==> duoc phep dk hanh trinh
+define('USER_ACCEPT_UPDATED_PROFILE', 4); //admin accepted thong tin tai khoan ==> duoc phep dk hanh trinh
 define('USER_LOCKED', 5);
 
 define('DRIVER_CREATED_SUCCESSFULLY', 19);

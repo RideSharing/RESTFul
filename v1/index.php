@@ -123,17 +123,21 @@ $app->post('/user', function() use ($app) {
                                 <a href='http://192.168.10.74/WebApp/controller/register.php?active_key=". $activation_code.
                                 "'>Kich hoat tai khoan</a>";
 
-                sendMail($email, $content_mail);
-
-                $response["error"] = false;
-                $response["message"] = "Đăng kí thành công. Vui lòng kích hoạt tài khoản qua email bạn vừa đăng kí!";
-            } else if ($res == USER_ALREADY_EXISTED) {
-                $response["error"] = true;
-                $response["message"] = "Xin lỗi! email bạn đăng kí đã tồn tại.";
+                if (sendMail($email, $content_mail, "Active Account")) {
+                    $response["error"] = false;
+                    $response["message"] = "Đăng kí thành công. Vui lòng kích hoạt tài khoản qua email bạn vừa đăng kí!";
+                } else {
+                    $response["error"] = true;
+                    $response["message"] = "Xin lỗi! Có lỗi xảy ra trong quá trình gửi email.";
+                }
+                
             } else if ($res == USER_CREATE_FAILED) {
                 $response["error"] = true;
                 $response["message"] = "Xin lỗi! Có lỗi xảy ra trong quá trình đăng kí.";
-            }
+            } else if ($res == USER_ALREADY_EXISTED) {
+                $response["error"] = true;
+                $response["message"] = "Xin lỗi! email bạn đăng kí đã tồn tại.";
+            } 
             // echo json response
             echoRespnse(201, $response);
         });
@@ -233,7 +237,7 @@ $app->get('/forgotpass/:email', function($email) {
                                 <a href='http://192.168.10.74/WebApp/forgotpass.php?api_key=". $res['api_key'].
                                 "'>Doi mat khau</a>";
 
-                    sendMail($email, $content_mail);
+                    sendMail($email, $content_mail, "Reset password");
 
                     $response["error"] = false;
                     $response["message"] = "Một email vừa được gửi đến địa chỉ email bạn nhập. Vui lòng làm theo hướng dẫn để lấy lại mật khẩu";
@@ -308,10 +312,8 @@ $app->get('/user/:field', 'authenticateUser', function($field) {
  * url - /user
  */
 $app->put('/user', 'authenticateUser', function() use($app) {
-            // check for required params
-            verifyRequiredParams(array('fullname', 'phone', 'personalID', 'personalID_img', 'link_avatar'));
+            global $user_id;   
 
-            global $user_id;            
             $fullname = $app->request->put('fullname');
             $phone = $app->request->put('phone');
             $personalID = $app->request->put('personalID');
@@ -961,7 +963,6 @@ $app->get('staff/itinerary/:id', function($itinerary_id) {
 $app->put('staff/itinerary/:id', 'authenticateStaff', function($itinerary_id) use($app) {
             // check for required params
             //verifyRequiredParams(array('task', 'status'));
-
             global $staff_id;
             $itinerary_fields = array();
 
@@ -1006,43 +1007,6 @@ $app->delete('/staff/itinerary/:id', function($itinerary_id) use($app) {
             }
             echoRespnse(200, $response);
         });
-
-/**
- * Listing single task of particual user
- * method GET
- * url /tasks/:id
- * Will return 404 if the task doesn't belongs to user
- */
-/*$app->get('/itinerary/:id', function($itinerary_id) {
-            global $user_id;
-            $response = array();
-            $db = new DbHandler();
-
-            // fetch task
-            $result = $db->getItinerary($itinerary_id);
-
-            if ($result != NULL) {
-                $response["error"] = false;
-                $response["itinerary_id"] = $result["itinerary_id"];
-                $response["driver_id"] = $result["driver_id"];
-                $response["customer_id"] = $result["customer_id"];
-                $response["start_address"] = $result["start_address"];
-                $response["pick_up_address"] = $result["pick_up_address"];
-                $response["drop_address"] = $result["drop_address"];
-                $response["end_address"] = $result["end_address"];
-                $response["leave_date"] = $result["leave_date"];
-                $response["duration"] = $result["duration"];
-                $response["cost"] = $result["cost"];
-                $response["description"] = $result["description"];
-                $response["status"] = $result["status"];
-                $response["created_at"] = $result["created_at"];
-                echoRespnse(200, $response);
-            } else {
-                $response["error"] = true;
-                $response["message"] = "The requested resource doesn't exists";
-                echoRespnse(404, $response);
-            }
-        });*/
 
 //Route itinerary
 //
@@ -1255,7 +1219,7 @@ $app->get('/itineraries/driver/:order', 'authenticateUser', function($order) {
 
                 //driver info
                 $tmp["driver_license"] = $itinerary["driver_license"];
-                //$tmp["driver_license_img"] = $itinerary["driver_license_img"];
+                $tmp["driver_license_img"] = $itinerary["driver_license_img"];
                 
                 //user info
                 $tmp["user_id"] = $itinerary["user_id"];
@@ -1263,15 +1227,12 @@ $app->get('/itineraries/driver/:order', 'authenticateUser', function($order) {
                 $tmp["fullname"] = $itinerary["fullname"];
                 $tmp["phone"] = $itinerary["phone"];
                 $tmp["personalID"] = $itinerary["personalID"];
-                //$tmp["link_avatar"] = $itinerary["link_avatar"];
+                $tmp["link_avatar"] = $itinerary["link_avatar"];
                 array_push($response["itineraries"], $tmp);
                 //print_r($itinerary);
                 //echoRespnse(200, $itinerary);
-            }
-            
-
-            print_r($response);
-
+            }           
+            //print_r($response);
             echoRespnse(200, $response);
         });
 /**
@@ -1395,17 +1356,26 @@ $app->put('/customer_accept_itinerary/:id', 'authenticateUser', function($itiner
 
             $db = new DbHandler();
             $response = array();
-            // updating task
-            $result = $db->updateCustomerAcceptedItinerary($itinerary_id, $user_id);
-            if ($result) {
-                // task updated successfully
-                $response["error"] = false;
-                $response["message"] = "Customer accepted itinerary successfully";
+
+            $status = $db->checkItineraryStatus($itinerary_id);
+            echo $status;
+            if($status==1){
+                // updating task
+                $result = $db->updateCustomerAcceptedItinerary($itinerary_id, $user_id);
+                if ($result) {
+                    // task updated successfully
+                    $response["error"] = false;
+                    $response["message"] = "Customer accepted itinerary successfully";
+                } else {
+                    // task failed to update
+                    $response["error"] = true;
+                    $response["message"] = "Itinerary failed to accepted by customer. Please try again!";
+                }
             } else {
-                // task failed to update
                 $response["error"] = true;
-                $response["message"] = "Itinerary failed to accepted by customer. Please try again!";
+                $response["message"] = "Sorry! Itinerary was accepted other customer. Please try the new one.";
             }
+
             echoRespnse(200, $response);
         });
 
@@ -1543,6 +1513,26 @@ $app->post('/feedback', function() use ($app) {
             echoRespnse(201, $response);
         });
 
+$app->get('/comment/:user_id', 'authenticateUser', function($user_id) {
+            $response = array();
+            $db = new DbHandler();
+
+            if ($db->isUserExists1($user_id)) {
+                $response['error'] = false;
+                $response['comments'] = array();
+                $result = $db->getListCommentOfUser($user_id);
+                while ($comment = $result->fetch_assoc()) {
+                    array_push($response['comment'], $comment);
+                }
+                echoRespnse(200, $response);
+
+            } else {
+                $response['error'] = true;
+                $response['message'] = 'Đường dẫn bạn yêu cầu không tồn tại!';
+                echoRespnse(404, $response);
+            }
+        });
+
 /**
  * Verifying required params posted or not
  */
@@ -1613,7 +1603,7 @@ function validatePassword($password) {
 /**
  * Send activation email
  */
-function sendMail($receiver_mail, $content) {
+function sendMail($receiver_mail, $content, $subject) {
     require_once '../libs/PHPMailer/class.phpmailer.php';
 
     $mail               = new PHPMailer();
@@ -1630,7 +1620,7 @@ function sendMail($receiver_mail, $content) {
 
     $mail->SetFrom('thanhbkdn92@gmail.com', 'Ride Sharing Verification Team'); //Sender
 
-    $mail->Subject    = "Activate account"; //Subject
+    $mail->Subject    = $subject; //Subject
 
     $mail->MsgHTML($body);
 
@@ -1641,9 +1631,9 @@ function sendMail($receiver_mail, $content) {
     // $mail->AddAttachment("dinhkem/200_100.jpg"); // Attach
 
     if(!$mail->Send()) {
-      return "Lỗi gửi mail: " . $mail->ErrorInfo;
+      return false;
     } else {
-      return "Mail đã được gửi!";
+      return true;
     }
 }
 

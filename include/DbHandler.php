@@ -49,7 +49,6 @@ class DbHandler {
             }
 
             $stmt->close();
-
             // Check for successful insertion
             if ($result) {
                 // User successfully inserted
@@ -59,7 +58,6 @@ class DbHandler {
                 return USER_CREATE_FAILED;
             }
         } else {
-            // User with same email already existed in the db
             return USER_ALREADY_EXISTED;
         }
     }
@@ -162,6 +160,16 @@ class DbHandler {
     public function isUserExists($email) {
         $stmt = $this->conn->prepare("SELECT user_id from user WHERE email = ?");
         $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $stmt->store_result();
+        $num_rows = $stmt->num_rows;
+        $stmt->close();
+        return $num_rows > 0;
+    }
+
+    public function isUserExists1($user_id) {
+        $stmt = $this->conn->prepare("SELECT user_id from user WHERE user_id = ?");
+        $stmt->bind_param("i", $user_id);
         $stmt->execute();
         $stmt->store_result();
         $num_rows = $stmt->num_rows;
@@ -336,16 +344,54 @@ class DbHandler {
      * @param String $link_avatar Link Avartar
      */
     public function updateUser($user_id, $fullname, $phone, $personalID, $personalID_img, $link_avatar) {
-        $stmt = $this->conn->prepare("UPDATE user set fullname = ?, phone = ?, personalID = ?,
-                                        personalID_img = ?, link_avatar = ?, status = 3
-                                        WHERE user_id = ?");
+        require_once '/Config.php';
+        $conn2 = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME, DB_USERNAME, DB_PASSWORD);
+        // set the PDO error mode to exception
+        $conn2->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-        $stmt->bind_param("sssssi", $fullname, $phone, $personalID, $personalID_img, $link_avatar, $user_id);
+        $qry = "UPDATE user set";
+        $param = array();
+
+        if (isset($fullname)) { 
+            $qry .= " fullname = :fullname,"; 
+        }
+        if (isset($phone)) { 
+            $qry .= " phone = :phone,"; 
+        }
+        if (isset($personalID)) { 
+            $qry .= " personalID = :personalID,"; 
+        }
+        if (isset($personalID_img)) { 
+            $qry .= " personalID_img = :personalID_img,"; 
+        }
+        if (isset($link_avatar)) { 
+            $qry .= " link_avatar = :link_avatar,"; 
+        }
+
+        $qry .= " status = 3 WHERE user_id = :user_id";
+        
+
+        $stmt = $conn2->prepare($qry);
+
+        if (isset($fullname)) { 
+            $stmt->bindParam(':fullname', $fullname);
+        }
+        if (isset($phone)) { 
+            $stmt->bindParam(':phone', $phone);
+        }
+        if (isset($personalID)) {  
+            $stmt->bindParam(':personalID', $personalID);
+        }
+        if (isset($personalID_img)) {  
+            $stmt->bindParam(':personalID_img', $personalID_img);
+        }
+        if (isset($link_avatar)) { 
+            $stmt->bindParam(':link_avatar', $link_avatar);
+        }
+        $stmt->bindParam(':user_id', $user_id);
         $stmt->execute();
-
-        $num_affected_rows = $stmt->affected_rows;
-
-        $stmt->close();
+        $num_affected_rows = $stmt->rowCount();
+        $conn2 = null;
         return $num_affected_rows > 0;
     }
 
@@ -1023,8 +1069,6 @@ class DbHandler {
         $nq .= " WHERE itinerary_id = {$itinerary_id} LIMIT 1";
 
         $stmt = $this->conn->prepare($nq);
-
-        print_r($nq);
         
         $stmt->execute();
         $num_affected_rows = $stmt->affected_rows;
@@ -1033,14 +1077,18 @@ class DbHandler {
     }
 
     public function checkItineraryStatus($itinerary_id){
-        $q = "SELECT status FROM itinerary WHERE itinerary = ?";
+        $q = "SELECT status FROM itinerary WHERE itinerary_id = ?";
         $stmt = $this->conn->prepare($q);
         $stmt->bind_param("i",$itinerary_id);
         $stmt->execute();
-
         $stmt->bind_result($status);
-            $stmt->close();
+        $stmt->store_result();
 
+        $stmt->fetch();
+        
+
+        //print_r($status);
+        $stmt->close();
         if($status == null){
             return 0;
         } else {
@@ -1058,7 +1106,6 @@ class DbHandler {
         $q = "UPDATE itinerary set customer_id = ?, status = 2 
                 WHERE itinerary_id = ?";
         $stmt = $this->conn->prepare($q);
-        echo $customer_id;
         $stmt->bind_param("ii",$customer_id, $itinerary_id);
         $stmt->execute();
         $num_affected_rows = $stmt->affected_rows;
