@@ -949,7 +949,15 @@ class DbHandler {
     }
 
     public function getAllItinerariesWithDriverInfo() {
-        $q = "SELECT * FROM itinerary, driver, user WHERE itinerary.driver_id = driver.user_id AND driver.user_id = user.user_id";
+        //$q = "SELECT * FROM itinerary, driver, user WHERE itinerary.driver_id = driver.user_id AND driver.user_id = user.user_id";
+        $q = "SELECT itinerary_id, i.driver_id, i.customer_id, start_address, start_address_lat, start_address_long,
+            pick_up_address, pick_up_address_lat, pick_up_address_long, drop_address, drop_address_lat, drop_address_long,
+            end_address, end_address_lat, end_address_long, leave_date, duration, distance, cost, description, i.status as itinerary_status, i.created_at,
+            driver_license, driver_license_img, u.user_id, u.email, u.fullname, u.phone, personalID, link_avatar ";
+        $q .=    "FROM itinerary as i, driver as d, user as u ";
+        $q .=     "WHERE i.driver_id = d.user_id AND d.user_id = u.user_id";       
+
+
         $stmt = $this->conn->prepare($q);
         $stmt->execute();
         $itineraries = $stmt->get_result();
@@ -1008,15 +1016,16 @@ class DbHandler {
     public function getCustomerItineraries($customer_id, $order) {
         $q = "SELECT itinerary_id, i.driver_id, i.customer_id, start_address, start_address_lat, start_address_long,
             pick_up_address, pick_up_address_lat, pick_up_address_long, drop_address, drop_address_lat, drop_address_long,
-            end_address, end_address_lat, end_address_long, leave_date, duration, distance, cost, description, i.status as itnerary_status, i.created_at,
+            end_address, end_address_lat, end_address_long, leave_date, duration, distance, cost, description, i.status as itinerary_status, i.created_at,
             driver_license, driver_license_img, u.user_id, u.email, u.fullname, u.phone, personalID, link_avatar ";
         $q .=    "FROM itinerary as i, driver as d, user as u ";
         $q .=     "WHERE i.driver_id = d.user_id AND d.user_id = u.user_id AND customer_id = ? ";
-        if(isset($order)){
-            $q .= "ORDER BY " .$order;
-        } else {
-            $q .= "ORDER BY itinerary_status";
-        }
+        //if(isset($order)){
+        //    $q .= " ORDER BY " .$order;
+        //} else {
+        //    $q .= " ORDER BY itinerary_status";
+        //}
+        echo $customer_id;
         $stmt = $this->conn->prepare($q);
         $stmt->bind_param("i",$customer_id);
         $stmt->execute();

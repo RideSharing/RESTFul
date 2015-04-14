@@ -193,13 +193,18 @@ $app->post('/user/login', function() use ($app) {
                     $response["error"] = false;
                     $response['apiKey'] = $user['api_key'];
                     $response['customer_status'] = $user['status'];
+                    $response['link_avatar'] = $user['link_avatar'];
+                    $response['fullname'] = $user['fullname'];
 
                     $user_id = $db->getUserId($user['api_key']);
 
-                    $driver_status = $db->getDriverByField($user_id, 'status');
-                    $response['driver_status'] = $driver_status;
-
-                    $response['driver'] = $db->isDriver($user_id);
+                    if ($db->isDriver($user_id)) {
+                        $driver_status = $db->getDriverByField($user_id, 'status');
+                        $response['driver_status'] = $driver_status;
+                        $response['driver'] = true;
+                    } else {
+                        $response['driver'] = false;
+                    }
                 } else {
                     // unknown error occurred
                     $response['error'] = true;
@@ -1124,7 +1129,6 @@ $app->get('/itineraries', 'authenticateUser', function() {
             while ($itinerary = $result->fetch_assoc()) {
                 $tmp = array();
 
-                //itinerary info
                 $tmp["itinerary_id"] = $itinerary["itinerary_id"];
                 $tmp["driver_id"] = $itinerary["driver_id"];
                 $tmp["customer_id"] = $itinerary["customer_id"];
@@ -1145,7 +1149,7 @@ $app->get('/itineraries', 'authenticateUser', function() {
                 $tmp["distance"] = $itinerary["distance"];
                 $tmp["cost"] = $itinerary["cost"];
                 $tmp["description"] = $itinerary["description"];
-                $tmp["status"] = $itinerary["status"];
+                $tmp["status"] = $itinerary["itinerary_status"];
                 $tmp["created_at"] = $itinerary["created_at"];
 
                 //driver info
@@ -1275,7 +1279,7 @@ $app->get('/itineraries/customer/:order', 'authenticateUser', function($order) {
                 $tmp["distance"] = $itinerary["distance"];
                 $tmp["cost"] = $itinerary["cost"];
                 $tmp["description"] = $itinerary["description"];
-                $tmp["status"] = $itinerary["status"];
+                $tmp["status"] = $itinerary["itinerary_status"];
                 $tmp["created_at"] = $itinerary["created_at"];
 
                 //driver info
@@ -1290,9 +1294,11 @@ $app->get('/itineraries/customer/:order', 'authenticateUser', function($order) {
                 $tmp["personalID"] = $itinerary["personalID"];
                 $tmp["link_avatar"] = $itinerary["link_avatar"];
                 array_push($response["itineraries"], $tmp);
-            }
+                //print_r($itinerary);
+                //echoRespnse(200, $itinerary);
+            }           
 
-            print_r($response);
+            //print_r($response);
             echoRespnse(200, $response);
         });
 
@@ -1358,7 +1364,7 @@ $app->put('/customer_accept_itinerary/:id', 'authenticateUser', function($itiner
             $response = array();
 
             $status = $db->checkItineraryStatus($itinerary_id);
-            echo $status;
+            
             if($status==1){
                 // updating task
                 $result = $db->updateCustomerAcceptedItinerary($itinerary_id, $user_id);
