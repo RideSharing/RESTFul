@@ -1025,7 +1025,7 @@ class DbHandler {
         //} else {
         //    $q .= " ORDER BY itinerary_status";
         //}
-        echo $customer_id;
+        
         $stmt = $this->conn->prepare($q);
         $stmt->bind_param("i",$customer_id);
         $stmt->execute();
