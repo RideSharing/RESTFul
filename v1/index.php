@@ -8,6 +8,8 @@ require '../libs/Slim/Slim.php';
 
 $app = new \Slim\Slim();
 
+//Language use
+$language = 'en';
 // User id from db - Global Variable
 $user_id = NULL;
 // Staff id from db - Global Variable
@@ -21,6 +23,11 @@ $restricted_user_field = array('user_id', 'email', 'api_key', 'created_at', 'sta
  * Checking if the request has valid api key in the 'Authorization' header
  */
 function authenticateUser(\Slim\Route $route) {
+    if (isset($_GET['lang'])) {
+        include '../include/lang_'.$_GET['lang'].'.php';
+    } else {
+        include '../include/lang_en.php';
+    }
     // Getting request headers
     $headers = apache_request_headers();
     $response = array();
@@ -36,7 +43,7 @@ function authenticateUser(\Slim\Route $route) {
         if (!$db->isValidApiKey($api_key,"user") || $db->isLockUser($api_key)) {
             // api key is not present in users table
             $response["error"] = true;
-            $response["message"] = "Access Denied.";
+            $response["message"] = $lang['ERR_ACCESS_DENIED'];
             echoRespnse(401, $response);
             $app->stop();
         } else {
@@ -47,7 +54,7 @@ function authenticateUser(\Slim\Route $route) {
     } else {
         // api key is missing in header
         $response["error"] = true;
-        $response["message"] = "Api key is misssing";
+        $response["message"] = $lang['ERR_API_MISSING'];
         echoRespnse(400, $response);
         $app->stop();
     }
@@ -58,6 +65,11 @@ function authenticateUser(\Slim\Route $route) {
  * Checking if the request has valid api key in the 'Authorization' header
  */
 function authenticateStaff(\Slim\Route $route) {
+    if (isset($_GET['lang'])) {
+        include '../include/lang_'.$_GET['lang'].'.php';
+    } else {
+        include '../include/lang_en.php';
+    }
     // Getting request headers
     $headers = apache_request_headers();
     $response = array();
@@ -73,7 +85,7 @@ function authenticateStaff(\Slim\Route $route) {
         if (!$db->isValidApiKey($api_key,"staff")) {
             // api key is not present in users table
             $response["error"] = true;
-            $response["message"] = "Access Denied. Invalid Api key";
+            $response["message"] = $lang['ERR_ACCESS_DENIED'];
             echoRespnse(401, $response);
             $app->stop();
         } else {
@@ -84,7 +96,7 @@ function authenticateStaff(\Slim\Route $route) {
     } else {
         // api key is missing in header
         $response["error"] = true;
-        $response["message"] = "Api key is misssing";
+        $response["message"] = $lang['ERR_API_MISSING'];
         echoRespnse(400, $response);
         $app->stop();
     }
@@ -97,6 +109,16 @@ function authenticateStaff(\Slim\Route $route) {
  * params - email, password
  */
 $app->post('/user', function() use ($app) {
+            global $language;
+            if (isset($_GET['lang'])) {
+                if (file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                    $language = $_GET['lang'];
+                    require_once '../include/lang_'.$_GET['lang'].'.php';
+                } else {
+                    $language = 'en';
+                    require_once '../include/lang_en.php';
+                }
+            }
             // check for required params
             verifyRequiredParams(array('email', 'password'));
 
@@ -125,7 +147,7 @@ $app->post('/user', function() use ($app) {
 
                 if (sendMail($email, $content_mail, "Active Account")) {
                     $response["error"] = false;
-                    $response["message"] = "Đăng kí thành công. Vui lòng kích hoạt tài khoản qua email bạn vừa đăng kí!";
+                    $response["message"] = $lang['REGISTER_USER_SUCCESS'];
                 } else {
                     $response["error"] = true;
                     $response["message"] = "Xin lỗi! Có lỗi xảy ra trong quá trình gửi email.";
@@ -1141,6 +1163,8 @@ $app->get('/itineraries', 'authenticateUser', function() use($app) {
             $cost = $app->request->get('cost');
             $distance = $app->request->get('distance');
 
+            echo $start_address;
+
             if (isset($start_address) || isset($end_address)) {
                 $result = $db->searchItineraries($start_address, $end_address);
             } else {
@@ -1521,6 +1545,8 @@ $app->get('/comment/:user_id', 'authenticateUser', function($user_id) {
  * Verifying required params posted or not
  */
 function verifyRequiredParams($required_fields) {
+    global $language;
+    include '../include/lang_'.$language.'.php';
     $error = false;
     $error_fields = "";
     $request_params = array();
@@ -1543,7 +1569,7 @@ function verifyRequiredParams($required_fields) {
         $response = array();
         $app = \Slim\Slim::getInstance();
         $response["error"] = true;
-        $response["message"] = 'Bạn chưa nhập ' . substr($error_fields, 0, -2) . ' !';
+        $response["message"] = $lang['ERR_MISSING_FIELD'] . substr($error_fields, 0, -2) . ' !';
         echoRespnse(200, $response);
         $app->stop();
     }
