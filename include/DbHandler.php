@@ -345,7 +345,7 @@ class DbHandler {
      */
     public function updateUser($user_id, $fullname, $phone, $personalID, $personalID_img, $link_avatar) {
         require_once '/Config.php';
-        $conn2 = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME, DB_USERNAME, DB_PASSWORD);
+        $conn2 = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME.";charset=utf8", DB_USERNAME, DB_PASSWORD);
         // set the PDO error mode to exception
         $conn2->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
@@ -948,23 +948,6 @@ class DbHandler {
         return $itineraries;
     }
 
-    public function getAllItinerariesWithDriverInfo() {
-        //$q = "SELECT * FROM itinerary, driver, user WHERE itinerary.driver_id = driver.user_id AND driver.user_id = user.user_id";
-        $q = "SELECT itinerary_id, i.driver_id, i.customer_id, start_address, start_address_lat, start_address_long,
-            pick_up_address, pick_up_address_lat, pick_up_address_long, drop_address, drop_address_lat, drop_address_long,
-            end_address, end_address_lat, end_address_long, leave_date, duration, distance, cost, description, i.status as itinerary_status, i.created_at,
-            driver_license, driver_license_img, u.user_id, u.email, u.fullname, u.phone, personalID, link_avatar ";
-        $q .=    "FROM itinerary as i, driver as d, user as u ";
-        $q .=     "WHERE i.driver_id = d.user_id AND d.user_id = u.user_id";       
-
-
-        $stmt = $this->conn->prepare($q);
-        $stmt->execute();
-        $itineraries = $stmt->get_result();
-        $stmt->close();
-        return $itineraries;
-    }
-
     public function getAverageRatingofDriver($driver_id){
         $q = "SELECT AVG(rating) AS average_rating FROM rating WHERE user_id = ?";
         $stmt = $this->conn->prepare($q);
@@ -979,6 +962,107 @@ class DbHandler {
         } else {
             return $average_rating;
         }
+    }
+
+    public function getAllItinerariesWithDriverInfo() {
+        //$q = "SELECT * FROM itinerary, driver, user WHERE itinerary.driver_id = driver.user_id AND driver.user_id = user.user_id";
+        $q = "SELECT i.itinerary_id, i.driver_id, i.customer_id, i.start_address, i.start_address_lat, i.start_address_long,
+            i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, 
+            i.drop_address_long, i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, 
+            i.distance, i.cost, i.description, i.status as itinerary_status, i.created_at,
+            d.driver_license, d.driver_license_img, u.user_id, u.email, u.fullname, u.phone, u.personalID, u.link_avatar ";
+        $q .=    "FROM itinerary as i, driver as d, user as u ";
+        $q .=     "WHERE i.driver_id = d.user_id AND d.user_id = u.user_id";       
+
+        $stmt = $this->conn->prepare($q);
+        $stmt->execute();
+        $itineraries = $stmt->get_result();
+        $stmt->close();
+
+        $result = array();
+        // looping through result and preparing tasks array
+        while ($itinerary = $itineraries->fetch_assoc()) {
+            $tmp = array();
+
+            $tmp["itinerary_id"] = $itinerary["itinerary_id"];
+            $tmp["driver_id"] = $itinerary["driver_id"];
+            $tmp["customer_id"] = $itinerary["customer_id"];
+            $tmp["start_address"] = $itinerary["start_address"];
+            $tmp["start_address_lat"] = $itinerary["start_address_lat"];
+            $tmp["start_address_long"] = $itinerary["start_address_long"];
+            $tmp["pick_up_address"] = $itinerary["pick_up_address"];
+            $tmp["pick_up_address_lat"] = $itinerary["pick_up_address_lat"];
+            $tmp["pick_up_address_long"] = $itinerary["pick_up_address_long"];
+            $tmp["drop_address"] = $itinerary["drop_address"];
+            $tmp["drop_address_lat"] = $itinerary["drop_address_lat"];
+            $tmp["drop_address_long"] = $itinerary["drop_address_long"];
+            $tmp["end_address"] = $itinerary["end_address"];
+            $tmp["end_address_lat"] = $itinerary["end_address_lat"];
+            $tmp["end_address_long"] = $itinerary["end_address_long"];
+            $tmp["leave_date"] = $itinerary["leave_date"];
+            $tmp["duration"] = $itinerary["duration"];
+            $tmp["distance"] = $itinerary["distance"];
+            $tmp["cost"] = $itinerary["cost"];
+            $tmp["description"] = $itinerary["description"];
+            $tmp["status"] = $itinerary["itinerary_status"];
+            $tmp["created_at"] = $itinerary["created_at"];
+
+            //driver info
+            $tmp["driver_license"] = $itinerary["driver_license"];
+            $tmp["driver_license_img"] = $itinerary["driver_license_img"];
+            
+            //user info
+            $tmp["user_id"] = $itinerary["user_id"];
+            $tmp["email"] = $itinerary["email"];
+            $tmp["fullname"] = $itinerary["fullname"];
+            $tmp["phone"] = $itinerary["phone"];
+            $tmp["personalID"] = $itinerary["personalID"];
+            $tmp["link_avatar"] = $itinerary["link_avatar"];
+
+            //rating
+            $tmp["average_rating"] = $this->getAverageRatingofDriver($itinerary["user_id"]);
+            array_push($result, $tmp);
+        }
+
+        return $result;
+    }
+
+    public function searchItineraries($start_address, $end_address) {
+        require_once '/Config.php';
+        $conn2 = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME.";charset=utf8", DB_USERNAME, DB_PASSWORD);
+        // set the PDO error mode to exception
+        $conn2->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        $q = "SELECT i.itinerary_id, i.driver_id, i.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
+                        i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, 
+                        i.drop_address_long, i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, 
+                        i.distance, i.cost, i.description, i.status as itinerary_status, i.created_at, d.driver_license, 
+                        d.driver_license_img, u.user_id, u.email, u.fullname, u.phone, u.personalID, u.link_avatar 
+              FROM itinerary as i 
+              INNER JOIN driver as d ON i.driver_id = d.user_id
+              INNER JOIN user as u ON i.customer_id = u.user_id
+              WHERE ";
+        if (isset($start_address)) {
+            $q.= "match(start_address) against(:start_address) AND ";
+        }
+        if (isset($end_address)) {
+            $q.= "match(end_address) against(:end_address) AND ";
+        }
+
+        $q.= "1";
+                 
+        $stmt = $conn2->prepare($q);
+
+        if (isset($start_address)) {
+            $stmt->bindParam(':start_address', $start_address);
+        }
+        if (isset($end_address)) {
+            $stmt->bindParam(':end_address', $end_address);
+        }
+
+        $stmt->execute();
+        $itineraries = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $itineraries;
     }
 
     //not finished yet

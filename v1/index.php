@@ -168,7 +168,7 @@ $app->get('/active/:activation_code', function($activation_code) {
 
 /**
  * User Login
- * url - /user
+ * url - /user/login
  * method - POST
  * params - email, password
  */
@@ -262,6 +262,7 @@ $app->get('/forgotpass/:email', function($email) {
  * Get user information
  * method GET
  * url /user
+ * header - Authorization: API Key
  */
 $app->get('/user', 'authenticateUser', function() {
             global $user_id;
@@ -291,6 +292,12 @@ $app->get('/user', 'authenticateUser', function() {
             }
         });
 
+/**
+ * Get user's field information
+ * method GET
+ * url /user/:field (field is name of field want to get information)
+ * header - Authorization: API Key
+ */
 $app->get('/user/:field', 'authenticateUser', function($field) {
             global $user_id;
             $response = array();
@@ -313,8 +320,9 @@ $app->get('/user/:field', 'authenticateUser', function($field) {
 /**
  * Updating user
  * method PUT
- * params task, status
+ * params fullname, phone, personalID, personalID_img, link_avatar
  * url - /user
+ * header - Authorization: API Key
  */
 $app->put('/user', 'authenticateUser', function() use($app) {
             global $user_id;   
@@ -345,7 +353,9 @@ $app->put('/user', 'authenticateUser', function() use($app) {
 /**
  * Update user information
  * method PUT
- * url /user
+ * url /user/:field (field is name of field want to update)
+ * params value
+ * header - Authorization: API Key
  */
 $app->put('/user/:field', 'authenticateUser', function($field) use($app) {
             global $restricted_user_field;
@@ -997,7 +1007,6 @@ $app->put('staff/itinerary/:id', 'authenticateStaff', function($itinerary_id) us
 
 $app->delete('/staff/itinerary/:id', function($itinerary_id) use($app) {
             //global $staff_id;
-            echo "quay len";
             $db = new DbHandler();
             $response = array();
             $result = $db->deleteItinerary($itinerary_id);
@@ -1114,64 +1123,33 @@ $app->get('/itinerary/:id', function($itinerary_id) {
  * method GET
  * url /itineraries          
  */
-$app->get('/itineraries', 'authenticateUser', function() {
+$app->get('/itineraries', 'authenticateUser', function() use($app) {
             global $user_id;
             $response = array();
             $db = new DbHandler();
 
-            // fetching all user tasks
-            $result = $db->getAllItinerariesWithDriverInfo();
+            $start_address = $app->request->get('start_address');
+            $start_address_lat = $app->request->get('start_address_lat');
+            $start_address_long = $app->request->get('start_address_long');
 
-            $response["error"] = false;
-            $response["itineraries"] = array();
+            $end_address = $app->request->get('end_address');
+            $end_address_lat = $app->request->get('end_address_lat');
+            $end_address_long = $app->request->get('end_address_long');
 
-            // looping through result and preparing tasks array
-            while ($itinerary = $result->fetch_assoc()) {
-                $tmp = array();
+            $leave_date = $app->request->get('leave_date');
+            $duration = $app->request->get('duration');
+            $cost = $app->request->get('cost');
+            $distance = $app->request->get('distance');
 
-                $tmp["itinerary_id"] = $itinerary["itinerary_id"];
-                $tmp["driver_id"] = $itinerary["driver_id"];
-                $tmp["customer_id"] = $itinerary["customer_id"];
-                $tmp["start_address"] = $itinerary["start_address"];
-                $tmp["start_address_lat"] = $itinerary["start_address_lat"];
-                $tmp["start_address_long"] = $itinerary["start_address_long"];
-                $tmp["pick_up_address"] = $itinerary["pick_up_address"];
-                $tmp["pick_up_address_lat"] = $itinerary["pick_up_address_lat"];
-                $tmp["pick_up_address_long"] = $itinerary["pick_up_address_long"];
-                $tmp["drop_address"] = $itinerary["drop_address"];
-                $tmp["drop_address_lat"] = $itinerary["drop_address_lat"];
-                $tmp["drop_address_long"] = $itinerary["drop_address_long"];
-                $tmp["end_address"] = $itinerary["end_address"];
-                $tmp["end_address_lat"] = $itinerary["end_address_lat"];
-                $tmp["end_address_long"] = $itinerary["end_address_long"];
-                $tmp["leave_date"] = $itinerary["leave_date"];
-                $tmp["duration"] = $itinerary["duration"];
-                $tmp["distance"] = $itinerary["distance"];
-                $tmp["cost"] = $itinerary["cost"];
-                $tmp["description"] = $itinerary["description"];
-                $tmp["status"] = $itinerary["itinerary_status"];
-                $tmp["created_at"] = $itinerary["created_at"];
-
-                //driver info
-                $tmp["driver_license"] = $itinerary["driver_license"];
-                $tmp["driver_license_img"] = $itinerary["driver_license_img"];
-                
-                //user info
-                $tmp["user_id"] = $itinerary["user_id"];
-                $tmp["email"] = $itinerary["email"];
-                $tmp["fullname"] = $itinerary["fullname"];
-                $tmp["phone"] = $itinerary["phone"];
-                $tmp["personalID"] = $itinerary["personalID"];
-                $tmp["link_avatar"] = $itinerary["link_avatar"];
-
-                //rating
-                $tmp["average_rating"] = $db->getAverageRatingofDriver($itinerary["user_id"]);
-                array_push($response["itineraries"], $tmp);
+            if (isset($start_address) || isset($end_address)) {
+                $result = $db->searchItineraries($start_address, $end_address);
+            } else {
+                // fetching all user tasks
+                $result = $db->getAllItinerariesWithDriverInfo();
             }
+            $response["error"] = false;
+            $response["itineraries"] = $result;
 
-            //print_r($response);
-
-            //echo $response;
             echoRespnse(200, $response);
 
         });
@@ -1626,7 +1604,7 @@ function sendMail($receiver_mail, $content, $subject) {
 
     $mail->SetFrom('thanhbkdn92@gmail.com', 'Ride Sharing Verification Team'); //Sender
 
-    $mail->Subject    = $subject; //Subject
+    $mail->Subject      = $subject; //Subject
 
     $mail->MsgHTML($body);
 
