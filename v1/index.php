@@ -142,7 +142,7 @@ $app->post('/user', function() use ($app) {
 
                 $content_mail = "Chao ban,<br>
                                 Vui long nhan vao duong link sau de kich hoat tai khoan:
-                                <a href='http://192.168.10.74/WebApp/controller/register.php?active_key=". $activation_code.
+                                <a href='http://192.168.10.132/WebApp/controller/register.php?active_key=". $activation_code.
                                 "'>Kich hoat tai khoan</a>";
 
                 if (sendMail($email, $content_mail, "Active Account")) {
