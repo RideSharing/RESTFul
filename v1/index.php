@@ -8,8 +8,6 @@ require '../libs/Slim/Slim.php';
 
 $app = new \Slim\Slim();
 
-//Language use
-$language = 'en';
 // User id from db - Global Variable
 $user_id = NULL;
 // Staff id from db - Global Variable
@@ -23,10 +21,11 @@ $restricted_user_field = array('user_id', 'email', 'api_key', 'created_at', 'sta
  * Checking if the request has valid api key in the 'Authorization' header
  */
 function authenticateUser(\Slim\Route $route) {
-    if (isset($_GET['lang'])) {
-        include '../include/lang_'.$_GET['lang'].'.php';
+    if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+        require_once '../include/lang_'.$_GET['lang'].'.php';
     } else {
-        include '../include/lang_en.php';
+        $language = 'en';
+        require_once '../include/lang_en.php';
     }
     // Getting request headers
     $headers = apache_request_headers();
@@ -65,10 +64,11 @@ function authenticateUser(\Slim\Route $route) {
  * Checking if the request has valid api key in the 'Authorization' header
  */
 function authenticateStaff(\Slim\Route $route) {
-    if (isset($_GET['lang'])) {
-        include '../include/lang_'.$_GET['lang'].'.php';
+    if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+        require_once '../include/lang_'.$_GET['lang'].'.php';
     } else {
-        include '../include/lang_en.php';
+        $language = 'en';
+        require_once '../include/lang_en.php';
     }
     // Getting request headers
     $headers = apache_request_headers();
@@ -109,18 +109,16 @@ function authenticateStaff(\Slim\Route $route) {
  * params - email, password
  */
 $app->post('/user', function() use ($app) {
-            global $language;
-            if (isset($_GET['lang'])) {
-                if (file_exists('../include/lang_'.$_GET['lang'].'.php')) {
-                    $language = $_GET['lang'];
-                    require_once '../include/lang_'.$_GET['lang'].'.php';
-                } else {
-                    $language = 'en';
-                    require_once '../include/lang_en.php';
-                }
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
             }
+
             // check for required params
-            verifyRequiredParams(array('email', 'password'));
+            verifyRequiredParams(array('email', 'password'), $language);
 
             $response = array();
 
@@ -129,9 +127,9 @@ $app->post('/user', function() use ($app) {
             $password = $app->request->post('password');
 
             // validating email address
-            validateEmail($email);
+            validateEmail($email, $language);
             // validating password
-            validatePassword($password);
+            validatePassword($password, $language);
 
             $db = new DbHandler();
             $res = $db->createUser($email, $password);
@@ -150,15 +148,15 @@ $app->post('/user', function() use ($app) {
                     $response["message"] = $lang['REGISTER_USER_SUCCESS'];
                 } else {
                     $response["error"] = true;
-                    $response["message"] = "Xin lỗi! Có lỗi xảy ra trong quá trình gửi email.";
+                    $response["message"] = $lang['ERR_SEND_EMAIL'];
                 }
                 
             } else if ($res == USER_CREATE_FAILED) {
                 $response["error"] = true;
-                $response["message"] = "Xin lỗi! Có lỗi xảy ra trong quá trình đăng kí.";
+                $response["message"] = $lang['ERR_REGISTER'];
             } else if ($res == USER_ALREADY_EXISTED) {
                 $response["error"] = true;
-                $response["message"] = "Xin lỗi! email bạn đăng kí đã tồn tại.";
+                $response["message"] = $lang['ERR_EMAIL_EXIST'];
             } 
             // echo json response
             echoRespnse(201, $response);
@@ -171,6 +169,14 @@ $app->post('/user', function() use ($app) {
  * params - activation_code
  */
 $app->get('/active/:activation_code', function($activation_code) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             $response = array();
 
             $db = new DbHandler();
@@ -178,10 +184,10 @@ $app->get('/active/:activation_code', function($activation_code) {
 
             if ($res == USER_ACTIVATED_SUCCESSFULLY) {
                 $response["error"] = false;
-                $response["message"] = "Bạn đã kích hoạt tài khoản thành công.";
+                $response["message"] = $lang['ACTIVATED_ACCOUNT_SUCCESS'];
             } else if ($res == USER_ACTIVATE_FAILED) {
                 $response["error"] = true;
-                $response["message"] = "Xin lỗi! Kích hoạt tài khoản thất bại.";
+                $response["message"] = $lang['ERR_ACTIVATED_ACCOUNT'];
             } 
 
             // echo json response
@@ -195,8 +201,16 @@ $app->get('/active/:activation_code', function($activation_code) {
  * params - email, password
  */
 $app->post('/user/login', function() use ($app) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             // check for required params
-            verifyRequiredParams(array('email', 'password'));
+            verifyRequiredParams(array('email', 'password'), $language);
 
             // reading post params
             $email = $app->request()->post('email');
@@ -230,27 +244,35 @@ $app->post('/user/login', function() use ($app) {
                 } else {
                     // unknown error occurred
                     $response['error'] = true;
-                    $response['message'] = "Có lỗi xảy ra! Vui lòng thử lại.";
+                    $response['message'] = $lang['ERR_LOGIN'];
                 }
             } elseif ($res == WRONG_PASSWORD || $res == USER_NOT_REGISTER) {
                 $response['error'] = true;
-                $response['message'] = "Sai email hoặc mật khẩu!";
+                $response['message'] = $lang['ERR_EMAIL_PASS'];
             } elseif ($res == USER_NOT_ACTIVATE) {
                 $response['error'] = true;
-                $response['message'] = "Tài khoản chưa được kích hoạt. Vui lòng kích hoạt tài khoản!";
+                $response['message'] = $lang['ERR_ACTIVATED_ACCOUNT'];
             } elseif($res == USER_LOCKED) {
                 $response['error'] = true;
-                $response['message'] = "Tài khoản của bạn đang bị khóa!";
+                $response['message'] = $lang['ERR_ACOUNT_LOCKED'];
             }
             else{
                 $response['error'] = true;
-                $response['message'] = "Có lỗi xảy ra trong quá trình đăng nhập!";
+                $response['message'] = $lang['ERR_LOGIN_CHECK'];
             }
 
             echoRespnse(200, $response);
         });
 
 $app->get('/forgotpass/:email', function($email) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             $response = array();
 
             $db = new DbHandler();
@@ -267,14 +289,14 @@ $app->get('/forgotpass/:email', function($email) {
                     sendMail($email, $content_mail, "Reset password");
 
                     $response["error"] = false;
-                    $response["message"] = "Một email vừa được gửi đến địa chỉ email bạn nhập. Vui lòng làm theo hướng dẫn để lấy lại mật khẩu";
+                    $response["message"] = $lang['ALERT_SENT_EMAIL'];
                 } else {
                     $response["error"] = true;
-                    $response["message"] = "Xin lỗi! Có lỗi xảy ra, vui lòng thử lại sau.";
+                    $response["message"] = $lang['ERROR_ACTIVATED'];
                 } 
             } else {
                 $response["error"] = true;
-                $response["message"] = "Email bạn nhập không chính xác!";
+                $response["message"] = $lang['ERR_TYPE_EMAIL'];
             }
             // echo json response
             echoRespnse(200, $response);
@@ -287,6 +309,14 @@ $app->get('/forgotpass/:email', function($email) {
  * header - Authorization: API Key
  */
 $app->get('/user', 'authenticateUser', function() {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             global $user_id;
             $response = array();
             $db = new DbHandler();
@@ -309,7 +339,7 @@ $app->get('/user', 'authenticateUser', function() {
                 echoRespnse(200, $response);
             } else {
                 $response['error'] = true;
-                $response['message'] = 'Đường dẫn bạn yêu cầu không tồn tại!';
+                $response['message'] = $lang['ERR_LINK_REQUEST'];
                 echoRespnse(404, $response);
             }
         });
@@ -321,6 +351,14 @@ $app->get('/user', 'authenticateUser', function() {
  * header - Authorization: API Key
  */
 $app->get('/user/:field', 'authenticateUser', function($field) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             global $user_id;
             $response = array();
             $db = new DbHandler();
@@ -334,7 +372,7 @@ $app->get('/user/:field', 'authenticateUser', function($field) {
                 echoRespnse(200, $response);
             } else {
                 $response["error"] = true;
-                $response["message"] = "Đường dẫn bạn yêu cầu không tồn tại!";
+                $response["message"] = $lang['ERR_LINK_REQUEST'];
                 echoRespnse(404, $response);
             }
         });
@@ -348,6 +386,14 @@ $app->get('/user/:field', 'authenticateUser', function($field) {
  */
 $app->put('/user', 'authenticateUser', function() use($app) {
             global $user_id;   
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
 
             $fullname = $app->request->put('fullname');
             $phone = $app->request->put('phone');
@@ -363,11 +409,11 @@ $app->put('/user', 'authenticateUser', function() use($app) {
             if ($result) {
                 // task updated successfully
                 $response['error'] = false;
-                $response['message'] = "Cập nhật thông tin thành công!";
+                $response['message'] = $lang['ALERT_UPDATE'];
             } else {
                 // task failed to update
                 $response['error'] = true;
-                $response['message'] = "Cập nhật thông tin thất bại. Vui lòng thử lại!";
+                $response['message'] = $lang['ERR_UPDATE'];
             }
             echoRespnse(200, $response);
         });
@@ -381,9 +427,18 @@ $app->put('/user', 'authenticateUser', function() use($app) {
  */
 $app->put('/user/:field', 'authenticateUser', function($field) use($app) {
             global $restricted_user_field;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             if (!in_array($field, $restricted_user_field)) {
                 // check for required params
-                verifyRequiredParams(array('value'));
+                verifyRequiredParams(array('value'), $language);
                 global $user_id;
                 $value = $app->request->put('value');
 
@@ -391,7 +446,7 @@ $app->put('/user/:field', 'authenticateUser', function($field) use($app) {
                 $db = new DbHandler();
 
                 if ($field == 'password') {
-                    validatePassword($value);
+                    validatePassword($value, $language);
 
                     $result = $db->changePassword($user_id, $value);
                 } else {
@@ -402,15 +457,15 @@ $app->put('/user/:field', 'authenticateUser', function($field) use($app) {
                 if ($result) {
                     // user updated successfully
                     $response["error"] = false;
-                    $response["message"] = "Cập nhật thông tin thành công!";
+                    $response["message"] = $lang['ALERT_UPDATE'];
                 } else {
                     // user failed to update
                     $response["error"] = true;
-                    $response["message"] = "Cập nhật thông tin thất bại. Vui lòng thử lại!";
+                    $response["message"] = $lang['ERR_UPDATE'];
                 }
             } else {
                 $response["error"] = true;
-                $response["message"] = "Cập nhật thông tin thất bại. Vui lòng thử lại!";
+                $response["message"] = $lang['ERR_UPDATE'];
             }
             
             echoRespnse(200, $response);
@@ -424,6 +479,14 @@ $app->put('/user/:field', 'authenticateUser', function($field) use($app) {
 $app->delete('/user', 'authenticateUser', function() {
             global $user_id;
 
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             $db = new DbHandler();
             $response = array();
 
@@ -432,11 +495,11 @@ $app->delete('/user', 'authenticateUser', function() {
             if ($result) {
                 // user deleted successfully
                 $response["error"] = false;
-                $response["message"] = "Xóa người dùng thành công!";
+                $response["message"] = $lang['USER_DELETE_SUCCESS'];
             } else {
                 // task failed to delete
                 $response["error"] = true;
-                $response["message"] = "Xóa người dùng thất bại. Vui lòng thử lại!";
+                $response["message"] = $lang['USER_DELETE_FAILURE'];
             }
             echoRespnse(200, $response);
         });
@@ -448,8 +511,17 @@ $app->delete('/user', 'authenticateUser', function() {
  * params - driver
  */
 $app->post('/driver', 'authenticateUser', function() use ($app) {
-            verifyRequiredParams(array('driver_license', 'driver_license_img'));
+            verifyRequiredParams(array('driver_license', 'driver_license_img'), $language);
             global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             $response = array();
 
             // reading post params
@@ -461,13 +533,13 @@ $app->post('/driver', 'authenticateUser', function() use ($app) {
 
             if ($res == DRIVER_CREATED_SUCCESSFULLY) {
                 $response["error"] = false;
-                $response["message"] = "Đăng kí thành công!";
+                $response["message"] = $lang['REGISTER_SUCCESS'];
             } else if ($res == DRIVER_ALREADY_EXISTED) {
                 $response["error"] = true;
-                $response["message"] = "Bạn đã đăng kí làm lái xe!";
+                $response["message"] = $lang['REGISTER_DRIVER'];
             } else if ($res == DRIVER_CREATE_FAILED) {
                 $response["error"] = true;
-                $response["message"] = "Xin lỗi! Có lỗi xảy ra trong quá trình đăng kí.";
+                $response["message"] = $lang['ERR_REGISTER'];
             }
             // echo json response
             echoRespnse(201, $response);
@@ -480,6 +552,15 @@ $app->post('/driver', 'authenticateUser', function() use ($app) {
  */
 $app->get('/driver', 'authenticateUser', function() {
             global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             $response = array();
             $db = new DbHandler();
 
@@ -493,7 +574,7 @@ $app->get('/driver', 'authenticateUser', function() {
                 echoRespnse(200, $response);
             } else {
                 $response["error"] = true;
-                $response["message"] = "Đường dẫn bạn yêu cầu không tồn tại!";
+                $response["message"] = $lang['ERR_LINK_REQUEST'];
                 echoRespnse(404, $response);
             }
         });
@@ -505,6 +586,15 @@ $app->get('/driver', 'authenticateUser', function() {
  */
 $app->get('/driver/:field', 'authenticateUser', function($field) {
             global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             $response = array();
             $db = new DbHandler();
 
@@ -517,7 +607,7 @@ $app->get('/driver/:field', 'authenticateUser', function($field) {
                 echoRespnse(200, $response);
             } else {
                 $response["error"] = true;
-                $response["message"] = "Đường dẫn bạn yêu cầu không tồn tại!";
+                $response["message"] = $lang['ERR_LINK_REQUEST'];
                 echoRespnse(200, $response);
             }
         });
@@ -530,9 +620,18 @@ $app->get('/driver/:field', 'authenticateUser', function($field) {
  */
 $app->put('/driver', 'authenticateUser', function() use($app) {
             // check for required params
-            verifyRequiredParams(array('driver_license', 'driver_license_img'));
+            verifyRequiredParams(array('driver_license', 'driver_license_img'), $language);
 
-            global $user_id;            
+            global $user_id;  
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }  
+
             $driver_license = $app->request->put('driver_license');
             $driver_license_img = $app->request->put('driver_license_img');
 
@@ -544,11 +643,11 @@ $app->put('/driver', 'authenticateUser', function() use($app) {
             if ($result) {
                 // task updated successfully
                 $response["error"] = false;
-                $response["message"] = "Cập nhật thông tin thành công!";
+                $response["message"] = $lang['ALERT_UPDATE'];
             } else {
                 // task failed to update
                 $response["error"] = true;
-                $response["message"] = "Cập nhật thông tin thất bại. Vui lòng thử lại!";
+                $response["message"] = $lang['ERR_UPDATE'];
             }
             echoRespnse(200, $response);
         });
@@ -560,8 +659,17 @@ $app->put('/driver', 'authenticateUser', function() use($app) {
  */
 $app->put('/driver/:field', 'authenticateUser', function($field) use($app) {
             // check for required params
-            verifyRequiredParams(array('value'));
+            verifyRequiredParams(array('value'), $language);
             global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             $value = $app->request->put('value');
 
             $response = array();
@@ -573,11 +681,11 @@ $app->put('/driver/:field', 'authenticateUser', function($field) use($app) {
             if ($result) {
                 // user updated successfully
                 $response["error"] = false;
-                $response["message"] = "Cập nhật thông tin thành công!";
+                $response["message"] = $lang['ALERT_UPDATE'];
             } else {
                 // user failed to update
                 $response["error"] = true;
-                $response["message"] = "Cập nhật thông tin thất bại. Vui lòng thử lại!";
+                $response["message"] = $lang['ERR_UPDATE'];
             }
             
             echoRespnse(200, $response);
@@ -591,6 +699,14 @@ $app->put('/driver/:field', 'authenticateUser', function($field) use($app) {
 $app->delete('/driver', 'authenticateUser', function() {
             global $user_id;
 
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             $db = new DbHandler();
             $response = array();
 
@@ -599,11 +715,11 @@ $app->delete('/driver', 'authenticateUser', function() {
             if ($result) {
                 // user deleted successfully
                 $response["error"] = false;
-                $response["message"] = "Xóa tài xế thành công!";
+                $response["message"] = $lang['DRIVER_DELETE_SUCCESS'];
             } else {
                 // task failed to delete
                 $response["error"] = true;
-                $response["message"] = "Xóa tài xế thất bại. Vui lòng thử lại!";
+                $response["message"] = $lang['DRIVER_DELETE_FAILURE'];
             }
             echoRespnse(200, $response);
         });
@@ -615,8 +731,16 @@ $app->delete('/driver', 'authenticateUser', function() {
  * params - email, password
  */
 $app->post('/staff', function() use ($app) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             // check for required params
-            verifyRequiredParams(array('email'));
+            verifyRequiredParams(array('email'), $language);
 
             $response = array();
 
@@ -627,20 +751,20 @@ $app->post('/staff', function() use ($app) {
             $personalID = $app->request->post('personalID');
 
             // validating email address
-            validateEmail($email);
+            validateEmail($email, $language);
 
             $db = new DbHandler();
             $res = $db->createStaff($role, $email, $fullname, $personalID);
 
             if ($res == STAFF_CREATED_SUCCESSFULLY) {
                 $response["error"] = false;
-                $response["message"] = "Tạo nhân viên mới thành công!";
+                $response["message"] = $lang['CREATE_STAFF_SUCCESS'];
             } else if ($res == STAFF_ALREADY_EXISTED) {
                 $response["error"] = true;
-                $response["message"] = "Xin lỗi! email bạn đăng kí đã tồn tại.";
+                $response["message"] = $lang['ERR_EMAIL_EXIST'];
             } else if ($res == STAFF_CREATE_FAILED) {
                 $response["error"] = true;
-                $response["message"] = "Xin lỗi! Có lỗi xảy ra trong quá trình đăng kí.";
+                $response["message"] = $lang['ERR_REGISTER'];
             }
             // echo json response
             echoRespnse(201, $response);
@@ -653,8 +777,16 @@ $app->post('/staff', function() use ($app) {
  * params - email, password
  */
 $app->post('/staff/login', function() use ($app) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             // check for required params
-            verifyRequiredParams(array('email', 'password'));
+            verifyRequiredParams(array('email', 'password'), $language);
 
             // reading post params
             $email = $app->request()->post('email');
@@ -675,11 +807,11 @@ $app->post('/staff/login', function() use ($app) {
                 } else {
                     // unknown error occurred
                     $response['error'] = true;
-                    $response['message'] = "Có lỗi xảy ra! Vui lòng thử lại.";
+                    $response['message'] = $lang['ERR_LOGIN'];
                 }
             } elseif ($res == WRONG_PASSWORD || $res == STAFF_NOT_REGISTER) {
                 $response['error'] = true;
-                $response['message'] = "Sai email hoặc mật khẩu!";
+                $response['message'] = $lang['ERR_EMAIL_PASS'];
             }
 
             echoRespnse(200, $response);
@@ -710,7 +842,52 @@ $app->get('/staff', 'authenticateStaff', function() {
                 echoRespnse(200, $response);
             } else {
                 $response["error"] = true;
-                $response["message"] = "Đường dẫn bạn yêu cầu không tồn tại!";
+                $response["message"] = $lang['ERR_LINK_REQUEST'];
+                echoRespnse(404, $response);
+            }
+        });
+
+$app->get('/staffs', 'authenticateStaff', function() {
+            $db = new DbHandler();
+
+            // fetch task
+            $result = $db->getListStaff();
+
+            if ($result != NULL) {
+                $response['error'] = false;
+                $response['staffs'] = array();
+
+                while ($staff = $result->fetch_assoc()) {
+                    array_push($response['staffs'], $staff);               
+                }
+
+                echoRespnse(200, $response);
+            } else {
+                $response["error"] = true;
+                $response["message"] = $lang['ERR_LINK_REQUEST'];
+                echoRespnse(404, $response);
+            }
+        });
+
+$app->get('/staff/:staff_id', 'authenticateStaff', function($staff_id) {
+            $response = array();
+            $db = new DbHandler();
+
+            // fetch task
+            $result = $db->getStaffByStaffID($staff_id);
+
+            if ($result != NULL) {
+                $response["error"] = false;
+                $response['email'] = $result['email'];
+                $response['apiKey'] = $result['api_key'];
+                $response['fullname'] = $result['fullname'];
+                $response['personalID'] = $result['personalID'];
+                $response['link_avatar'] = $result['link_avatar'];
+                $response['created_at'] = $result['created_at'];
+                echoRespnse(200, $response);
+            } else {
+                $response["error"] = true;
+                $response["message"] = $lang['ERR_LINK_REQUEST'];
                 echoRespnse(404, $response);
             }
         });
@@ -721,6 +898,14 @@ $app->get('/staff', 'authenticateStaff', function() {
  * url /user
  */
 $app->get('/staff/user', 'authenticateStaff', function() {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             $response = array();
             $db = new DbHandler();
 
@@ -743,6 +928,14 @@ $app->get('/staff/user', 'authenticateStaff', function() {
  * url /staff/user
  */
 $app->get('/staff/user/:user_id', 'authenticateStaff', function($user_id) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             $response = array();
             $db = new DbHandler();
 
@@ -775,6 +968,14 @@ $app->get('/staff/user/:user_id', 'authenticateStaff', function($user_id) {
  * url /user
  */
 $app->get('/staff/user/:user_id/:field', 'authenticateStaff', function($user_id, $field) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             $response = array();
             $db = new DbHandler();
 
@@ -787,7 +988,7 @@ $app->get('/staff/user/:user_id/:field', 'authenticateStaff', function($user_id,
                 echoRespnse(200, $response);
             } else {
                 $response["error"] = true;
-                $response["message"] = "Đường dẫn bạn yêu cầu không tồn tại!";
+                $response["message"] = $lang['ERR_LINK_REQUEST'];
                 echoRespnse(404, $response);
             }
         });
@@ -799,8 +1000,16 @@ $app->get('/staff/user/:user_id/:field', 'authenticateStaff', function($user_id,
  * url - /user
  */
 $app->put('/staff/user/:user_id', 'authenticateStaff', function($user_id) use($app) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             // check for required params
-            verifyRequiredParams(array('status', 'locked'));
+            verifyRequiredParams(array('status', 'locked'), $language);
         
             $status = $app->request->put('status');
             $locked = $app->request->put('locked');
@@ -813,11 +1022,11 @@ $app->put('/staff/user/:user_id', 'authenticateStaff', function($user_id) use($a
             if ($result) {
                 // task updated successfully
                 $response["error"] = false;
-                $response["message"] = "Cập nhật thông tin thành công!";
+                $response["message"] = $lang['ALERT_UPDATE'];
             } else {
                 // task failed to update
                 $response["error"] = true;
-                $response["message"] = "Cập nhật thông tin thất bại. Vui lòng thử lại!";
+                $response["message"] = $lang['ERR_UPDATE'];
             }
             echoRespnse(200, $response);
         });
@@ -830,9 +1039,17 @@ $app->put('/staff/user/:user_id', 'authenticateStaff', function($user_id) use($a
 $app->put('/staff/user/:user_id/:field', 'authenticateStaff', function($user_id, $field) use($app) {
             global $restricted_user_field;
 
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             if (!in_array($field, $restricted_user_field)) {
                 // check for required params
-                verifyRequiredParams(array('value'));
+                verifyRequiredParams(array('value'), $language);
 
                 $value = $app->request->put('value');
 
@@ -840,7 +1057,7 @@ $app->put('/staff/user/:user_id/:field', 'authenticateStaff', function($user_id,
                 $db = new DbHandler();
 
                 if ($field == 'password') {
-                    validatePassword($value);
+                    validatePassword($value, $language);
 
                     $result = $db->changePassword($user_id, $value);
                 } else {
@@ -851,15 +1068,15 @@ $app->put('/staff/user/:user_id/:field', 'authenticateStaff', function($user_id,
                 if ($result) {
                     // user updated successfully
                     $response["error"] = false;
-                    $response["message"] = "Cập nhật thông tin thành công!";
+                    $response["message"] = $lang['ALERT_UPDATE'];
                 } else {
                     // user failed to update
                     $response["error"] = true;
-                    $response["message"] = "Cập nhật thông tin thất bại. Vui lòng thử lại!";
+                    $response["message"] = $lang['ERR_UPDATE'];
                 }
             } else {
                 $response["error"] = true;
-                $response["message"] = "Cập nhật thông tin thất bại. Vui lòng thử lại!";
+                $response["message"] = $lang['ERR_UPDATE'];
             }
             
             echoRespnse(200, $response);
@@ -871,6 +1088,13 @@ $app->put('/staff/user/:user_id/:field', 'authenticateStaff', function($user_id,
  * url /staff/user
  */
 $app->delete('/staff/user/:user_id', 'authenticateStaff', function($user_id) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
 
             $db = new DbHandler();
             $response = array();
@@ -880,11 +1104,11 @@ $app->delete('/staff/user/:user_id', 'authenticateStaff', function($user_id) {
             if ($result) {
                 // user deleted successfully
                 $response["error"] = false;
-                $response["message"] = "Xóa người dùng thành công!";
+                $response["message"] = $lang['USER_DELETE_SUCCESS'];
             } else {
                 // task failed to delete
                 $response["error"] = true;
-                $response["message"] = "Xóa người dùng thất bại. Vui lòng thử lại!";
+                $response["message"] = $lang['USER_DELETE_FAILURE'];
             }
             echoRespnse(200, $response);
         });
@@ -896,6 +1120,15 @@ $app->delete('/staff/user/:user_id', 'authenticateStaff', function($user_id) {
  */
 $app->get('/staff/itineraries', 'authenticateStaff', function() {
             global $staff_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             $response = array();
             $db = new DbHandler();
 
@@ -959,6 +1192,14 @@ $app->get('/staff/itineraries', 'authenticateStaff', function() {
 
 
 $app->get('staff/itinerary/:id', function($itinerary_id) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             $response = array();
             $db = new DbHandler();
 
@@ -992,7 +1233,7 @@ $app->get('staff/itinerary/:id', function($itinerary_id) {
                 echoRespnse(200, $response);
             } else {
                 $response["error"] = true;
-                $response["message"] = "The requested resource doesn't exists";
+                $response["message"] = $lang['ERR_REQUEST_ITINERARY'];
                 echoRespnse(404, $response);
             }
         });
@@ -1001,6 +1242,15 @@ $app->put('staff/itinerary/:id', 'authenticateStaff', function($itinerary_id) us
             // check for required params
             //verifyRequiredParams(array('task', 'status'));
             global $staff_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             $itinerary_fields = array();
 
             $request_params = array();
@@ -1018,28 +1268,36 @@ $app->put('staff/itinerary/:id', 'authenticateStaff', function($itinerary_id) us
             if ($result) {
                 // task updated successfully
                 $response["error"] = false;
-                $response["message"] = "Itinerary updated successfully";
+                $response["message"] = $lang['UPDATE_ITINERARY_SUCCESS'];
             } else {
                 // task failed to update
                 $response["error"] = true;
-                $response["message"] = "Itinerary failed to update. Please try again!";
+                $response["message"] = $lang['UPDATE_ITINERARY_FAILURE'];
             }
             echoRespnse(200, $response);
         });
 
 $app->delete('/staff/itinerary/:id', function($itinerary_id) use($app) {
             //global $staff_id;
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             $db = new DbHandler();
             $response = array();
             $result = $db->deleteItinerary($itinerary_id);
             if ($result) {
                 // itinerary deleted successfully
                 $response["error"] = false;
-                $response["message"] = "Itinerary deleted succesfully";
+                $response["message"] = $lang['DELETE_ITINERARY_SUCCESS'];
             } else {
                 // itinerary failed to delete
                 $response["error"] = true;
-                $response["message"] = "Itinerary failed to delete. Please try again!";
+                $response["message"] = $lang['DELETE_ITINERARY_FAILURE'];
             }
             echoRespnse(200, $response);
         });
@@ -1048,9 +1306,17 @@ $app->delete('/staff/itinerary/:id', function($itinerary_id) use($app) {
 //
 //
 $app->post('/itinerary', 'authenticateUser', function() use ($app) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             // check for required params
             verifyRequiredParams(array('start_address','start_address_lat','start_address_long','end_address',
-                'end_address_lat','end_address_long','leave_date','duration','cost', 'distance'));
+                'end_address_lat','end_address_long','leave_date','duration','cost', 'distance'), $language);
 
             $response = array();
             
@@ -1084,12 +1350,12 @@ $app->post('/itinerary', 'authenticateUser', function() use ($app) {
 
             if ($itinerary_id != NULL) {
                 $response["error"] = false;
-                $response["message"] = "Itinerary created successfully";
+                $response["message"] = $lang['CREATE_ITINERARY_SUCCESS'];
                 $response["itinerary_id"] = $itinerary_id;
                 echoRespnse(201, $response);
             } else {
                 $response["error"] = true;
-                $response["message"] = "Failed to create itinerary. Please try again";
+                $response["message"] = $lang['CREATE_ITINERARY_FAILURE'];
                 echoRespnse(200, $response);
             }            
         });
@@ -1102,6 +1368,15 @@ $app->post('/itinerary', 'authenticateUser', function() use ($app) {
  */
 $app->get('/itinerary/:id', function($itinerary_id) {
             global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             $response = array();
             $db = new DbHandler();
 
@@ -1135,7 +1410,7 @@ $app->get('/itinerary/:id', function($itinerary_id) {
                 echoRespnse(200, $response);
             } else {
                 $response["error"] = true;
-                $response["message"] = "The requested resource doesn't exists";
+                $response["message"] = $lang['ERR_LINK_REQUEST'];
                 echoRespnse(404, $response);
             }
         });
@@ -1147,6 +1422,15 @@ $app->get('/itinerary/:id', function($itinerary_id) {
  */
 $app->get('/itineraries', 'authenticateUser', function() use($app) {
             global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             $response = array();
             $db = new DbHandler();
 
@@ -1185,6 +1469,15 @@ $app->get('/itineraries', 'authenticateUser', function() use($app) {
  */
 $app->get('/itineraries/driver/:order', 'authenticateUser', function($order) {
             global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             $response = array();
             $db = new DbHandler();
 
@@ -1248,6 +1541,15 @@ $app->get('/itineraries/driver/:order', 'authenticateUser', function($order) {
  */
 $app->get('/itineraries/customer/:order', 'authenticateUser', function($order) {
             global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             $response = array();
             $db = new DbHandler();
 
@@ -1315,6 +1617,15 @@ $app->put('/itinerary/:id', 'authenticateUser', function($itinerary_id) use($app
             // check for required params
             //verifyRequiredParams(array('task', 'status'));
             global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             $itinerary_fields = array();           
 
             $request_params = array();
@@ -1332,11 +1643,11 @@ $app->put('/itinerary/:id', 'authenticateUser', function($itinerary_id) use($app
             if ($result) {
                 // task updated successfully
                 $response["error"] = false;
-                $response["message"] = "Itinerary updated successfully";
+                $response["message"] = $lang['UPDATE_ITINERARY_SUCCESS'];
             } else {
                 // task failed to update
                 $response["error"] = true;
-                $response["message"] = "Itinerary failed to update. Please try again!";
+                $response["message"] = $lang['UPDATE_ITINERARY_FAILURE'];
             }
             echoRespnse(200, $response);
         });
@@ -1352,6 +1663,15 @@ $app->put('/customer_accept_itinerary/:id', 'authenticateUser', function($itiner
             //verifyRequiredParams(array('task', 'status'));
 
             global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             //$itinerary_fields = array();           
 
             //$request_params = array();
@@ -1373,15 +1693,15 @@ $app->put('/customer_accept_itinerary/:id', 'authenticateUser', function($itiner
                 if ($result) {
                     // task updated successfully
                     $response["error"] = false;
-                    $response["message"] = "Customer accepted itinerary successfully";
+                    $response["message"] = $lang['CUS_ACCEPT_ITINERARY_SUCCESS'];
                 } else {
                     // task failed to update
                     $response["error"] = true;
-                    $response["message"] = "Itinerary failed to accepted by customer. Please try again!";
+                    $response["message"] = $lang['CUS_ACCEPT_ITINERARY_FAILURE'];
                 }
             } else {
                 $response["error"] = true;
-                $response["message"] = "Sorry! Itinerary was accepted other customer. Please try the new one.";
+                $response["message"] = $lang['CUS_ACCEPT_ITINERARY_ALREADY'];
             }
 
             echoRespnse(200, $response);
@@ -1398,6 +1718,15 @@ $app->put('/customer_reject_itinerary/:id', 'authenticateUser', function($itiner
             //verifyRequiredParams(array('task', 'status'));
 
             global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             $db = new DbHandler();
             $response = array();
             // updating task
@@ -1405,11 +1734,11 @@ $app->put('/customer_reject_itinerary/:id', 'authenticateUser', function($itiner
             if ($result) {
                 // task updated successfully
                 $response["error"] = false;
-                $response["message"] = "Customer rejected itinerary successfully";
+                $response["message"] = $lang['CUS_REJECT_ITINERARY_SUCCESS'];
             } else {
                 // task failed to update
                 $response["error"] = true;
-                $response["message"] = "Itinerary failed to rejected by customer. Please try again!";
+                $response["message"] = $lang['CUS_REJECT_ITINERARY_FAILURE'];
             }
             echoRespnse(200, $response);
         });
@@ -1425,6 +1754,15 @@ $app->put('/driver_accept_itinerary/:id', 'authenticateUser', function($itinerar
             //verifyRequiredParams(array('task', 'status'));
 
             global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             $db = new DbHandler();
             $response = array();
             // updating task
@@ -1432,11 +1770,11 @@ $app->put('/driver_accept_itinerary/:id', 'authenticateUser', function($itinerar
             if ($result) {
                 // task updated successfully
                 $response["error"] = false;
-                $response["message"] = "Driver accepted itinerary successfully";
+                $response["message"] = $lang['DRI_ACCEPT_ITINERARY_SUCCESS'];
             } else {
                 // task failed to update
                 $response["error"] = true;
-                $response["message"] = "Itinerary failed to accepted by driver. Please try again!";
+                $response["message"] = $lang['DRI_ACCEPT_ITINERARY_FAILURE'];
             }
             echoRespnse(200, $response);
         });
@@ -1453,6 +1791,14 @@ $app->put('/driver_reject_itinerary/:id', 'authenticateUser', function($itinerar
 
             global $user_id;
 
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             $db = new DbHandler();
             $response = array();
             // updating task
@@ -1460,11 +1806,11 @@ $app->put('/driver_reject_itinerary/:id', 'authenticateUser', function($itinerar
             if ($result) {
                 // task updated successfully
                 $response["error"] = false;
-                $response["message"] = "Driver rejected successfully";
+                $response["message"] = $lang['DRI_REJECT_ITINERARY_SUCCESS'];
             } else {
                 // task failed to update
                 $response["error"] = true;
-                $response["message"] = "Itinerary failed to rejected by driver. Please try again!";
+                $response["message"] = $lang['DRI_REJECT_ITINERARY_FAILURE'];
             }
             echoRespnse(200, $response);
         });
@@ -1478,24 +1824,40 @@ $app->put('/driver_reject_itinerary/:id', 'authenticateUser', function($itinerar
 $app->delete('/itinerary/:id', 'authenticateUser', function($itinerary_id) use($app) {
             global $user_id;
 
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             $db = new DbHandler();
             $response = array();
             $result = $db->deleteItinerary($itinerary_id);
             if ($result) {
                 // itinerary deleted successfully
                 $response["error"] = false;
-                $response["message"] = "Itinerary deleted succesfully";
+                $response["message"] = $lang['DELETE_ITINERARY_SUCCESS'];
             } else {
                 // itinerary failed to delete
                 $response["error"] = true;
-                $response["message"] = "Itinerary failed to delete. Please try again!";
+                $response["message"] = $lang['DELETE_ITINERARY_FAILURE'];
             }
             echoRespnse(200, $response);
         });
 
 $app->post('/feedback', function() use ($app) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             // check for required params
-            verifyRequiredParams(array('email', 'name', 'content'));
+            verifyRequiredParams(array('email', 'name', 'content'), $language);
 
             $response = array();
 
@@ -1505,23 +1867,31 @@ $app->post('/feedback', function() use ($app) {
             $content = $app->request->post('content');
 
             // validating email address
-            validateEmail($email);
+            validateEmail($email, $language);
 
             $db = new DbHandler();
             $res = $db->createFeedback($email, $name, $content);
 
             if ($res == USER_CREATED_FEEDBACK_SUCCESSFULLY) {
                 $response["error"] = false;
-                $response["message"] = "Cám ơn bạn đã gửi góp ý!";
+                $response["message"] = $lang['ALERT_FEEDBACK'];
             } else if ($res == USER_CREATE_FEEDBACK_FAILED) {
                 $response["error"] = true;
-                $response["message"] = "Xin lỗi! Có lỗi xảy ra trong quá trình gửi góp ý.";
+                $response["message"] = $lang['ERR_FEEDBACK'];
             }
             // echo json response
             echoRespnse(201, $response);
         });
 
 $app->get('/comment/:user_id', 'authenticateUser', function($user_id) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                require_once '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                require_once '../include/lang_en.php';
+            }
+
             $response = array();
             $db = new DbHandler();
 
@@ -1536,7 +1906,7 @@ $app->get('/comment/:user_id', 'authenticateUser', function($user_id) {
 
             } else {
                 $response['error'] = true;
-                $response['message'] = 'Đường dẫn bạn yêu cầu không tồn tại!';
+                $response['message'] = $lang['ERR_LINK_REQUEST'];
                 echoRespnse(404, $response);
             }
         });
@@ -1544,9 +1914,13 @@ $app->get('/comment/:user_id', 'authenticateUser', function($user_id) {
 /**
  * Verifying required params posted or not
  */
-function verifyRequiredParams($required_fields) {
-    global $language;
-    include '../include/lang_'.$language.'.php';
+function verifyRequiredParams($required_fields, $language) {
+    if ($language != NULL) {
+        include '../include/lang_'.$language.'.php';
+    } else {
+        include '../include/lang_en.php';
+    }
+
     $error = false;
     $error_fields = "";
     $request_params = array();
@@ -1578,11 +1952,16 @@ function verifyRequiredParams($required_fields) {
 /**
  * Validating email address
  */
-function validateEmail($email) {
+function validateEmail($email, $language) {
+    if ($language != NULL) {
+        include '../include/lang_'.$language.'.php';
+    } else {
+        include '../include/lang_en.php';
+    }
     $app = \Slim\Slim::getInstance();
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $response["error"] = true;
-        $response["message"] = 'Email không hợp lệ!';
+        $response["message"] = $lang['ERR_EMAIL_VALID'];
         echoRespnse(200, $response);
         $app->stop();
     }
@@ -1591,20 +1970,25 @@ function validateEmail($email) {
 /**
  * Validating password
  */
-function validatePassword($password) {
+function validatePassword($password, $language) {
+    if ($language != NULL) {
+        include '../include/lang_'.$language.'.php';
+    } else {
+        include '../include/lang_en.php';
+    }
     $app = \Slim\Slim::getInstance();
 
     if ((strlen($password) < 6) || (strlen($password) > 12)) {
 
         $response["error"] = true;
-        $response["message"] = 'Độ dài mật khẩu phải nằm trong khoảng 6 đến 12 kí tự!';
+        $response["message"] = $lang['ERR_PASS_LENGTH'];
         echoRespnse(200, $response);
         $app->stop();
     } 
 
     if (preg_match('#[\\s]#', $password)) {
         $response["error"] = true;
-        $response["message"] = 'Mật khẩu không được có khoảng trống!';
+        $response["message"] = $lang['ERR_PASS_BLANKSPACE'];
         echoRespnse(200, $response);
         $app->stop();
     } 

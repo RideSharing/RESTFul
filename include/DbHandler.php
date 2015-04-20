@@ -754,6 +754,23 @@ class DbHandler {
     }
 
     /**
+     * Fetching user by email
+     * @param String $email User email id
+     */
+    public function getListStaff() {
+        $stmt = $this->conn->prepare("SELECT staff_id, email, api_key, fullname, personalID, 
+                                        link_avatar, created_at FROM staff");
+        if ($stmt->execute()) {
+            // $user = $stmt->get_result()->fetch_assoc();
+            $staffs = $stmt->get_result();
+            $stmt->close();
+            return $staffs;
+        } else {
+            return NULL;
+        }
+    }
+
+    /**
      * Fetching staff by email
      * @param String $email Staff email id
      */
@@ -784,12 +801,12 @@ class DbHandler {
      * @param String $staff_id Staff id
      */
     public function getStaffByStaffID($staff_id) {
-        $stmt = $this->conn->prepare("SELECT role, email, api_key, fullname, personalID, created_at 
+        $stmt = $this->conn->prepare("SELECT role, email, api_key, fullname, personalID, created_at, link_avatar 
                                         FROM staff WHERE staff_id = ?");
         $stmt->bind_param("s", $staff_id);
         if ($stmt->execute()) {
             // $user = $stmt->get_result()->fetch_assoc();
-            $stmt->bind_result($role, $email, $api_key, $fullname,$personalID, $created_at);
+            $stmt->bind_result($role, $email, $api_key, $fullname,$personalID, $created_at, $link_avatar);
             $stmt->fetch();
             $staff = array();
             $staff["role"] = $role;
@@ -797,6 +814,7 @@ class DbHandler {
             $staff["api_key"] = $api_key;
             $staff["fullname"] = $fullname;
             $staff["personalID"] = $personalID;
+            $staff["link_avatar"] = $link_avatar;
             $staff["created_at"] = $created_at;
             $stmt->close();
             return $staff;
@@ -1320,7 +1338,8 @@ class DbHandler {
      * @return boolean
      */
     public function isValidApiKey($api_key, $page) {
-        $stmt = $this->conn->prepare("SELECT ".$page."_id from ".$page." WHERE api_key = ?");
+        $qry = "SELECT ".$page."_id from ".$page." WHERE api_key = ?";
+        $stmt = $this->conn->prepare($qry);
         $stmt->bind_param("s", $api_key);
         $stmt->execute();
         $stmt->store_result();
