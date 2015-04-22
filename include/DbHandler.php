@@ -857,6 +857,64 @@ class DbHandler {
         }
     }
 
+    public function updateStaff($staff_id, $fullname, $email, $personalID, $link_avatar) {
+        require_once '/Config.php';
+        $conn2 = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME.";charset=utf8", DB_USERNAME, DB_PASSWORD);
+        // set the PDO error mode to exception
+        $conn2->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        $qry = "UPDATE staff set";
+        $param = array();
+
+        if (isset($fullname)) { 
+            $qry .= " fullname = :fullname"; 
+        }
+        if (isset($email)) { 
+            $qry .= ", email = :email"; 
+        }
+        if (isset($personalID)) { 
+            $qry .= ", personalID = :personalID"; 
+        }
+        if (isset($link_avatar)) { 
+            $qry .= ", link_avatar = :link_avatar"; 
+        }
+
+        $qry .= " WHERE staff_id = :staff_id"; 
+
+        $stmt = $conn2->prepare($qry);
+
+        if (isset($fullname)) { 
+            $stmt->bindParam(':fullname', $fullname);
+        }
+        if (isset($email)) { 
+            $stmt->bindParam(':email', $email);
+        }
+        if (isset($personalID)) {  
+            $stmt->bindParam(':personalID', $personalID);
+        }
+        if (isset($link_avatar)) { 
+            $stmt->bindParam(':link_avatar', $link_avatar);
+        }
+        $stmt->bindParam(':staff_id', $staff_id);
+        $stmt->execute();
+        $num_affected_rows = $stmt->rowCount();
+        $conn2 = null;
+        return $num_affected_rows > 0;
+    }
+
+    /**
+     * Delete staff
+     * @param String $staff_id id of staff
+     */
+    public function deleteStaff($staff_id) {
+        $stmt = $this->conn->prepare("DELETE FROM staff WHERE staff_id = ?");
+        $stmt->bind_param("i", $staff_id);
+        $stmt->execute();
+        $num_affected_rows = $stmt->affected_rows;
+        $stmt->close();
+        return $num_affected_rows > 0;
+    }
+
     /* ------------- `itinerary` table method ------------------ */
 
     //not finished yet
@@ -889,7 +947,6 @@ class DbHandler {
             return $new_itinerary_id;
             
         } else {
-            //echo $q;
             return NULL;
         }
 
@@ -982,7 +1039,7 @@ class DbHandler {
         }
     }
 
-    public function getAllItinerariesWithDriverInfo() {
+    public function getAllItinerariesWithDriverInfo($user_id) {
         //$q = "SELECT * FROM itinerary, driver, user WHERE itinerary.driver_id = driver.user_id AND driver.user_id = user.user_id";
         $q = "SELECT i.itinerary_id, i.driver_id, i.customer_id, i.start_address, i.start_address_lat, i.start_address_long,
             i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, 
@@ -990,9 +1047,10 @@ class DbHandler {
             i.distance, i.cost, i.description, i.status as itinerary_status, i.created_at,
             d.driver_license, d.driver_license_img, u.user_id, u.email, u.fullname, u.phone, u.personalID, u.link_avatar ";
         $q .=    "FROM itinerary as i, driver as d, user as u ";
-        $q .=     "WHERE i.driver_id = d.user_id AND d.user_id = u.user_id";       
+        $q .=     "WHERE i.driver_id = d.user_id AND d.user_id = u.user_id AND i.driver_id <> ? ";       
 
         $stmt = $this->conn->prepare($q);
+        $stmt->bind_param("i",$user_id);
         $stmt->execute();
         $itineraries = $stmt->get_result();
         $stmt->close();
@@ -1045,7 +1103,7 @@ class DbHandler {
         return $result;
     }
 
-    public function searchItineraries($start_address, $end_address) {
+    public function searchItineraries($start_address, $end_address, $user_id) {
         require_once '/Config.php';
         $conn2 = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME.";charset=utf8", DB_USERNAME, DB_PASSWORD);
         // set the PDO error mode to exception
@@ -1059,7 +1117,7 @@ class DbHandler {
               FROM itinerary as i 
               INNER JOIN driver as d ON i.driver_id = d.user_id
               INNER JOIN user as u ON i.customer_id = u.user_id
-              WHERE ";
+              WHERE i.driver_id <> :user_id AND ";
         if (isset($start_address)) {
             $q.= "match(start_address) against(:start_address) AND ";
         }
@@ -1070,6 +1128,8 @@ class DbHandler {
         $q.= "1";
                  
         $stmt = $conn2->prepare($q);
+
+        $stmt->bindParam(':user_id', $user_id);
 
         if (isset($start_address)) {
             $stmt->bindParam(':start_address', $start_address);

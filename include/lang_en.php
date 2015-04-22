@@ -91,3 +91,7 @@ $lang['ERR_LINK_REQUEST'] = "The link you request is not existing!.";
 $lang['ERR_EMAIL_VALID']  = "Your email is not validation.";
 $lang['ERR_PASS_LENGTH']  = "The length of your password must limited from 6 to 12 characters.";
 $lang['ERR_PASS_BLANKSPACE'] = "Your password not contain the blank space.";
+
+$lang['STAFF_DELETE_SUCCESS'] = "Delete staff is successful!."; 
+$lang['STAFF_DELETE_FAILURE'] = "Delete staff is failure!.";
+?>

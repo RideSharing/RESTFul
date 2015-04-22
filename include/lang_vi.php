@@ -90,5 +90,7 @@ $lang['ERR_LINK_REQUEST']  = "Đường dẫn bạn yêu cầu không tồn tạ
 $lang['ERR_EMAIL_VALID']   = "Email không hợp lệ!";
 $lang['ERR_PASS_LENGTH']   = "Độ dài mật khẩu phải nằm trong khoảng 6 đến 12 kí tự!";
 $lang['ERR_PASS_BLANKSPACE'] =  "Mật khẩu không được có khoảng trống!";
+$lang['STAFF_DELETE_SUCCESS'] = "Xóa nhân viên thành công!";
+$lang['STAFF_DELETE_FAILURE'] = "Xóa nhân viên thất bại. Vui lòng thử lại!";
 
 ?>

@@ -22,10 +22,10 @@ $restricted_user_field = array('user_id', 'email', 'api_key', 'created_at', 'sta
  */
 function authenticateUser(\Slim\Route $route) {
     if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
-        require_once '../include/lang_'.$_GET['lang'].'.php';
+        include '../include/lang_'.$_GET['lang'].'.php';
     } else {
         $language = 'en';
-        require_once '../include/lang_en.php';
+        include '../include/lang_en.php';
     }
     // Getting request headers
     $headers = apache_request_headers();
@@ -65,10 +65,10 @@ function authenticateUser(\Slim\Route $route) {
  */
 function authenticateStaff(\Slim\Route $route) {
     if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
-        require_once '../include/lang_'.$_GET['lang'].'.php';
+        include '../include/lang_'.$_GET['lang'].'.php';
     } else {
         $language = 'en';
-        require_once '../include/lang_en.php';
+        include '../include/lang_en.php';
     }
     // Getting request headers
     $headers = apache_request_headers();
@@ -112,9 +112,9 @@ $app->post('/user', function() use ($app) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             // check for required params
@@ -172,9 +172,9 @@ $app->get('/active/:activation_code', function($activation_code) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $response = array();
@@ -204,9 +204,9 @@ $app->post('/user/login', function() use ($app) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             // check for required params
@@ -268,9 +268,9 @@ $app->get('/forgotpass/:email', function($email) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $response = array();
@@ -312,9 +312,9 @@ $app->get('/user', 'authenticateUser', function() {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             global $user_id;
@@ -345,6 +345,46 @@ $app->get('/user', 'authenticateUser', function() {
         });
 
 /**
+ * Get user information
+ * method GET
+ * url /staff/user
+ */
+$app->get('/users/:user_id', 'authenticateUser', function($user_id) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $response = array();
+            $db = new DbHandler();
+
+            // fetch task
+            $result = $db->getUserByUserID($user_id);
+
+            if ($result != NULL) {
+                $response["error"] = false;
+                $response['email'] = $result['email'];
+                $response['apiKey'] = $result['api_key'];
+                $response['fullname'] = $result['fullname'];
+                $response['phone'] = $result['phone'];
+                $response['personalID'] = $result['personalID'];
+                $response['personalID_img'] = $result['personalID_img'];
+                $response['link_avatar'] = $result['link_avatar'];
+                $response['created_at'] = $result['created_at'];
+                $response['status'] = $result['status'];
+                $response['locked'] = $result['locked'];
+                echoRespnse(200, $response);
+            } else {
+                $response["error"] = true;
+                $response["message"] = "The requested resource doesn't exists";
+                echoRespnse(404, $response);
+            }
+        });
+
+/**
  * Get user's field information
  * method GET
  * url /user/:field (field is name of field want to get information)
@@ -354,9 +394,9 @@ $app->get('/user/:field', 'authenticateUser', function($field) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             global $user_id;
@@ -390,9 +430,9 @@ $app->put('/user', 'authenticateUser', function() use($app) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $fullname = $app->request->put('fullname');
@@ -431,9 +471,9 @@ $app->put('/user/:field', 'authenticateUser', function($field) use($app) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             if (!in_array($field, $restricted_user_field)) {
@@ -482,9 +522,9 @@ $app->delete('/user', 'authenticateUser', function() {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $db = new DbHandler();
@@ -517,9 +557,9 @@ $app->post('/driver', 'authenticateUser', function() use ($app) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $response = array();
@@ -556,9 +596,9 @@ $app->get('/driver', 'authenticateUser', function() {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $response = array();
@@ -590,9 +630,9 @@ $app->get('/driver/:field', 'authenticateUser', function($field) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $response = array();
@@ -627,9 +667,9 @@ $app->put('/driver', 'authenticateUser', function() use($app) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }  
 
             $driver_license = $app->request->put('driver_license');
@@ -665,9 +705,9 @@ $app->put('/driver/:field', 'authenticateUser', function($field) use($app) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $value = $app->request->put('value');
@@ -702,9 +742,9 @@ $app->delete('/driver', 'authenticateUser', function() {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $db = new DbHandler();
@@ -734,9 +774,9 @@ $app->post('/staff', function() use ($app) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             // check for required params
@@ -780,9 +820,9 @@ $app->post('/staff/login', function() use ($app) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             // check for required params
@@ -869,7 +909,7 @@ $app->get('/staffs', 'authenticateStaff', function() {
             }
         });
 
-$app->get('/staff/:staff_id', 'authenticateStaff', function($staff_id) {
+$app->get('/staffs/:staff_id', 'authenticateStaff', function($staff_id) {
             $response = array();
             $db = new DbHandler();
 
@@ -892,6 +932,68 @@ $app->get('/staff/:staff_id', 'authenticateStaff', function($staff_id) {
             }
         });
 
+$app->put('/staffs/:staff_id', 'authenticateStaff', function($staff_id) use($app) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+        
+            $fullname = $app->request->put('fullname');
+            $email = $app->request->put('email');
+            $personalID = $app->request->put('personalID');
+            $link_avatar = $app->request->put('link_avatar');
+
+            $db = new DbHandler();
+            $response = array();
+
+            // updating task
+            $result = $db->updateStaff($staff_id, $fullname, $email, $personalID, $link_avatar);
+            if ($result) {
+                // task updated successfully
+                $response["error"] = false;
+                $response["message"] = $lang['ALERT_UPDATE'];
+            } else {
+                // task failed to update
+                $response["error"] = true;
+                $response["message"] = $lang['ERR_UPDATE'];
+            }
+            echoRespnse(200, $response);
+        });
+
+/**
+ * Deleting user.
+ * method DELETE
+ * url /staff/user
+ */
+$app->delete('/staffs/:staff_id', 'authenticateStaff', function($staff_id) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $db = new DbHandler();
+            $response = array();
+
+            $result = $db->deleteStaff($staff_id);
+
+            if ($result) {
+                // user deleted successfully
+                $response["error"] = false;
+                $response["message"] = $lang['STAFF_DELETE_SUCCESS'];
+            } else {
+                // task failed to delete
+                $response["error"] = true;
+                $response["message"] = $lang['STAFF_DELETE_FAILURE'];
+            }
+            echoRespnse(200, $response);
+        });
+
 /**
  * Get all user information
  * method GET
@@ -901,9 +1003,9 @@ $app->get('/staff/user', 'authenticateStaff', function() {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $response = array();
@@ -931,9 +1033,9 @@ $app->get('/staff/user/:user_id', 'authenticateStaff', function($user_id) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $response = array();
@@ -971,9 +1073,9 @@ $app->get('/staff/user/:user_id/:field', 'authenticateStaff', function($user_id,
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $response = array();
@@ -1003,9 +1105,9 @@ $app->put('/staff/user/:user_id', 'authenticateStaff', function($user_id) use($a
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             // check for required params
@@ -1042,9 +1144,9 @@ $app->put('/staff/user/:user_id/:field', 'authenticateStaff', function($user_id,
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             if (!in_array($field, $restricted_user_field)) {
@@ -1091,9 +1193,9 @@ $app->delete('/staff/user/:user_id', 'authenticateStaff', function($user_id) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $db = new DbHandler();
@@ -1124,68 +1226,19 @@ $app->get('/staff/itineraries', 'authenticateStaff', function() {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $response = array();
             $db = new DbHandler();
-
             // fetching all user tasks
-            $result = $db->getAllItinerariesWithDriverInfo();
+            $result = $db->getAllItinerariesWithDriverInfo($staff_id);
 
             $response["error"] = false;
-            $response["itineraries"] = array();
+            $response["itineraries"] = $result;
 
-            // looping through result and preparing tasks array
-            while ($itinerary = $result->fetch_assoc()) {
-                $tmp = array();
-
-                //itinerary info
-                $tmp["itinerary_id"] = $itinerary["itinerary_id"];
-                $tmp["driver_id"] = $itinerary["driver_id"];
-                $tmp["customer_id"] = $itinerary["customer_id"];
-                $tmp["start_address"] = $itinerary["start_address"];
-                $tmp["start_address_lat"] = $itinerary["start_address_lat"];
-                $tmp["start_address_long"] = $itinerary["start_address_long"];
-                $tmp["pick_up_address"] = $itinerary["pick_up_address"];
-                $tmp["pick_up_address_lat"] = $itinerary["pick_up_address_lat"];
-                $tmp["pick_up_address_long"] = $itinerary["pick_up_address_long"];
-                $tmp["drop_address"] = $itinerary["drop_address"];
-                $tmp["drop_address_lat"] = $itinerary["drop_address_lat"];
-                $tmp["drop_address_long"] = $itinerary["drop_address_long"];
-                $tmp["end_address"] = $itinerary["end_address"];
-                $tmp["end_address_lat"] = $itinerary["end_address_lat"];
-                $tmp["end_address_long"] = $itinerary["end_address_long"];
-                $tmp["leave_date"] = $itinerary["leave_date"];
-                $tmp["duration"] = $itinerary["duration"];
-                $tmp["distance"] = $itinerary["distance"];
-                $tmp["cost"] = $itinerary["cost"];
-                $tmp["description"] = $itinerary["description"];
-                $tmp["status"] = $itinerary["status"];
-                $tmp["created_at"] = $itinerary["created_at"];
-
-                //driver info
-                $tmp["driver_license"] = $itinerary["driver_license"];
-                $tmp["driver_license_img"] = $itinerary["driver_license_img"];
-                
-                //user info
-                $tmp["user_id"] = $itinerary["user_id"];
-                $tmp["email"] = $itinerary["email"];
-                $tmp["fullname"] = $itinerary["fullname"];
-                $tmp["phone"] = $itinerary["phone"];
-                $tmp["personalID"] = $itinerary["personalID"];
-                $tmp["link_avatar"] = $itinerary["link_avatar"];
-
-                //rating
-                $tmp["average_rating"] = $db->getAverageRatingofDriver($itinerary["user_id"]);
-                array_push($response["itineraries"], $tmp);
-            }
-
-            //print_r($response);
-
-            //echo $response;
             echoRespnse(200, $response);
 
         });
@@ -1195,9 +1248,9 @@ $app->get('staff/itinerary/:id', function($itinerary_id) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $response = array();
@@ -1246,9 +1299,9 @@ $app->put('staff/itinerary/:id', 'authenticateStaff', function($itinerary_id) us
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $itinerary_fields = array();
@@ -1282,9 +1335,9 @@ $app->delete('/staff/itinerary/:id', function($itinerary_id) use($app) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $db = new DbHandler();
@@ -1309,9 +1362,9 @@ $app->post('/itinerary', 'authenticateUser', function() use ($app) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             // check for required params
@@ -1372,9 +1425,9 @@ $app->get('/itinerary/:id', function($itinerary_id) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $response = array();
@@ -1426,9 +1479,9 @@ $app->get('/itineraries', 'authenticateUser', function() use($app) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $response = array();
@@ -1447,13 +1500,11 @@ $app->get('/itineraries', 'authenticateUser', function() use($app) {
             $cost = $app->request->get('cost');
             $distance = $app->request->get('distance');
 
-            echo $start_address;
-
             if (isset($start_address) || isset($end_address)) {
-                $result = $db->searchItineraries($start_address, $end_address);
+                $result = $db->searchItineraries($start_address, $end_address, $user_id);
             } else {
                 // fetching all user tasks
-                $result = $db->getAllItinerariesWithDriverInfo();
+                $result = $db->getAllItinerariesWithDriverInfo($user_id);
             }
             $response["error"] = false;
             $response["itineraries"] = $result;
@@ -1473,9 +1524,9 @@ $app->get('/itineraries/driver/:order', 'authenticateUser', function($order) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $response = array();
@@ -1545,9 +1596,9 @@ $app->get('/itineraries/customer/:order', 'authenticateUser', function($order) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $response = array();
@@ -1621,9 +1672,9 @@ $app->put('/itinerary/:id', 'authenticateUser', function($itinerary_id) use($app
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $itinerary_fields = array();           
@@ -1667,9 +1718,9 @@ $app->put('/customer_accept_itinerary/:id', 'authenticateUser', function($itiner
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             //$itinerary_fields = array();           
@@ -1722,9 +1773,9 @@ $app->put('/customer_reject_itinerary/:id', 'authenticateUser', function($itiner
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $db = new DbHandler();
@@ -1758,9 +1809,9 @@ $app->put('/driver_accept_itinerary/:id', 'authenticateUser', function($itinerar
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $db = new DbHandler();
@@ -1794,9 +1845,9 @@ $app->put('/driver_reject_itinerary/:id', 'authenticateUser', function($itinerar
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $db = new DbHandler();
@@ -1827,9 +1878,9 @@ $app->delete('/itinerary/:id', 'authenticateUser', function($itinerary_id) use($
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $db = new DbHandler();
@@ -1851,9 +1902,9 @@ $app->post('/feedback', function() use ($app) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             // check for required params
@@ -1887,9 +1938,9 @@ $app->get('/comment/:user_id', 'authenticateUser', function($user_id) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
-                require_once '../include/lang_'.$_GET['lang'].'.php';
+                include '../include/lang_'.$_GET['lang'].'.php';
             } else {
-                require_once '../include/lang_en.php';
+                include '../include/lang_en.php';
             }
 
             $response = array();
