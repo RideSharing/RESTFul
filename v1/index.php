@@ -278,10 +278,7 @@ $app->get('/forgotpass/:email', function($email) {
                 $res = $db->getUserByEmail($email);
 
                 if (isset($res)) {
-                    $content_mail = "Chao ban,<br>
-                                Vui long nhan vao duong link sau de doi mat khau:
-                                <a href='http://192.168.10.74/WebApp/forgotpass.php?api_key=". $res['api_key'].
-                                "'>Doi mat khau</a>";
+                    $content_mail = $lang['FORGOTPASS_MSG']. $res['api_key']. $lang['FORGOTPASS_MSG1'];
 
                     sendMail($email, $content_mail, "Reset password");
 
@@ -843,6 +840,10 @@ $app->post('/staff/login', function() use ($app) {
                     $response['apiKey'] = $staff['api_key'];
                     $response['email'] = $staff['email'];
                     $response['fullname'] = $staff['fullname'];
+                    $response['personalID'] = $staff['personalID'];
+                    $response['created_at'] = $staff['created_at'];
+                    $response['link_avatar'] = $staff['link_avatar'];
+                    $response['staff_id'] = $staff['staff_id'];
                 } else {
                     // unknown error occurred
                     $response['error'] = true;
@@ -1952,6 +1953,33 @@ $app->get('/comment/:user_id', 'authenticateUser', function($user_id) {
                 while ($comment = $result->fetch_assoc()) {
                     array_push($response['comment'], $comment);
                 }
+                echoRespnse(200, $response);
+
+            } else {
+                $response['error'] = true;
+                $response['message'] = $lang['ERR_LINK_REQUEST'];
+                echoRespnse(404, $response);
+            }
+        });
+
+$app->get('/statistic/user', 'authenticateStaff', function() {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $response = array();
+            $db = new DbHandler();
+
+            $result = $db->statisticUserBy("123");
+
+            if (isset($result)) {
+                $response['error'] = false;
+                $response['stats'] = $result;
+
                 echoRespnse(200, $response);
 
             } else {

@@ -775,12 +775,12 @@ class DbHandler {
      * @param String $email Staff email id
      */
     public function getStaffByEmail($email) {
-        $stmt = $this->conn->prepare("SELECT role, email, api_key, fullname, personalID, created_at 
+        $stmt = $this->conn->prepare("SELECT role, email, api_key, fullname, personalID, created_at, link_avatar, staff_id   
                                         FROM staff WHERE email = ?");
         $stmt->bind_param("s", $email);
         if ($stmt->execute()) {
             // $user = $stmt->get_result()->fetch_assoc();
-            $stmt->bind_result($role, $email, $api_key, $fullname,$personalID, $created_at);
+            $stmt->bind_result($role, $email, $api_key, $fullname,$personalID, $created_at, $link_avatar, $staff_id);
             $stmt->fetch();
             $staff = array();
             $staff["role"] = $role;
@@ -789,6 +789,8 @@ class DbHandler {
             $staff["fullname"] = $fullname;
             $staff["personalID"] = $personalID;
             $staff["created_at"] = $created_at;
+            $staff["link_avatar"] = $link_avatar;
+            $staff["staff_id"] = $staff_id;
             $stmt->close();
             return $staff;
         } else {
@@ -1112,7 +1114,7 @@ class DbHandler {
         $q = "SELECT i.itinerary_id, i.driver_id, i.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
                         i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, 
                         i.drop_address_long, i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, 
-                        i.distance, i.cost, i.description, i.status as itinerary_status, i.created_at, d.driver_license, 
+                        i.distance, i.cost, i.description, i.status, i.created_at, d.driver_license, 
                         d.driver_license_img, u.user_id, u.email, u.fullname, u.phone, u.personalID, u.link_avatar 
               FROM itinerary as i 
               INNER JOIN driver as d ON i.driver_id = d.user_id
@@ -1369,6 +1371,32 @@ class DbHandler {
             // Failed to create user
             return USER_CREATE_FEEDBACK_FAILED;
         }
+    }
+
+    /* ------------- Statistic ------------------ */
+
+    public function statisticUserBy($field) {
+        $q = "SELECT DATE_FORMAT(created_at,'%Y-%m') as month, COUNT(EXTRACT(MONTH FROM created_at)) as number 
+                FROM user GROUP BY EXTRACT(MONTH FROM created_at)";
+        
+        $stmt = $this->conn->prepare($q);
+        //$stmt->bind_param("i",$customer_id);
+        $stmt->execute();
+        $results = $stmt->get_result();
+
+        $stats = array();
+        // looping through result and preparing tasks array
+        while ($stat = $results->fetch_assoc()) {
+            $tmp = array();
+
+            $tmp["month"] = $stat["month"];
+            $tmp["number"] = $stat["number"];
+
+            array_push($stats, $tmp);
+        }
+
+        $stmt->close();
+        return $stats;
     }
 
     /* ------------- Utility method ------------------ */
