@@ -1,14 +1,15 @@
 <?php
 /* 
 ------------------
-Language: Vietnamese
+Language: English
 ------------------
 */
  
 $lang = array();
 
-$lang['MAIL_REGISTER'] = "Welcome you,<br>Please click on the link below to active your account:
+$lang['MAIL_REGISTER'] = "Hi there,<br>Please click on the link below to active your account:
 							<a href='http://192.168.10.74/WebApp/controller/register.php?active_key=";
+$lang['MAIL_REGISTER_ACTIVE_ACCOUNT'] = "'>Active account</a>";
 
 //User message
 $lang['REGISTER_USER_SUCCESS'] = "Register success. Please activate your account via email!";

@@ -1,7 +1,6 @@
 <?php
 
 class PassHash {
-
     // blowfish
     private static $algo = '$2a';
     // cost parameter
@@ -26,7 +25,6 @@ class PassHash {
         $new_hash = crypt($password, $full_salt);
         return ($hash == $new_hash);
     }
-
 }
 
 ?>

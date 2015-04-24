@@ -138,10 +138,7 @@ $app->post('/user', function() use ($app) {
                 $user = $db->getUserByEmail($email);
                 $activation_code = $user["api_key"];
 
-                $content_mail = "Chao ban,<br>
-                                Vui long nhan vao duong link sau de kich hoat tai khoan:
-                                <a href='http://192.168.10.132/WebApp/controller/register.php?active_key=". $activation_code.
-                                "'>Kich hoat tai khoan</a>";
+                $content_mail = $lang["MAIL_REGISTER"]. $activation_code.$lang['MAIL_REGISTER_ACTIVE_ACCOUNT'];
 
                 if (sendMail($email, $content_mail, "Active Account")) {
                     $response["error"] = false;
@@ -844,6 +841,8 @@ $app->post('/staff/login', function() use ($app) {
                 if ($staff != NULL) {
                     $response["error"] = false;
                     $response['apiKey'] = $staff['api_key'];
+                    $response['email'] = $staff['email'];
+                    $response['fullname'] = $staff['fullname'];
                 } else {
                     // unknown error occurred
                     $response['error'] = true;
