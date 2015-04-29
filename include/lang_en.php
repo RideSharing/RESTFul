@@ -12,7 +12,7 @@ $lang['MAIL_REGISTER'] = "Hi there,<br>Please click on the link below to active 
 $lang['MAIL_REGISTER_ACTIVE_ACCOUNT'] = "'>Active account</a>";
 
 $lang['FORGOTPASS_MSG'] = "Hi there,<br>Please click on the link below to reset your password:
-                           <a href='http://192.168.10.132/WebApp/forgotpass.php?api_key=";
+                           <a href='http://localhost/RideSharing/controller/change_password.php?api_key=";
 $lang['FORGOTPASS_MSG1'] = "'>Reset password</a>";
 
 //User message

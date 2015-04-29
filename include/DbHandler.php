@@ -1375,9 +1375,10 @@ class DbHandler {
 
     /* ------------- Statistic ------------------ */
 
+    //number of users created per month
     public function statisticUserBy($field) {
-        $q = "SELECT DATE_FORMAT(created_at,'%Y-%m') as month, COUNT(EXTRACT(MONTH FROM created_at)) as number 
-                FROM user GROUP BY EXTRACT(MONTH FROM created_at)";
+        $q = "SELECT DATE_FORMAT(created_at,'%Y-%m') as month, COUNT(DATE_FORMAT(created_at,'%Y-%m')) as number 
+                FROM user GROUP BY DATE_FORMAT(created_at,'%Y-%m')";
         
         $stmt = $this->conn->prepare($q);
         //$stmt->bind_param("i",$customer_id);
@@ -1391,6 +1392,167 @@ class DbHandler {
 
             $tmp["month"] = $stat["month"];
             $tmp["number"] = $stat["number"];
+
+            array_push($stats, $tmp);
+        }
+
+        $stmt->close();
+        return $stats;
+    }
+
+    //number of itineraries creted per month
+    public function statisticItineraryBy($field) {
+        $q = "SELECT DATE_FORMAT(created_at,'%Y-%m') as month, COUNT(DATE_FORMAT(created_at,'%Y-%m')) as number 
+                FROM itinerary GROUP BY DATE_FORMAT(created_at,'%Y-%m')";
+        
+        $stmt = $this->conn->prepare($q);
+        //$stmt->bind_param("i",$customer_id);
+        $stmt->execute();
+        $results = $stmt->get_result();
+
+        $stats = array();
+        // looping through result and preparing tasks array
+        while ($stat = $results->fetch_assoc()) {
+            $tmp = array();
+
+            $tmp["month"] = $stat["month"];
+            $tmp["number"] = $stat["number"];
+
+            array_push($stats, $tmp);
+        }
+
+        $stmt->close();
+        return $stats;
+    }
+
+    //total money come frome itineraries per month
+    public function statisticMoneyBy($field) {
+        $q = "SELECT DATE_FORMAT(created_at,'%Y-%m') as month, SUM(cost) as total_money 
+                FROM itinerary GROUP BY DATE_FORMAT(created_at,'%Y-%m')";
+        
+        $stmt = $this->conn->prepare($q);
+        //$stmt->bind_param("i",$customer_id);
+        $stmt->execute();
+        $results = $stmt->get_result();
+
+        $stats = array();
+        // looping through result and preparing tasks array
+        while ($stat = $results->fetch_assoc()) {
+            $tmp = array();
+
+            $tmp["month"] = $stat["month"];
+            $tmp["total_money"] = $stat["total_money"];
+
+            array_push($stats, $tmp);
+        }
+
+        $stmt->close();
+        return $stats;
+    }
+
+
+    //Customer staticstic 
+    //number of itineraries creted per month
+    public function statisticCustomerItineraryBy($field, $customer_id) {
+        $q = "SELECT DATE_FORMAT(created_at,'%Y-%m') as month, COUNT(DATE_FORMAT(created_at,'%Y-%m')) as number 
+                FROM (SELECT * FROM itinerary WHERE customer_id = ?) as i GROUP BY DATE_FORMAT(created_at,'%Y-%m')";
+        echo $customer_id;
+        $stmt = $this->conn->prepare($q);
+        if ($stmt->bind_param("i",$customer_id)) {
+            $stmt->execute();
+        } else {
+            var_dump($this->db->error);
+        }
+
+        $results = $stmt->get_result();
+
+        $stats = array();
+        // looping through result and preparing tasks array
+        while ($stat = $results->fetch_assoc()) {
+            $tmp = array();
+
+            $tmp["month"] = $stat["month"];
+            $tmp["number"] = $stat["number"];
+
+            array_push($stats, $tmp);
+        }
+
+        $stmt->close();
+        return $stats;
+    }
+
+    //total money come frome itineraries per month
+    public function statisticCustomerMoneyBy($field, $customer_id) {
+        $q = "SELECT DATE_FORMAT(created_at,'%Y-%m') as month, SUM(cost) as total_money 
+                FROM (SELECT * FROM itinerary WHERE customer_id = ?) as i GROUP BY DATE_FORMAT(created_at,'%Y-%m') ";
+        
+        $stmt = $this->conn->prepare($q);
+        if ($stmt->bind_param("i",$customer_id)) {
+            $stmt->execute();
+        } else {
+            var_dump($this->db->error);
+        }
+        
+        $results = $stmt->get_result();
+
+        $stats = array();
+        // looping through result and preparing tasks array
+        while ($stat = $results->fetch_assoc()) {
+            $tmp = array();
+
+            $tmp["month"] = $stat["month"];
+            $tmp["total_money"] = $stat["total_money"];
+
+            array_push($stats, $tmp);
+        }
+
+        $stmt->close();
+        return $stats;
+    }
+
+    //Driver Staticstic
+    //number of itineraries creted per month
+    public function statisticDriverItineraryBy($field, $driver_id) {
+        $q = "SELECT DATE_FORMAT(created_at,'%Y-%m') as month, COUNT(DATE_FORMAT(created_at,'%Y-%m')) as number 
+                FROM (SELECT * FROM itinerary WHERE driver_id = ?) as i GROUP BY DATE_FORMAT(created_at,'%Y-%m')";
+        
+        $stmt = $this->conn->prepare($q);
+        $stmt->bind_param("i",$driver_id);
+        $stmt->execute();
+        $results = $stmt->get_result();
+
+        $stats = array();
+        // looping through result and preparing tasks array
+        while ($stat = $results->fetch_assoc()) {
+            $tmp = array();
+
+            $tmp["month"] = $stat["month"];
+            $tmp["number"] = $stat["number"];
+
+            array_push($stats, $tmp);
+        }
+
+        $stmt->close();
+        return $stats;
+    }
+
+    //total money come frome itineraries per month
+    public function statisticDriverMoneyBy($field, $driver_id) {
+        $q = "SELECT DATE_FORMAT(created_at,'%Y-%m') as month, SUM(cost) as total_money 
+                FROM (SELECT * FROM itinerary WHERE driver_id = ?) as i GROUP BY DATE_FORMAT(created_at,'%Y-%m')";
+        
+        $stmt = $this->conn->prepare($q);
+        $stmt->bind_param("i",$driver_id);
+        $stmt->execute();
+        $results = $stmt->get_result();
+
+        $stats = array();
+        // looping through result and preparing tasks array
+        while ($stat = $results->fetch_assoc()) {
+            $tmp = array();
+
+            $tmp["month"] = $stat["month"];
+            $tmp["total_money"] = $stat["total_money"];
 
             array_push($stats, $tmp);
         }
