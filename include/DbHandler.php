@@ -927,8 +927,8 @@ class DbHandler {
      */
     public function createItinerary($driver_id, $start_address, $start_address_lat,$start_address_long,
              $end_address, $end_address_lat, $end_address_long, $pick_up_address, $pick_up_address_lat, $pick_up_address_long,
-             $drop_address, $drop_address_lat, $drop_address_long, $leave_date, $duration, $cost, $description, $distance) {
-        $q = "INSERT INTO itinerary(driver_id, start_address, start_address_lat, start_address_long, 
+             $drop_address, $drop_address_lat, $drop_address_long, $leave_date, $duration, $cost, $description, $distance, $table) {
+        $q = "INSERT INTO ".$table." (driver_id, start_address, start_address_lat, start_address_long, 
             end_address, end_address_lat, end_address_long, pick_up_address, pick_up_address_lat, pick_up_address_long, 
             drop_address, drop_address_lat, drop_address_long, leave_date, duration, cost, description, distance, status) ";
                 $q .= " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,". ITINERARY_STATUS_CREATED.")";
