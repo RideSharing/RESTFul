@@ -1618,15 +1618,50 @@ $app->post('/itinerary', 'authenticateUser', function() use ($app) {
             $description = $app->request->post('description');
             $distance = $app->request->post('distance');
 
-            //echo $start_address;
-
             global $user_id;
             $db = new DbHandler();
 
+            //Choose table to insert base on lat, long
+            $dlat = abs($start_address_lat - $end_address_lat);
+            $dlon = abs($start_address_long - $end_address_long);
+
+            $table = "";
+            $itinerary = NULL;
+
+            if ($dlat*EPSILON/$dlon != 1) {
+                if ($dlat*EPSILON/$dlon > 1) {
+                    if ($start_address_lat > $end_address_lat) {
+                        $table = "itinerary_south";
+                    } else {
+                        $table = "itinerary_north";
+                    }
+                } else {
+                    if ($start_address_long > $end_address_long) {
+                        $table = "itinerary_west";
+                    } else {
+                        $table = "itinerary_east";
+                    }
+                }
+            } else {
+                if ($start_address_lat > $end_address_lat) {
+                    if ($start_address_long > $end_address_long) {
+                        $table = "itinerary_southwest";
+                    } else {
+                        $table = "itinerary_southeast";
+                    }
+                } else {
+                    if ($start_address_long > $end_address_long) {
+                        $table = "itinerary_northwest";
+                    } else {
+                        $table = "itinerary_northeast";
+                    }
+                }
+            }
+
             // creating new itinerary
             $itinerary_id = $db->createItinerary($user_id, $start_address, $start_address_lat,$start_address_long,
-             $end_address, $end_address_lat, $end_address_long, $pick_up_address, $pick_up_address_lat, $pick_up_address_long,
-             $drop_address, $drop_address_lat, $drop_address_long, $leave_date, $duration, $cost, $description, $distance);
+                     $end_address, $end_address_lat, $end_address_long, $pick_up_address, $pick_up_address_lat, $pick_up_address_long,
+                     $drop_address, $drop_address_lat, $drop_address_long, $leave_date, $duration, $cost, $description, $distance, $table);
 
             if ($itinerary_id != NULL) {
                 $response["error"] = false;
@@ -1714,11 +1749,9 @@ $app->get('/itineraries', 'authenticateUser', function() use($app) {
             $response = array();
             $db = new DbHandler();
 
-            $start_address = $app->request->get('start_address');
             $start_address_lat = $app->request->get('start_address_lat');
             $start_address_long = $app->request->get('start_address_long');
 
-            $end_address = $app->request->get('end_address');
             $end_address_lat = $app->request->get('end_address_lat');
             $end_address_long = $app->request->get('end_address_long');
 
@@ -1727,8 +1760,8 @@ $app->get('/itineraries', 'authenticateUser', function() use($app) {
             $cost = $app->request->get('cost');
             $distance = $app->request->get('distance');
 
-            if (isset($start_address) || isset($end_address)) {
-                $result = $db->searchItineraries($start_address, $end_address, $user_id);
+            if (isset($start_address_lat) && isset($start_address_long) && isset($end_address_lat) && isset($end_address_long)) {
+                $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $user_id);
             } else {
                 // fetching all user tasks
                 $result = $db->getAllItinerariesWithDriverInfo($user_id);

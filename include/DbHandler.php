@@ -961,8 +961,8 @@ class DbHandler {
      */
     public function createItinerary($driver_id, $start_address, $start_address_lat,$start_address_long,
              $end_address, $end_address_lat, $end_address_long, $pick_up_address, $pick_up_address_lat, $pick_up_address_long,
-             $drop_address, $drop_address_lat, $drop_address_long, $leave_date, $duration, $cost, $description, $distance) {
-        $q = "INSERT INTO itinerary(driver_id, start_address, start_address_lat, start_address_long, 
+             $drop_address, $drop_address_lat, $drop_address_long, $leave_date, $duration, $cost, $description, $distance, $table) {
+        $q = "INSERT INTO ".$table." (driver_id, start_address, start_address_lat, start_address_long, 
             end_address, end_address_lat, end_address_long, pick_up_address, pick_up_address_lat, pick_up_address_long, 
             drop_address, drop_address_lat, drop_address_long, leave_date, duration, cost, description, distance, status) ";
                 $q .= " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,". ITINERARY_STATUS_CREATED.")";
@@ -1139,40 +1139,39 @@ class DbHandler {
         return $result;
     }
 
-    public function searchItineraries($start_address, $end_address, $user_id) {
+    public function searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $user_id) {
         require_once '/Config.php';
         $conn2 = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME.";charset=utf8", DB_USERNAME, DB_PASSWORD);
         // set the PDO error mode to exception
         $conn2->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
         $q = "SELECT i.itinerary_id, i.driver_id, i.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
-                        i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, 
-                        i.drop_address_long, i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, 
-                        i.distance, i.cost, i.description, i.status, i.created_at, d.driver_license, 
-                        d.driver_license_img, u.user_id, u.email, u.fullname, u.phone, u.personalID, u.link_avatar 
-              FROM itinerary as i 
-              INNER JOIN driver as d ON i.driver_id = d.user_id
-              INNER JOIN user as u ON i.customer_id = u.user_id
-              WHERE i.driver_id <> :user_id AND ";
-        if (isset($start_address)) {
-            $q.= "match(start_address) against(:start_address) AND ";
-        }
-        if (isset($end_address)) {
-            $q.= "match(end_address) against(:end_address) AND ";
-        }
+                i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
+                i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, i.status, 
+                i.created_at, d.driver_license, d.driver_license_img
+              FROM (SELECT * FROM itinerary WHERE status = 1 AND leave_date >='". date('m/d/Y H:i:s', time()). "' AND 
+                (ABS(start_address_lat - :start_address_lat) + ABS(start_address_long - :start_address_long)) < 6 AND 
+                (ABS(end_address_lat - :end_address_lat) + ABS(end_address_long - :end_address_long)) < 6) as i 
+              INNER JOIN (select * from driver where user_id <> :user_id and status = 2) as d 
+              ON i.driver_id = d.user_id
+              WHERE ";
 
         $q.= "1";
                  
         $stmt = $conn2->prepare($q);
 
+        $stmt->bindParam(':start_address_lat', $start_address_lat);
+        $stmt->bindParam(':start_address_long', $start_address_long);
+        $stmt->bindParam(':end_address_lat', $end_address_lat);
+        $stmt->bindParam(':end_address_long', $end_address_long);
         $stmt->bindParam(':user_id', $user_id);
 
-        if (isset($start_address)) {
-            $stmt->bindParam(':start_address', $start_address);
-        }
-        if (isset($end_address)) {
-            $stmt->bindParam(':end_address', $end_address);
-        }
+        // if (isset($start_address)) {
+        //     $stmt->bindParam(':start_address', $start_address);
+        // }
+        // if (isset($end_address)) {
+        //     $stmt->bindParam(':end_address', $end_address);
+        // }
 
         $stmt->execute();
         $itineraries = $stmt->fetchAll(PDO::FETCH_ASSOC);

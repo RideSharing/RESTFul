@@ -1,4 +1,10 @@
-SELECT i.itinerary_id, i.driver_id, i.customer_id, i.start_address, i.start_address_lat, i.start_address_long, i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, i.status, i.created_at, d.driver_license, d.driver_license_img, u.user_id, u.email, u.fullname, u.phone, u.personalID, u.link_avatar FROM itinerary as i 
-INNER JOIN driver as d ON i.driver_id = d.user_id
-INNER JOIN user as u ON i.customer_id = u.user_id
-WHERE match(start_address) against('hai chau')
+//List itinerary
+SELECT i.itinerary_id, i.driver_id, i.customer_id, i.start_address, i.start_address_lat, i.start_address_long, i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, i.status, i.created_at, d.driver_license, d.driver_license_img, u.user_id, u.email, u.fullname, u.phone, u.personalID, u.link_avatar FROM (select * from itinerary where status = 1) as i 
+INNER JOIN (select * from driver where user_id <> 59 and status = 2) as d ON i.driver_id = d.user_id
+INNER JOIN (select * from user where user_id <> 59) as u ON i.customer_id = u.user_id 
+
+//Search
+SELECT i.itinerary_id, i.driver_id, i.customer_id, i.start_address, i.start_address_lat, i.start_address_long, i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, i.status, i.created_at, d.driver_license, d.driver_license_img
+FROM (SELECT * FROM itinerary WHERE status = 1 AND leave_date = "2015-04-08 10:45:00" AND (ABS(start_address_lat - end_address_lat) + ABS(start_address_long - end_address_long)) < 6 AND (ABS(end_address_lat - end_address_lat) + ABS(end_address_long - end_address_long)) < 6) as i 
+INNER JOIN (select * from driver where user_id <> 59 and status = 2) as d 
+ON i.driver_id = d.user_id
