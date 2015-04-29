@@ -1960,7 +1960,9 @@ $app->get('/comment/:user_id', 'authenticateUser', function($user_id) {
             }
         });
 
-$app->get('/statistic/user', 'authenticateStaff', function() {
+
+//Staticstic for admin
+$app->get('/statistic/:field', 'authenticateStaff', function($field) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
@@ -1969,10 +1971,92 @@ $app->get('/statistic/user', 'authenticateStaff', function() {
                 include '../include/lang_en.php';
             }
 
+            echo "THERE";
+
             $response = array();
             $db = new DbHandler();
 
-            $result = $db->statisticUserBy("123");
+            if ($field == 'user'){
+                $result = $db->statisticUserBy("123");
+            } else if ($field == 'itinerary'){
+                $result = $db->statisticItineraryBy("123");
+            } else if ($field == 'total_money'){
+                $result = $db->statisticMoneyBy("123");
+            } else {
+
+            }
+
+            if (isset($result)) {
+                $response['error'] = false;
+                $response['stats'] = $result;
+
+                echoRespnse(200, $response);
+
+            } else {
+                $response['error'] = true;
+                $response['message'] = $lang['ERR_LINK_REQUEST'];
+                echoRespnse(404, $response);
+            }
+        });
+
+
+//staticstic for customer
+$app->get('/statistic_customer/:field', 'authenticateUser', function($field) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            global $user_id;
+
+            $response = array();
+            $db = new DbHandler();
+
+            if ($field == 'itinerary'){
+                $result = $db->statisticCustomerItineraryBy("123", $user_id);
+            } else if ($field == 'total_money'){
+                $result = $db->statisticCustomerMoneyBy("123", $user_id);
+            } else {
+
+            }
+
+            if (isset($result)) {
+                $response['error'] = false;
+                $response['stats'] = $result;
+
+                echoRespnse(200, $response);
+
+            } else {
+                $response['error'] = true;
+                $response['message'] = $lang['ERR_LINK_REQUEST'];
+                echoRespnse(404, $response);
+            }
+        });
+
+$app->get('/statistic_driver/:field', 'authenticateUser', function($field) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            global $user_id;
+
+            $response = array();
+            $db = new DbHandler();
+
+            if ($field == 'itinerary'){
+                $result = $db->statisticDriverItineraryBy("123", $user_id);
+            } else if ($field == 'total_money'){
+                $result = $db->statisticDriverMoneyBy("123", $user_id);
+            } else {
+
+            }
 
             if (isset($result)) {
                 $response['error'] = false;

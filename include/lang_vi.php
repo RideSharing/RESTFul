@@ -10,6 +10,10 @@ $lang['MAIL_REGISTER'] = "Chao ban,<br>Vui long nhan vao duong link sau de kich 
 							<a href='http://192.168.10.74/WebApp/controller/register.php?active_key=";
 $lang['MAIL_REGISTER_ACTIVE_ACCOUNT'] = "'>Kich hoat tai khoan</a>";
 
+$lang['FORGOTPASS_MSG'] = "Chao ban,<br>Vui long click vao duong link sau de doi mat khau:
+                           <a href='http://localhost/RideSharing/controller/change_password.php?api_key=";
+$lang['FORGOTPASS_MSG1'] = "'>Doi mat khau</a>";
+
 //User message
 $lang['REGISTER_USER_SUCCESS'] = "Đăng kí thành công. Vui lòng kích hoạt tài khoản qua email bạn vừa đăng kí!";
 
