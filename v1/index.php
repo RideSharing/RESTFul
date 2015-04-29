@@ -1487,11 +1487,9 @@ $app->get('/itineraries', 'authenticateUser', function() use($app) {
             $response = array();
             $db = new DbHandler();
 
-            $start_address = $app->request->get('start_address');
             $start_address_lat = $app->request->get('start_address_lat');
             $start_address_long = $app->request->get('start_address_long');
 
-            $end_address = $app->request->get('end_address');
             $end_address_lat = $app->request->get('end_address_lat');
             $end_address_long = $app->request->get('end_address_long');
 
@@ -1500,8 +1498,8 @@ $app->get('/itineraries', 'authenticateUser', function() use($app) {
             $cost = $app->request->get('cost');
             $distance = $app->request->get('distance');
 
-            if (isset($start_address) || isset($end_address)) {
-                $result = $db->searchItineraries($start_address, $end_address, $user_id);
+            if (isset($start_address_lat) && isset($start_address_long) && isset($end_address_lat) && isset($end_address_long)) {
+                $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $user_id);
             } else {
                 // fetching all user tasks
                 $result = $db->getAllItinerariesWithDriverInfo($user_id);
