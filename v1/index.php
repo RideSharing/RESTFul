@@ -759,6 +759,233 @@ $app->delete('/driver', 'authenticateUser', function() {
         });
 
 /**
+ * Vehicle Registration
+ * url - /vehicle
+ * method - POST
+ * params - vehicle
+ */
+$app->post('/vehicle', 'authenticateUser', function() use ($app) {
+            verifyRequiredParams(array('user_id', 'type', 'license_plate', 
+                                        'reg_certificate', 'license_plate_img', 'vehicle_img', 'motor_insurance_img'), $language);
+            global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $response = array();
+
+            // reading post params
+            $user_id = $app->request->post('user_id');
+            $type = $app->request->post('type');
+            $license_plate = $app->request->post('license_plate');
+            $license_plate_img = $app->request->post('license_plate_img');
+            $reg_certificate = $app->request->post('reg_certificate');
+            $vehicle_img = $app->request->post('vehicle_img');
+            $motor_insurance_img = $app->request->post('motor_insurance_img');
+
+            $db = new DbHandler();
+            $res = $db->createVehicle($user_id, $type, $license_plate, $license_plate_img, $reg_certificate
+                                        $vehicle_img, $motor_insurance_img);
+
+            if ($res == VEHICLE_CREATED_SUCCESSFULLY) {
+                $response["error"] = false;
+                $response["message"] = $lang['REGISTER_SUCCESS'];
+            } else if ($res == VEHICLE_ALREADY_EXISTED) {
+                $response["error"] = true;
+                $response["message"] = $lang['REGISTER_VEHICLE'];
+            } else if ($res == VEHICLE_CREATE_FAILED) {
+                $response["error"] = true;
+                $response["message"] = $lang['ERR_REGISTER'];
+            }
+            // echo json response
+            echoRespnse(201, $response);
+        });
+
+/**
+ * Get driver information
+ * method GET
+ * url /driver
+ */
+$app->get('/vehicle', 'authenticateUser', function() {
+            global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $response = array();
+            $db = new DbHandler();
+
+            // fetch task
+            $result = $db->getDriverByUserID($user_id);
+
+            if ($result != NULL) {
+                $response["error"] = false;
+                $response['driver_license'] = $result['driver_license'];
+                $response['driver_license_img'] = $result['driver_license_img'];
+                echoRespnse(200, $response);
+            } else {
+                $response["error"] = true;
+                $response["message"] = $lang['ERR_LINK_REQUEST'];
+                echoRespnse(404, $response);
+            }
+        });
+
+/**
+ * Get user information
+ * method GET
+ * url /user
+ */
+$app->get('/vehicle/:field', 'authenticateUser', function($field) {
+            global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $response = array();
+            $db = new DbHandler();
+
+            // fetch task
+            $result = $db->getDriverByField($user_id, $field);
+
+            if ($result != NULL) {
+                $response["error"] = false;
+                $response[$field] = $result;
+                echoRespnse(200, $response);
+            } else {
+                $response["error"] = true;
+                $response["message"] = $lang['ERR_LINK_REQUEST'];
+                echoRespnse(200, $response);
+            }
+        });
+
+/**
+ * Updating user
+ * method PUT
+ * params task, status
+ * url - /user
+ */
+$app->put('/vehicle', 'authenticateUser', function() use($app) {
+            // check for required params
+            verifyRequiredParams(array('driver_license', 'driver_license_img'), $language);
+
+            global $user_id;  
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }  
+
+            $driver_license = $app->request->put('driver_license');
+            $driver_license_img = $app->request->put('driver_license_img');
+
+            $db = new DbHandler();
+            $response = array();
+
+            // updating task
+            $result = $db->updateDriver($user_id, $driver_license, $driver_license_img);
+            if ($result) {
+                // task updated successfully
+                $response["error"] = false;
+                $response["message"] = $lang['ALERT_UPDATE'];
+            } else {
+                // task failed to update
+                $response["error"] = true;
+                $response["message"] = $lang['ERR_UPDATE'];
+            }
+            echoRespnse(200, $response);
+        });
+
+/**
+ * Update user information
+ * method PUT
+ * url /user
+ */
+$app->put('/vehicle/:field', 'authenticateUser', function($field) use($app) {
+            // check for required params
+            verifyRequiredParams(array('value'), $language);
+            global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $value = $app->request->put('value');
+
+            $response = array();
+            $db = new DbHandler();
+
+            // fetch user
+            $result = $db->updateDriverField($user_id, $field, $value);
+
+            if ($result) {
+                // user updated successfully
+                $response["error"] = false;
+                $response["message"] = $lang['ALERT_UPDATE'];
+            } else {
+                // user failed to update
+                $response["error"] = true;
+                $response["message"] = $lang['ERR_UPDATE'];
+            }
+            
+            echoRespnse(200, $response);
+        });
+
+/**
+ * Deleting user.
+ * method DELETE
+ * url /user
+ */
+$app->delete('/vehicle', 'authenticateUser', function() {
+            global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $db = new DbHandler();
+            $response = array();
+
+            $result = $db->deleteDriver($user_id);
+
+            if ($result) {
+                // user deleted successfully
+                $response["error"] = false;
+                $response["message"] = $lang['DRIVER_DELETE_SUCCESS'];
+            } else {
+                // task failed to delete
+                $response["error"] = true;
+                $response["message"] = $lang['DRIVER_DELETE_FAILURE'];
+            }
+            echoRespnse(200, $response);
+        });
+
+/**
  * Staff Registration
  * url - /staff
  * method - POST
@@ -1972,8 +2199,6 @@ $app->get('/statistic/:field', 'authenticateStaff', function($field) {
             } else {
                 include '../include/lang_en.php';
             }
-
-            echo "THERE";
 
             $response = array();
             $db = new DbHandler();

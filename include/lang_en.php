@@ -46,6 +46,7 @@ $lang['USER_DELETE_SUCCESS'] = "Delete user is successful!.";
 $lang['USER_DELETE_FAILURE'] = "Delete user is failure!.";
 $lang['REGISTER_SUCCESS']  = "Registration is successful1!.";
 $lang['REGISTER_DRIVER']   = "You are driver.";
+$lang['REGISTER_VEHICLE']   = "You have registered this vehicle!";
 $lang['ERR_REGISTER']      = "Sorry! Registration is missing.";
 $lang['ERR_LINK_REQUEST']  = "The link you request is not existing!.";
 $lang['ERR_LINK_REQUEST']  = "The link you request is not existing!.";

@@ -667,6 +667,40 @@ class DbHandler {
         return $num_rows > 0;
     }
 
+    /* ------------- `Vehicle` table method ------------------ */
+
+    public function createVehicle($user_id, $type, $license_plate, $license_plate_img, $reg_certificate
+                                        $vehicle_img, $motor_insurance_img) {
+        // First check if user already existed in db
+        if (!$this->isDriverExists($user_id)) {
+
+            $sql_query = "INSERT INTO driver(user_id, driver_license, driver_license_img) values(?, ?, ?)";
+
+            // insert query
+            if ($stmt = $this->conn->prepare($sql_query)) {
+                $stmt->bind_param("iss", $user_id, $driver_license==NULL?'':$driver_license, $driver_license_img==NULL?'':$driver_license_img);
+                $result = $stmt->execute();
+            } else {
+                var_dump($this->conn->error);
+            }
+
+
+            $stmt->close();
+
+            // Check for successful insertion
+            if ($result) {
+                // User successfully inserted
+                return VEHICLE_CREATED_SUCCESSFULLY;
+            } else {
+                // Failed to create user
+                return VEHICLE_CREATE_FAILED;
+            }
+        } else {
+            // User with same email already existed in the db
+            return VEHICLE_ALREADY_EXISTED;
+        }
+    }
+
     /* ------------- `staff` table method ------------------ */
 
     /**
