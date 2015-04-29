@@ -669,7 +669,7 @@ class DbHandler {
 
     /* ------------- `Vehicle` table method ------------------ */
 
-    public function createVehicle($user_id, $type, $license_plate, $license_plate_img, $reg_certificate
+    public function createVehicle($user_id, $type, $license_plate, $license_plate_img, $reg_certificate,
                                         $vehicle_img, $motor_insurance_img) {
         // First check if user already existed in db
         if (!$this->isDriverExists($user_id)) {

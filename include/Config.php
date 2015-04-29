@@ -5,7 +5,7 @@
 define('DB_USERNAME', 'root');
 define('DB_PASSWORD', 'jcvzvJLLxupZQzRs');
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'rs');
+define('DB_NAME', 'rs1');
 
 define('USER_CREATED_SUCCESSFULLY', 0);
 define('USER_CREATE_FAILED', 1);

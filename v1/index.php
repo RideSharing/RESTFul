@@ -789,7 +789,7 @@ $app->post('/vehicle', 'authenticateUser', function() use ($app) {
             $motor_insurance_img = $app->request->post('motor_insurance_img');
 
             $db = new DbHandler();
-            $res = $db->createVehicle($user_id, $type, $license_plate, $license_plate_img, $reg_certificate
+            $res = $db->createVehicle($user_id, $type, $license_plate, $license_plate_img, $reg_certificate,
                                         $vehicle_img, $motor_insurance_img);
 
             if ($res == VEHICLE_CREATED_SUCCESSFULLY) {
