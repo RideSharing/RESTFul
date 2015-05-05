@@ -545,7 +545,6 @@ $app->delete('/user', 'authenticateUser', function() {
  * params - driver
  */
 $app->post('/driver', 'authenticateUser', function() use ($app) {
-            verifyRequiredParams(array('driver_license', 'driver_license_img'), $language);
             global $user_id;
 
             $language = "en";
@@ -555,6 +554,8 @@ $app->post('/driver', 'authenticateUser', function() use ($app) {
             } else {
                 include '../include/lang_en.php';
             }
+
+            verifyRequiredParams(array('driver_license', 'driver_license_img'), $language);
 
             $response = array();
 
@@ -653,18 +654,19 @@ $app->get('/driver/:field', 'authenticateUser', function($field) {
  * url - /user
  */
 $app->put('/driver', 'authenticateUser', function() use($app) {
-            // check for required params
-            verifyRequiredParams(array('driver_license', 'driver_license_img'), $language);
-
             global $user_id;  
 
             $language = "en";
+
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
                 include '../include/lang_'.$_GET['lang'].'.php';
             } else {
                 include '../include/lang_en.php';
-            }  
+            } 
+
+            // check for required params
+            verifyRequiredParams(array('driver_license', 'driver_license_img'), $language); 
 
             $driver_license = $app->request->put('driver_license');
             $driver_license_img = $app->request->put('driver_license_img');
@@ -692,8 +694,6 @@ $app->put('/driver', 'authenticateUser', function() use($app) {
  * url /user
  */
 $app->put('/driver/:field', 'authenticateUser', function($field) use($app) {
-            // check for required params
-            verifyRequiredParams(array('value'), $language);
             global $user_id;
 
             $language = "en";
@@ -703,6 +703,9 @@ $app->put('/driver/:field', 'authenticateUser', function($field) use($app) {
             } else {
                 include '../include/lang_en.php';
             }
+
+            // check for required params
+            verifyRequiredParams(array('value'), $language);
 
             $value = $app->request->put('value');
 
@@ -765,10 +768,7 @@ $app->delete('/driver', 'authenticateUser', function() {
  * params - vehicle
  */
 $app->post('/vehicle', 'authenticateUser', function() use ($app) {
-            verifyRequiredParams(array('user_id', 'type', 'license_plate', 
-                                        'reg_certificate', 'license_plate_img', 'vehicle_img', 'motor_insurance_img'), $language);
             global $user_id;
-
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
@@ -777,10 +777,11 @@ $app->post('/vehicle', 'authenticateUser', function() use ($app) {
                 include '../include/lang_en.php';
             }
 
+            verifyRequiredParams(array('type', 'license_plate', 
+                                        'reg_certificate', 'license_plate_img', 'vehicle_img', 'motor_insurance_img'), $language);
+
             $response = array();
 
-            // reading post params
-            $user_id = $app->request->post('user_id');
             $type = $app->request->post('type');
             $license_plate = $app->request->post('license_plate');
             $license_plate_img = $app->request->post('license_plate_img');
@@ -806,32 +807,22 @@ $app->post('/vehicle', 'authenticateUser', function() use ($app) {
             echoRespnse(201, $response);
         });
 
-/**
- * Get driver information
- * method GET
- * url /driver
- */
-$app->get('/vehicle', 'authenticateUser', function() {
+$app->get('/vehicles', 'authenticateUser', function() {
             global $user_id;
 
-            $language = "en";
-            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
-                $language = $_GET['lang'];
-                include '../include/lang_'.$_GET['lang'].'.php';
-            } else {
-                include '../include/lang_en.php';
-            }
-
-            $response = array();
             $db = new DbHandler();
 
             // fetch task
-            $result = $db->getDriverByUserID($user_id);
+            $result = $db->getListVehicle($user_id);
 
             if ($result != NULL) {
-                $response["error"] = false;
-                $response['driver_license'] = $result['driver_license'];
-                $response['driver_license_img'] = $result['driver_license_img'];
+                $response['error'] = false;
+                $response['vehicles'] = array();
+
+                while ($vehicle = $result->fetch_assoc()) {
+                    array_push($response['vehicles'], $vehicle);               
+                }
+
                 echoRespnse(200, $response);
             } else {
                 $response["error"] = true;
@@ -841,12 +832,11 @@ $app->get('/vehicle', 'authenticateUser', function() {
         });
 
 /**
- * Get user information
+ * Get driver information
  * method GET
- * url /user
+ * url /driver
  */
-$app->get('/vehicle/:field', 'authenticateUser', function($field) {
-            global $user_id;
+$app->get('/vehicle/:vehicle_id', 'authenticateUser', function($vehicle_id) {
 
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
@@ -860,16 +850,25 @@ $app->get('/vehicle/:field', 'authenticateUser', function($field) {
             $db = new DbHandler();
 
             // fetch task
-            $result = $db->getDriverByField($user_id, $field);
+            $vehicle = $db->getVehicle($vehicle_id);
 
-            if ($result != NULL) {
+            if ($vehicle != NULL) {
                 $response["error"] = false;
-                $response[$field] = $result;
+                $response['vehicle_id'] = $vehicle["vehicle_id"];
+                $response['user_id'] = $vehicle["user_id"];
+                $response['type'] = $vehicle["type"];
+                $response['license_plate'] = $vehicle["license_plate"];
+                $response['reg_certificate'] = $vehicle["reg_certificate"];
+                $response['license_plate_img'] = $vehicle["license_plate_img"];
+                $response['vehicle_img'] = $vehicle["vehicle_img"];
+                $response['motor_insurance_img'] = $vehicle["motor_insurance_img"];
+                $response['status'] = $vehicle["status"];
+                $response['created_at'] = $vehicle["created_at"];
                 echoRespnse(200, $response);
             } else {
                 $response["error"] = true;
                 $response["message"] = $lang['ERR_LINK_REQUEST'];
-                echoRespnse(200, $response);
+                echoRespnse(404, $response);
             }
         });
 
@@ -879,12 +878,7 @@ $app->get('/vehicle/:field', 'authenticateUser', function($field) {
  * params task, status
  * url - /user
  */
-$app->put('/vehicle', 'authenticateUser', function() use($app) {
-            // check for required params
-            verifyRequiredParams(array('driver_license', 'driver_license_img'), $language);
-
-            global $user_id;  
-
+$app->put('/vehicle/:vehicle_id', 'authenticateUser', function($vehicle_id) use($app) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
@@ -893,14 +887,18 @@ $app->put('/vehicle', 'authenticateUser', function() use($app) {
                 include '../include/lang_en.php';
             }  
 
-            $driver_license = $app->request->put('driver_license');
-            $driver_license_img = $app->request->put('driver_license_img');
+            $type = $app->request->put('type');
+            $license_plate = $app->request->put('license_plate');
+            $reg_certificate = $app->request->put('reg_certificate');
+            $license_plate_img = $app->request->put('license_plate_img');
+            $vehicle_img = $app->request->put('vehicle_img');
+            $motor_insurance_img = $app->request->put('motor_insurance_img');
 
             $db = new DbHandler();
             $response = array();
 
             // updating task
-            $result = $db->updateDriver($user_id, $driver_license, $driver_license_img);
+            $result = $db->updateVehicle($vehicle_id, $type, $license_plate, $reg_certificate, $license_plate_img, $vehicle_img, $motor_insurance_img);
             if ($result) {
                 // task updated successfully
                 $response["error"] = false;
@@ -914,50 +912,11 @@ $app->put('/vehicle', 'authenticateUser', function() use($app) {
         });
 
 /**
- * Update user information
- * method PUT
- * url /user
- */
-$app->put('/vehicle/:field', 'authenticateUser', function($field) use($app) {
-            // check for required params
-            verifyRequiredParams(array('value'), $language);
-            global $user_id;
-
-            $language = "en";
-            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
-                $language = $_GET['lang'];
-                include '../include/lang_'.$_GET['lang'].'.php';
-            } else {
-                include '../include/lang_en.php';
-            }
-
-            $value = $app->request->put('value');
-
-            $response = array();
-            $db = new DbHandler();
-
-            // fetch user
-            $result = $db->updateDriverField($user_id, $field, $value);
-
-            if ($result) {
-                // user updated successfully
-                $response["error"] = false;
-                $response["message"] = $lang['ALERT_UPDATE'];
-            } else {
-                // user failed to update
-                $response["error"] = true;
-                $response["message"] = $lang['ERR_UPDATE'];
-            }
-            
-            echoRespnse(200, $response);
-        });
-
-/**
  * Deleting user.
  * method DELETE
  * url /user
  */
-$app->delete('/vehicle', 'authenticateUser', function() {
+$app->delete('/vehicle/:vehicle_id', 'authenticateUser', function($vehicle_id) {
             global $user_id;
 
             $language = "en";
@@ -971,18 +930,785 @@ $app->delete('/vehicle', 'authenticateUser', function() {
             $db = new DbHandler();
             $response = array();
 
-            $result = $db->deleteDriver($user_id);
+            $result = $db->deleteVehicle($vehicle_id);
 
             if ($result) {
                 // user deleted successfully
                 $response["error"] = false;
-                $response["message"] = $lang['DRIVER_DELETE_SUCCESS'];
+                $response["message"] = $lang['VEHICLE_DELETE_SUCCESS'];
             } else {
                 // task failed to delete
                 $response["error"] = true;
-                $response["message"] = $lang['DRIVER_DELETE_FAILURE'];
+                $response["message"] = $lang['VEHICLE_DELETE_FAILURE'];
             }
             echoRespnse(200, $response);
+        });
+
+//Route itinerary
+//
+//
+$app->post('/itinerary', 'authenticateUser', function() use ($app) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            // check for required params
+            verifyRequiredParams(array('start_address','start_address_lat','start_address_long','end_address',
+                'end_address_lat','end_address_long','leave_date','duration','cost', 'distance'), $language);
+
+            $response = array();
+            
+            $start_address = $app->request->post('start_address');
+            $start_address_lat = $app->request->post('start_address_lat');
+            $start_address_long = $app->request->post('start_address_long');
+            $end_address = $app->request->post('end_address');
+            $end_address_lat = $app->request->post('end_address_lat');
+            $end_address_long = $app->request->post('end_address_long');
+            $pick_up_address = $app->request->post('pick_up_address');
+            $pick_up_address_lat = $app->request->post('pick_up_address_lat');
+            $pick_up_address_long = $app->request->post('pick_up_address_long');
+            $drop_address = $app->request->post('drop_address');
+            $drop_address_lat = $app->request->post('drop_address_lat');
+            $drop_address_long = $app->request->post('drop_address_long');
+            $leave_date = $app->request->post('leave_date');
+            $duration = $app->request->post('duration');
+            $cost = $app->request->post('cost');
+            $description = $app->request->post('description');
+            $distance = $app->request->post('distance');
+
+            global $user_id;
+            $db = new DbHandler();
+
+            $table = "";
+            $itinerary = NULL;
+
+            if (($end_address_lat - $start_address_lat) > 0.05 && ($end_address_long - $start_address_long) > 0.05) {
+                $table = "itinerary_created_northeast";
+            } else if (($end_address_lat - $start_address_lat) > 0.05 && ($end_address_long - $start_address_long) < -0.05) {
+                $table = "itinerary_created_northwest";
+            } else if (($end_address_lat - $start_address_lat) < -0.05 && ($end_address_long - $start_address_long) < -0.05) {
+                $table = "itinerary_created_southwest";
+            } else if (($end_address_lat - $start_address_lat) < -0.05 && ($end_address_long - $start_address_long) > 0.05) {
+                $table = "itinerary_created_southeast";
+            } else if (($end_address_lat - $start_address_lat) > -0.05 && ($end_address_lat - $start_address_lat) < 0.05 &&
+                        ($end_address_long - $start_address_long) > 0.05) {
+                $table = "itinerary_created_east";
+            } else if (($end_address_lat - $start_address_lat) > -0.05 && ($end_address_lat - $start_address_lat) < 0.05 &&
+                        ($end_address_long - $start_address_long) < -0.05) {
+                $table = "itinerary_created_west";
+            } else if (($end_address_long - $start_address_long) > -0.05 && ($end_address_long - $start_address_long) < 0.05 &&
+                        ($end_address_lat - $start_address_lat) > 0.05) {
+                $table = "itinerary_created_north";
+            } else if (($end_address_long - $start_address_long) > -0.05 && ($end_address_long - $start_address_long) < 0.05 &&
+                        ($end_address_lat - $start_address_lat) < -0.05) {
+                $table = "itinerary_created_south";
+            } else {
+                $response["error"] = true;
+                $response["message"] = $lang['CREATE_ITINERARY_FAILURE_BECAUSE_SHORT_DISTANCE'];
+                echoRespnse(200, $response);
+                $app->stop();
+            }
+
+            // creating new itinerary
+            $itinerary_id = $db->createItinerary($user_id, $start_address, $start_address_lat,$start_address_long,
+                     $end_address, $end_address_lat, $end_address_long, $pick_up_address, $pick_up_address_lat, $pick_up_address_long,
+                     $drop_address, $drop_address_lat, $drop_address_long, $leave_date, $duration, $cost, $description, $distance, $table);
+
+            if ($itinerary_id != NULL) {
+                $response["error"] = false;
+                $response["message"] = $lang['CREATE_ITINERARY_SUCCESS'];
+                $response["itinerary_id"] = $itinerary_id;
+                echoRespnse(201, $response);
+            } else {
+                $response["error"] = true;
+                $response["message"] = $lang['CREATE_ITINERARY_FAILURE'];
+                echoRespnse(200, $response);
+            }            
+        });
+
+/**
+ * Listing single task of particual user
+ * method GET
+ * url /tasks/:id
+ * Will return 404 if the task doesn't belongs to user
+ */
+$app->get('/itinerary/:id', function($itinerary_id) {
+            global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $response = array();
+            $db = new DbHandler();
+
+            // fetch task
+            $result = $db->getItinerary($itinerary_id);
+
+            if ($result != NULL) {
+                $response["error"] = false;
+                $response["itinerary_id"] = $result["itinerary_id"];
+                $response["driver_id"] = $result["driver_id"];
+                $response["customer_id"] = $result["customer_id"];
+                $response["start_address"] = $result["start_address"];
+                $response["start_address_lat"] = $result["start_address_lat"];
+                $response["start_address_long"] = $result["start_address_long"];
+                $response["pick_up_address"] = $result["pick_up_address"];
+                $response["pick_up_address_lat"] = $result["pick_up_address_lat"];
+                $response["pick_up_address_long"] = $result["pick_up_address_long"];
+                $response["drop_address"] = $result["drop_address"];
+                $response["drop_address_lat"] = $result["drop_address_lat"];
+                $response["drop_address_long"] = $result["drop_address_long"];
+                $response["end_address"] = $result["end_address"];
+                $response["end_address_lat"] = $result["end_address_lat"];
+                $response["end_address_long"] = $result["end_address_long"];
+                $response["leave_date"] = $result["leave_date"];
+                $response["duration"] = $result["duration"];
+                $response["distance"] = $result["distance"];
+                $response["cost"] = $result["cost"];
+                $response["description"] = $result["description"];
+                $response["status"] = $result["status"];
+                $response["created_at"] = $result["created_at"];
+                echoRespnse(200, $response);
+            } else {
+                $response["error"] = true;
+                $response["message"] = $lang['ERR_LINK_REQUEST'];
+                echoRespnse(404, $response);
+            }
+        });
+
+/**
+ * Listing all itineraries of particual user
+ * method GET
+ * url /itineraries          
+ */
+$app->get('/itineraries', 'authenticateUser', function() use($app) {
+            global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $response = array();
+            $db = new DbHandler();
+
+            $start_address_lat = $app->request->get('start_address_lat');
+            $start_address_long = $app->request->get('start_address_long');
+
+            $end_address_lat = $app->request->get('end_address_lat');
+            $end_address_long = $app->request->get('end_address_long');
+
+            $leave_date = $app->request->get('leave_date');
+            $duration = $app->request->get('duration');
+            $cost = $app->request->get('cost');
+            $distance = $app->request->get('distance');
+
+            if (isset($start_address_lat) && isset($start_address_long) && isset($end_address_lat) && isset($end_address_long)) {
+                if (($end_address_lat - $start_address_lat) > 0.05 && ($end_address_long - $start_address_long) > 0.05) {
+                    $table = "itinerary_created_northeast";
+                } else if (($end_address_lat - $start_address_lat) > 0.05 && ($end_address_long - $start_address_long) < -0.05) {
+                    $table = "itinerary_created_northwest";
+                } else if (($end_address_lat - $start_address_lat) < -0.05 && ($end_address_long - $start_address_long) < -0.05) {
+                    $table = "itinerary_created_southwest";
+                } else if (($end_address_lat - $start_address_lat) < -0.05 && ($end_address_long - $start_address_long) > 0.05) {
+                    $table = "itinerary_created_southeast";
+                } else if (($end_address_lat - $start_address_lat) > -0.05 && ($end_address_lat - $start_address_lat) < 0.05 &&
+                            ($end_address_long - $start_address_long) > 0.05) {
+                    $table = "itinerary_created_east";
+                } else if (($end_address_lat - $start_address_lat) > -0.05 && ($end_address_lat - $start_address_lat) < 0.05 &&
+                            ($end_address_long - $start_address_long) < -0.05) {
+                    $table = "itinerary_created_west";
+                } else if (($end_address_long - $start_address_long) > -0.05 && ($end_address_long - $start_address_long) < 0.05 &&
+                            ($end_address_lat - $start_address_lat) > 0.05) {
+                    $table = "itinerary_created_north";
+                } else if (($end_address_long - $start_address_long) > -0.05 && ($end_address_long - $start_address_long) < 0.05 &&
+                            ($end_address_lat - $start_address_lat) < -0.05) {
+                    $table = "itinerary_created_south";
+                } else {
+                    $response["error"] = true;
+                    $response["message"] = $lang['CREATE_ITINERARY_FAILURE_BECAUSE_SHORT_DISTANCE'];
+                    echoRespnse(200, $response);
+                }
+
+                $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table);
+            } else {
+                // fetching all user tasks
+                $result = $db->getAllItinerariesWithDriverInfo($user_id);
+            }
+            $response["error"] = false;
+            $response["itineraries"] = $result;
+
+            echoRespnse(200, $response);
+        });
+
+/**
+ * Listing all itineraries of driver
+ * method GET
+ * url /itineraries          
+ */
+$app->get('/itineraries/driver/:order', 'authenticateUser', function($order) {
+            global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $response = array();
+            $db = new DbHandler();
+
+            // fetching all user tasks
+            $result = $db->getDriverItineraries($user_id, $order);
+
+            $response["error"] = false;
+            $response["itineraries"] = array();
+
+            //print_r($result);
+
+            // looping through result and preparing tasks array
+            while ($itinerary = $result->fetch_assoc()) {
+                $tmp = array();
+                //itinerary info
+                $tmp["itinerary_id"] = $itinerary["itinerary_id"];
+                $tmp["driver_id"] = $itinerary["driver_id"];
+                $tmp["customer_id"] = $itinerary["customer_id"];
+                $tmp["start_address"] = $itinerary["start_address"];
+                $tmp["start_address_lat"] = $itinerary["start_address_lat"];
+                $tmp["start_address_long"] = $itinerary["start_address_long"];
+                $tmp["pick_up_address"] = $itinerary["pick_up_address"];
+                $tmp["pick_up_address_lat"] = $itinerary["pick_up_address_lat"];
+                $tmp["pick_up_address_long"] = $itinerary["pick_up_address_long"];
+                $tmp["drop_address"] = $itinerary["drop_address"];
+                $tmp["drop_address_lat"] = $itinerary["drop_address_lat"];
+                $tmp["drop_address_long"] = $itinerary["drop_address_long"];
+                $tmp["end_address"] = $itinerary["end_address"];
+                $tmp["end_address_lat"] = $itinerary["end_address_lat"];
+                $tmp["end_address_long"] = $itinerary["end_address_long"];
+                $tmp["leave_date"] = $itinerary["leave_date"];
+                $tmp["duration"] = $itinerary["duration"];
+                $tmp["distance"] = $itinerary["distance"];
+                $tmp["cost"] = $itinerary["cost"];
+                $tmp["description"] = $itinerary["description"];
+                $tmp["status"] = $itinerary["itinerary_status"];
+                $tmp["created_at"] = $itinerary["created_at"];
+
+                //driver info
+                $tmp["driver_license"] = $itinerary["driver_license"];
+                $tmp["driver_license_img"] = $itinerary["driver_license_img"];
+                
+                //user info
+                $tmp["user_id"] = $itinerary["user_id"];
+                $tmp["email"] = $itinerary["email"];
+                $tmp["fullname"] = $itinerary["fullname"];
+                $tmp["phone"] = $itinerary["phone"];
+                $tmp["personalID"] = $itinerary["personalID"];
+                $tmp["link_avatar"] = $itinerary["link_avatar"];
+                array_push($response["itineraries"], $tmp);
+                //print_r($itinerary);
+                //echoRespnse(200, $itinerary);
+            }           
+            //print_r($response);
+            echoRespnse(200, $response);
+        });
+/**
+ * Listing all itineraries of customer
+ * method GET
+ * url /itineraries          
+ */
+$app->get('/itineraries/customer/:order', 'authenticateUser', function($order) {
+            global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $response = array();
+            $db = new DbHandler();
+
+            // fetching all user tasks
+            $result = $db->getCustomerItineraries($user_id, $order);
+
+            $response["error"] = false;
+            $response["itineraries"] = array();
+
+            // looping through result and preparing tasks array
+            while ($itinerary = $result->fetch_assoc()) {
+                $tmp = array();
+                //itinerary info
+                $tmp["itinerary_id"] = $itinerary["itinerary_id"];
+                $tmp["driver_id"] = $itinerary["driver_id"];
+                $tmp["customer_id"] = $itinerary["customer_id"];
+                $tmp["start_address"] = $itinerary["start_address"];
+                $tmp["start_address_lat"] = $itinerary["start_address_lat"];
+                $tmp["start_address_long"] = $itinerary["start_address_long"];
+                $tmp["pick_up_address"] = $itinerary["pick_up_address"];
+                $tmp["pick_up_address_lat"] = $itinerary["pick_up_address_lat"];
+                $tmp["pick_up_address_long"] = $itinerary["pick_up_address_long"];
+                $tmp["drop_address"] = $itinerary["drop_address"];
+                $tmp["drop_address_lat"] = $itinerary["drop_address_lat"];
+                $tmp["drop_address_long"] = $itinerary["drop_address_long"];
+                $tmp["end_address"] = $itinerary["end_address"];
+                $tmp["end_address_lat"] = $itinerary["end_address_lat"];
+                $tmp["end_address_long"] = $itinerary["end_address_long"];
+                $tmp["leave_date"] = $itinerary["leave_date"];
+                $tmp["duration"] = $itinerary["duration"];
+                $tmp["distance"] = $itinerary["distance"];
+                $tmp["cost"] = $itinerary["cost"];
+                $tmp["description"] = $itinerary["description"];
+                $tmp["status"] = $itinerary["itinerary_status"];
+                $tmp["created_at"] = $itinerary["created_at"];
+
+                //driver info
+                $tmp["driver_license"] = $itinerary["driver_license"];
+                $tmp["driver_license_img"] = $itinerary["driver_license_img"];
+                
+                //user info
+                $tmp["user_id"] = $itinerary["user_id"];
+                $tmp["email"] = $itinerary["email"];
+                $tmp["fullname"] = $itinerary["fullname"];
+                $tmp["phone"] = $itinerary["phone"];
+                $tmp["personalID"] = $itinerary["personalID"];
+                $tmp["link_avatar"] = $itinerary["link_avatar"];
+                array_push($response["itineraries"], $tmp);
+                //print_r($itinerary);
+                //echoRespnse(200, $itinerary);
+            }           
+
+            //print_r($response);
+            echoRespnse(200, $response);
+        });
+
+//not finished yet: updated when accepted
+/**
+ * Updating existing itinerary
+ * method PUT
+ * params task, status
+ * url - /itinerary/:id
+ */
+$app->put('/itinerary/:id', 'authenticateUser', function($itinerary_id) use($app) {
+            // check for required params
+            //verifyRequiredParams(array('task', 'status'));
+            global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $itinerary_fields = array();           
+
+            $request_params = array();
+            $request_params = $_REQUEST;
+            // Handling PUT request params
+            if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
+                $app = \Slim\Slim::getInstance();
+                parse_str($app->request()->getBody(), $request_params);
+            }
+
+            $db = new DbHandler();
+            $response = array();
+            // updating task
+            $result = $db->updateItinerary2($request_params, $itinerary_id);
+            if ($result) {
+                // task updated successfully
+                $response["error"] = false;
+                $response["message"] = $lang['UPDATE_ITINERARY_SUCCESS'];
+            } else {
+                // task failed to update
+                $response["error"] = true;
+                $response["message"] = $lang['UPDATE_ITINERARY_FAILURE'];
+            }
+            echoRespnse(200, $response);
+        });
+
+/**
+ * Updating when itinerary is accepted by customer
+ * method PUT
+ * params 
+ * url - /accept_itinerary/:id
+ */
+$app->put('/customer_accept_itinerary/:id', 'authenticateUser', function($itinerary_id) use($app) {
+            // check for required params
+            //verifyRequiredParams(array('task', 'status'));
+
+            global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            //$itinerary_fields = array();           
+
+            //$request_params = array();
+            //$request_params = $_REQUEST;
+            // Handling PUT request params
+            /*if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
+                $app = \Slim\Slim::getInstance();
+                parse_str($app->request()->getBody(), $request_params);
+            }*/
+
+            $db = new DbHandler();
+            $response = array();
+
+            $status = $db->checkItineraryStatus($itinerary_id);
+            
+            if($status==1){
+                // updating task
+                $result = $db->updateCustomerAcceptedItinerary($itinerary_id, $user_id);
+                if ($result) {
+                    // task updated successfully
+                    $response["error"] = false;
+                    $response["message"] = $lang['CUS_ACCEPT_ITINERARY_SUCCESS'];
+                } else {
+                    // task failed to update
+                    $response["error"] = true;
+                    $response["message"] = $lang['CUS_ACCEPT_ITINERARY_FAILURE'];
+                }
+            } else {
+                $response["error"] = true;
+                $response["message"] = $lang['CUS_ACCEPT_ITINERARY_ALREADY'];
+            }
+
+            echoRespnse(200, $response);
+        });
+
+/**
+ * Updating when itinerary is rejected by customer
+ * method PUT
+ * params 
+ * url - /accept_itinerary/:id
+ */
+$app->put('/customer_reject_itinerary/:id', 'authenticateUser', function($itinerary_id) use($app) {
+            // check for required params
+            //verifyRequiredParams(array('task', 'status'));
+
+            global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $db = new DbHandler();
+            $response = array();
+            // updating task
+            $result = $db->updateCustomerRejectedItinerary($itinerary_id);
+            if ($result) {
+                // task updated successfully
+                $response["error"] = false;
+                $response["message"] = $lang['CUS_REJECT_ITINERARY_SUCCESS'];
+            } else {
+                // task failed to update
+                $response["error"] = true;
+                $response["message"] = $lang['CUS_REJECT_ITINERARY_FAILURE'];
+            }
+            echoRespnse(200, $response);
+        });
+
+/**
+ * Updating when itinerary is accepted by driver
+ * method PUT
+ * params 
+ * url - /accept_itinerary/:id
+ */
+$app->put('/driver_accept_itinerary/:id', 'authenticateUser', function($itinerary_id) use($app) {
+            // check for required params
+            //verifyRequiredParams(array('task', 'status'));
+
+            global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $db = new DbHandler();
+            $response = array();
+            // updating task
+            $result = $db->updateDriverAcceptedItinerary($itinerary_id);
+            if ($result) {
+                // task updated successfully
+                $response["error"] = false;
+                $response["message"] = $lang['DRI_ACCEPT_ITINERARY_SUCCESS'];
+            } else {
+                // task failed to update
+                $response["error"] = true;
+                $response["message"] = $lang['DRI_ACCEPT_ITINERARY_FAILURE'];
+            }
+            echoRespnse(200, $response);
+        });
+
+/**
+ * Updating when itinerary is rejected by driver
+ * method PUT
+ * params 
+ * url - /accept_itinerary/:id
+ */
+$app->put('/driver_reject_itinerary/:id', 'authenticateUser', function($itinerary_id) use($app) {
+            // check for required params
+            //verifyRequiredParams(array('task', 'status'));
+
+            global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $db = new DbHandler();
+            $response = array();
+            // updating task
+            $result = $db->updateDrivereRectedItinerary($itinerary_id);
+            if ($result) {
+                // task updated successfully
+                $response["error"] = false;
+                $response["message"] = $lang['DRI_REJECT_ITINERARY_SUCCESS'];
+            } else {
+                // task failed to update
+                $response["error"] = true;
+                $response["message"] = $lang['DRI_REJECT_ITINERARY_FAILURE'];
+            }
+            echoRespnse(200, $response);
+        });
+//not finished 
+//not finished yet: bi phat sau khi delete khi da duoc accepted
+/**
+ * Deleting itinerary. Users can delete only their itineraries
+ * method DELETE
+ * url /itinerary
+ */
+$app->delete('/itinerary/:id', 'authenticateUser', function($itinerary_id) use($app) {
+            global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $db = new DbHandler();
+            $response = array();
+            $result = $db->deleteItinerary($itinerary_id);
+            if ($result) {
+                // itinerary deleted successfully
+                $response["error"] = false;
+                $response["message"] = $lang['DELETE_ITINERARY_SUCCESS'];
+            } else {
+                // itinerary failed to delete
+                $response["error"] = true;
+                $response["message"] = $lang['DELETE_ITINERARY_FAILURE'];
+            }
+            echoRespnse(200, $response);
+        });
+
+$app->post('/feedback', function() use ($app) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            // check for required params
+            verifyRequiredParams(array('email', 'name', 'content'), $language);
+
+            $response = array();
+
+            // reading post params
+            $email = $app->request->post('email');
+            $name = $app->request->post('name');
+            $content = $app->request->post('content');
+
+            // validating email address
+            validateEmail($email, $language);
+
+            $db = new DbHandler();
+            $res = $db->createFeedback($email, $name, $content);
+
+            if ($res == USER_CREATED_FEEDBACK_SUCCESSFULLY) {
+                $response["error"] = false;
+                $response["message"] = $lang['ALERT_FEEDBACK'];
+            } else if ($res == USER_CREATE_FEEDBACK_FAILED) {
+                $response["error"] = true;
+                $response["message"] = $lang['ERR_FEEDBACK'];
+            }
+            // echo json response
+            echoRespnse(201, $response);
+        });
+
+$app->get('/comment/:user_id', 'authenticateUser', function($user_id) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $response = array();
+            $db = new DbHandler();
+
+            if ($db->isUserExists1($user_id)) {
+                $response['error'] = false;
+                $response['comments'] = array();
+                $result = $db->getListCommentOfUser($user_id);
+                while ($comment = $result->fetch_assoc()) {
+                    array_push($response['comment'], $comment);
+                }
+                echoRespnse(200, $response);
+
+            } else {
+                $response['error'] = true;
+                $response['message'] = $lang['ERR_LINK_REQUEST'];
+                echoRespnse(404, $response);
+            }
+        });
+
+
+//Staticstic for admin
+$app->get('/statistic/:field', 'authenticateStaff', function($field) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $response = array();
+            $db = new DbHandler();
+
+            if ($field == 'user'){
+                $result = $db->statisticUserBy("123");
+            } else if ($field == 'itinerary'){
+                $result = $db->statisticItineraryBy("123");
+            } else if ($field == 'total_money'){
+                $result = $db->statisticMoneyBy("123");
+            } else {
+
+            }
+
+            if (isset($result)) {
+                $response['error'] = false;
+                $response['stats'] = $result;
+
+                echoRespnse(200, $response);
+
+            } else {
+                $response['error'] = true;
+                $response['message'] = $lang['ERR_LINK_REQUEST'];
+                echoRespnse(404, $response);
+            }
+        });
+
+
+//staticstic for customer
+$app->get('/statistic_customer/:field', 'authenticateUser', function($field) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            global $user_id;
+
+            $response = array();
+            $db = new DbHandler();
+
+            if ($field == 'itinerary'){
+                $result = $db->statisticCustomerItineraryBy("123", $user_id);
+            } else if ($field == 'total_money'){
+                $result = $db->statisticCustomerMoneyBy("123", $user_id);
+            } else {
+
+            }
+
+            if (isset($result)) {
+                $response['error'] = false;
+                $response['stats'] = $result;
+
+                echoRespnse(200, $response);
+
+            } else {
+                $response['error'] = true;
+                $response['message'] = $lang['ERR_LINK_REQUEST'];
+                echoRespnse(404, $response);
+            }
+        });
+
+$app->get('/statistic_driver/:field', 'authenticateUser', function($field) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            global $user_id;
+
+            $response = array();
+            $db = new DbHandler();
+
+            if ($field == 'itinerary'){
+                $result = $db->statisticDriverItineraryBy("123", $user_id);
+            } else if ($field == 'total_money'){
+                $result = $db->statisticDriverMoneyBy("123", $user_id);
+            } else {
+
+            }
+
+            if (isset($result)) {
+                $response['error'] = false;
+                $response['stats'] = $result;
+
+                echoRespnse(200, $response);
+
+            } else {
+                $response['error'] = true;
+                $response['message'] = $lang['ERR_LINK_REQUEST'];
+                echoRespnse(404, $response);
+            }
         });
 
 /**
@@ -1580,755 +2306,6 @@ $app->delete('/staff/itinerary/:id', function($itinerary_id) use($app) {
                 $response["message"] = $lang['DELETE_ITINERARY_FAILURE'];
             }
             echoRespnse(200, $response);
-        });
-
-//Route itinerary
-//
-//
-$app->post('/itinerary', 'authenticateUser', function() use ($app) {
-            $language = "en";
-            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
-                $language = $_GET['lang'];
-                include '../include/lang_'.$_GET['lang'].'.php';
-            } else {
-                include '../include/lang_en.php';
-            }
-
-            // check for required params
-            verifyRequiredParams(array('start_address','start_address_lat','start_address_long','end_address',
-                'end_address_lat','end_address_long','leave_date','duration','cost', 'distance'), $language);
-
-            $response = array();
-            
-            $start_address = $app->request->post('start_address');
-            $start_address_lat = $app->request->post('start_address_lat');
-            $start_address_long = $app->request->post('start_address_long');
-            $end_address = $app->request->post('end_address');
-            $end_address_lat = $app->request->post('end_address_lat');
-            $end_address_long = $app->request->post('end_address_long');
-            $pick_up_address = $app->request->post('pick_up_address');
-            $pick_up_address_lat = $app->request->post('pick_up_address_lat');
-            $pick_up_address_long = $app->request->post('pick_up_address_long');
-            $drop_address = $app->request->post('drop_address');
-            $drop_address_lat = $app->request->post('drop_address_lat');
-            $drop_address_long = $app->request->post('drop_address_long');
-            $leave_date = $app->request->post('leave_date');
-            $duration = $app->request->post('duration');
-            $cost = $app->request->post('cost');
-            $description = $app->request->post('description');
-            $distance = $app->request->post('distance');
-
-            global $user_id;
-            $db = new DbHandler();
-
-            //Choose table to insert base on lat, long
-            $dlat = abs($start_address_lat - $end_address_lat);
-            $dlon = abs($start_address_long - $end_address_long);
-
-            $table = "";
-            $itinerary = NULL;
-
-            if ($dlat*EPSILON/$dlon != 1) {
-                if ($dlat*EPSILON/$dlon > 1) {
-                    if ($start_address_lat > $end_address_lat) {
-                        $table = "itinerary_south";
-                    } else {
-                        $table = "itinerary_north";
-                    }
-                } else {
-                    if ($start_address_long > $end_address_long) {
-                        $table = "itinerary_west";
-                    } else {
-                        $table = "itinerary_east";
-                    }
-                }
-            } else {
-                if ($start_address_lat > $end_address_lat) {
-                    if ($start_address_long > $end_address_long) {
-                        $table = "itinerary_southwest";
-                    } else {
-                        $table = "itinerary_southeast";
-                    }
-                } else {
-                    if ($start_address_long > $end_address_long) {
-                        $table = "itinerary_northwest";
-                    } else {
-                        $table = "itinerary_northeast";
-                    }
-                }
-            }
-
-            // creating new itinerary
-            $itinerary_id = $db->createItinerary($user_id, $start_address, $start_address_lat,$start_address_long,
-                     $end_address, $end_address_lat, $end_address_long, $pick_up_address, $pick_up_address_lat, $pick_up_address_long,
-                     $drop_address, $drop_address_lat, $drop_address_long, $leave_date, $duration, $cost, $description, $distance, $table);
-
-            if ($itinerary_id != NULL) {
-                $response["error"] = false;
-                $response["message"] = $lang['CREATE_ITINERARY_SUCCESS'];
-                $response["itinerary_id"] = $itinerary_id;
-                echoRespnse(201, $response);
-            } else {
-                $response["error"] = true;
-                $response["message"] = $lang['CREATE_ITINERARY_FAILURE'];
-                echoRespnse(200, $response);
-            }            
-        });
-
-/**
- * Listing single task of particual user
- * method GET
- * url /tasks/:id
- * Will return 404 if the task doesn't belongs to user
- */
-$app->get('/itinerary/:id', function($itinerary_id) {
-            global $user_id;
-
-            $language = "en";
-            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
-                $language = $_GET['lang'];
-                include '../include/lang_'.$_GET['lang'].'.php';
-            } else {
-                include '../include/lang_en.php';
-            }
-
-            $response = array();
-            $db = new DbHandler();
-
-            // fetch task
-            $result = $db->getItinerary($itinerary_id);
-
-            if ($result != NULL) {
-                $response["error"] = false;
-                $response["itinerary_id"] = $result["itinerary_id"];
-                $response["driver_id"] = $result["driver_id"];
-                $response["customer_id"] = $result["customer_id"];
-                $response["start_address"] = $result["start_address"];
-                $response["start_address_lat"] = $result["start_address_lat"];
-                $response["start_address_long"] = $result["start_address_long"];
-                $response["pick_up_address"] = $result["pick_up_address"];
-                $response["pick_up_address_lat"] = $result["pick_up_address_lat"];
-                $response["pick_up_address_long"] = $result["pick_up_address_long"];
-                $response["drop_address"] = $result["drop_address"];
-                $response["drop_address_lat"] = $result["drop_address_lat"];
-                $response["drop_address_long"] = $result["drop_address_long"];
-                $response["end_address"] = $result["end_address"];
-                $response["end_address_lat"] = $result["end_address_lat"];
-                $response["end_address_long"] = $result["end_address_long"];
-                $response["leave_date"] = $result["leave_date"];
-                $response["duration"] = $result["duration"];
-                $response["distance"] = $result["distance"];
-                $response["cost"] = $result["cost"];
-                $response["description"] = $result["description"];
-                $response["status"] = $result["status"];
-                $response["created_at"] = $result["created_at"];
-                echoRespnse(200, $response);
-            } else {
-                $response["error"] = true;
-                $response["message"] = $lang['ERR_LINK_REQUEST'];
-                echoRespnse(404, $response);
-            }
-        });
-
-/**
- * Listing all itineraries of particual user
- * method GET
- * url /itineraries          
- */
-$app->get('/itineraries', 'authenticateUser', function() use($app) {
-            global $user_id;
-
-            $language = "en";
-            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
-                $language = $_GET['lang'];
-                include '../include/lang_'.$_GET['lang'].'.php';
-            } else {
-                include '../include/lang_en.php';
-            }
-
-            $response = array();
-            $db = new DbHandler();
-
-            $start_address_lat = $app->request->get('start_address_lat');
-            $start_address_long = $app->request->get('start_address_long');
-
-            $end_address_lat = $app->request->get('end_address_lat');
-            $end_address_long = $app->request->get('end_address_long');
-
-            $leave_date = $app->request->get('leave_date');
-            $duration = $app->request->get('duration');
-            $cost = $app->request->get('cost');
-            $distance = $app->request->get('distance');
-
-            if (isset($start_address_lat) && isset($start_address_long) && isset($end_address_lat) && isset($end_address_long)) {
-                $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $user_id);
-            } else {
-                // fetching all user tasks
-                $result = $db->getAllItinerariesWithDriverInfo($user_id);
-            }
-            $response["error"] = false;
-            $response["itineraries"] = $result;
-
-            echoRespnse(200, $response);
-
-        });
-
-/**
- * Listing all itineraries of driver
- * method GET
- * url /itineraries          
- */
-$app->get('/itineraries/driver/:order', 'authenticateUser', function($order) {
-            global $user_id;
-
-            $language = "en";
-            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
-                $language = $_GET['lang'];
-                include '../include/lang_'.$_GET['lang'].'.php';
-            } else {
-                include '../include/lang_en.php';
-            }
-
-            $response = array();
-            $db = new DbHandler();
-
-            // fetching all user tasks
-            $result = $db->getDriverItineraries($user_id, $order);
-
-            $response["error"] = false;
-            $response["itineraries"] = array();
-
-            //print_r($result);
-
-            // looping through result and preparing tasks array
-            while ($itinerary = $result->fetch_assoc()) {
-                $tmp = array();
-                //itinerary info
-                $tmp["itinerary_id"] = $itinerary["itinerary_id"];
-                $tmp["driver_id"] = $itinerary["driver_id"];
-                $tmp["customer_id"] = $itinerary["customer_id"];
-                $tmp["start_address"] = $itinerary["start_address"];
-                $tmp["start_address_lat"] = $itinerary["start_address_lat"];
-                $tmp["start_address_long"] = $itinerary["start_address_long"];
-                $tmp["pick_up_address"] = $itinerary["pick_up_address"];
-                $tmp["pick_up_address_lat"] = $itinerary["pick_up_address_lat"];
-                $tmp["pick_up_address_long"] = $itinerary["pick_up_address_long"];
-                $tmp["drop_address"] = $itinerary["drop_address"];
-                $tmp["drop_address_lat"] = $itinerary["drop_address_lat"];
-                $tmp["drop_address_long"] = $itinerary["drop_address_long"];
-                $tmp["end_address"] = $itinerary["end_address"];
-                $tmp["end_address_lat"] = $itinerary["end_address_lat"];
-                $tmp["end_address_long"] = $itinerary["end_address_long"];
-                $tmp["leave_date"] = $itinerary["leave_date"];
-                $tmp["duration"] = $itinerary["duration"];
-                $tmp["distance"] = $itinerary["distance"];
-                $tmp["cost"] = $itinerary["cost"];
-                $tmp["description"] = $itinerary["description"];
-                $tmp["status"] = $itinerary["itinerary_status"];
-                $tmp["created_at"] = $itinerary["created_at"];
-
-                //driver info
-                $tmp["driver_license"] = $itinerary["driver_license"];
-                $tmp["driver_license_img"] = $itinerary["driver_license_img"];
-                
-                //user info
-                $tmp["user_id"] = $itinerary["user_id"];
-                $tmp["email"] = $itinerary["email"];
-                $tmp["fullname"] = $itinerary["fullname"];
-                $tmp["phone"] = $itinerary["phone"];
-                $tmp["personalID"] = $itinerary["personalID"];
-                $tmp["link_avatar"] = $itinerary["link_avatar"];
-                array_push($response["itineraries"], $tmp);
-                //print_r($itinerary);
-                //echoRespnse(200, $itinerary);
-            }           
-            //print_r($response);
-            echoRespnse(200, $response);
-        });
-/**
- * Listing all itineraries of customer
- * method GET
- * url /itineraries          
- */
-$app->get('/itineraries/customer/:order', 'authenticateUser', function($order) {
-            global $user_id;
-
-            $language = "en";
-            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
-                $language = $_GET['lang'];
-                include '../include/lang_'.$_GET['lang'].'.php';
-            } else {
-                include '../include/lang_en.php';
-            }
-
-            $response = array();
-            $db = new DbHandler();
-
-            // fetching all user tasks
-            $result = $db->getCustomerItineraries($user_id, $order);
-
-            $response["error"] = false;
-            $response["itineraries"] = array();
-
-            // looping through result and preparing tasks array
-            while ($itinerary = $result->fetch_assoc()) {
-                $tmp = array();
-                //itinerary info
-                $tmp["itinerary_id"] = $itinerary["itinerary_id"];
-                $tmp["driver_id"] = $itinerary["driver_id"];
-                $tmp["customer_id"] = $itinerary["customer_id"];
-                $tmp["start_address"] = $itinerary["start_address"];
-                $tmp["start_address_lat"] = $itinerary["start_address_lat"];
-                $tmp["start_address_long"] = $itinerary["start_address_long"];
-                $tmp["pick_up_address"] = $itinerary["pick_up_address"];
-                $tmp["pick_up_address_lat"] = $itinerary["pick_up_address_lat"];
-                $tmp["pick_up_address_long"] = $itinerary["pick_up_address_long"];
-                $tmp["drop_address"] = $itinerary["drop_address"];
-                $tmp["drop_address_lat"] = $itinerary["drop_address_lat"];
-                $tmp["drop_address_long"] = $itinerary["drop_address_long"];
-                $tmp["end_address"] = $itinerary["end_address"];
-                $tmp["end_address_lat"] = $itinerary["end_address_lat"];
-                $tmp["end_address_long"] = $itinerary["end_address_long"];
-                $tmp["leave_date"] = $itinerary["leave_date"];
-                $tmp["duration"] = $itinerary["duration"];
-                $tmp["distance"] = $itinerary["distance"];
-                $tmp["cost"] = $itinerary["cost"];
-                $tmp["description"] = $itinerary["description"];
-                $tmp["status"] = $itinerary["itinerary_status"];
-                $tmp["created_at"] = $itinerary["created_at"];
-
-                //driver info
-                $tmp["driver_license"] = $itinerary["driver_license"];
-                $tmp["driver_license_img"] = $itinerary["driver_license_img"];
-                
-                //user info
-                $tmp["user_id"] = $itinerary["user_id"];
-                $tmp["email"] = $itinerary["email"];
-                $tmp["fullname"] = $itinerary["fullname"];
-                $tmp["phone"] = $itinerary["phone"];
-                $tmp["personalID"] = $itinerary["personalID"];
-                $tmp["link_avatar"] = $itinerary["link_avatar"];
-                array_push($response["itineraries"], $tmp);
-                //print_r($itinerary);
-                //echoRespnse(200, $itinerary);
-            }           
-
-            //print_r($response);
-            echoRespnse(200, $response);
-        });
-
-//not finished yet: updated when accepted
-/**
- * Updating existing itinerary
- * method PUT
- * params task, status
- * url - /itinerary/:id
- */
-$app->put('/itinerary/:id', 'authenticateUser', function($itinerary_id) use($app) {
-            // check for required params
-            //verifyRequiredParams(array('task', 'status'));
-            global $user_id;
-
-            $language = "en";
-            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
-                $language = $_GET['lang'];
-                include '../include/lang_'.$_GET['lang'].'.php';
-            } else {
-                include '../include/lang_en.php';
-            }
-
-            $itinerary_fields = array();           
-
-            $request_params = array();
-            $request_params = $_REQUEST;
-            // Handling PUT request params
-            if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
-                $app = \Slim\Slim::getInstance();
-                parse_str($app->request()->getBody(), $request_params);
-            }
-
-            $db = new DbHandler();
-            $response = array();
-            // updating task
-            $result = $db->updateItinerary2($request_params, $itinerary_id);
-            if ($result) {
-                // task updated successfully
-                $response["error"] = false;
-                $response["message"] = $lang['UPDATE_ITINERARY_SUCCESS'];
-            } else {
-                // task failed to update
-                $response["error"] = true;
-                $response["message"] = $lang['UPDATE_ITINERARY_FAILURE'];
-            }
-            echoRespnse(200, $response);
-        });
-
-/**
- * Updating when itinerary is accepted by customer
- * method PUT
- * params 
- * url - /accept_itinerary/:id
- */
-$app->put('/customer_accept_itinerary/:id', 'authenticateUser', function($itinerary_id) use($app) {
-            // check for required params
-            //verifyRequiredParams(array('task', 'status'));
-
-            global $user_id;
-
-            $language = "en";
-            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
-                $language = $_GET['lang'];
-                include '../include/lang_'.$_GET['lang'].'.php';
-            } else {
-                include '../include/lang_en.php';
-            }
-
-            //$itinerary_fields = array();           
-
-            //$request_params = array();
-            //$request_params = $_REQUEST;
-            // Handling PUT request params
-            /*if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
-                $app = \Slim\Slim::getInstance();
-                parse_str($app->request()->getBody(), $request_params);
-            }*/
-
-            $db = new DbHandler();
-            $response = array();
-
-            $status = $db->checkItineraryStatus($itinerary_id);
-            
-            if($status==1){
-                // updating task
-                $result = $db->updateCustomerAcceptedItinerary($itinerary_id, $user_id);
-                if ($result) {
-                    // task updated successfully
-                    $response["error"] = false;
-                    $response["message"] = $lang['CUS_ACCEPT_ITINERARY_SUCCESS'];
-                } else {
-                    // task failed to update
-                    $response["error"] = true;
-                    $response["message"] = $lang['CUS_ACCEPT_ITINERARY_FAILURE'];
-                }
-            } else {
-                $response["error"] = true;
-                $response["message"] = $lang['CUS_ACCEPT_ITINERARY_ALREADY'];
-            }
-
-            echoRespnse(200, $response);
-        });
-
-/**
- * Updating when itinerary is rejected by customer
- * method PUT
- * params 
- * url - /accept_itinerary/:id
- */
-$app->put('/customer_reject_itinerary/:id', 'authenticateUser', function($itinerary_id) use($app) {
-            // check for required params
-            //verifyRequiredParams(array('task', 'status'));
-
-            global $user_id;
-
-            $language = "en";
-            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
-                $language = $_GET['lang'];
-                include '../include/lang_'.$_GET['lang'].'.php';
-            } else {
-                include '../include/lang_en.php';
-            }
-
-            $db = new DbHandler();
-            $response = array();
-            // updating task
-            $result = $db->updateCustomerRejectedItinerary($itinerary_id);
-            if ($result) {
-                // task updated successfully
-                $response["error"] = false;
-                $response["message"] = $lang['CUS_REJECT_ITINERARY_SUCCESS'];
-            } else {
-                // task failed to update
-                $response["error"] = true;
-                $response["message"] = $lang['CUS_REJECT_ITINERARY_FAILURE'];
-            }
-            echoRespnse(200, $response);
-        });
-
-/**
- * Updating when itinerary is accepted by driver
- * method PUT
- * params 
- * url - /accept_itinerary/:id
- */
-$app->put('/driver_accept_itinerary/:id', 'authenticateUser', function($itinerary_id) use($app) {
-            // check for required params
-            //verifyRequiredParams(array('task', 'status'));
-
-            global $user_id;
-
-            $language = "en";
-            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
-                $language = $_GET['lang'];
-                include '../include/lang_'.$_GET['lang'].'.php';
-            } else {
-                include '../include/lang_en.php';
-            }
-
-            $db = new DbHandler();
-            $response = array();
-            // updating task
-            $result = $db->updateDriverAcceptedItinerary($itinerary_id);
-            if ($result) {
-                // task updated successfully
-                $response["error"] = false;
-                $response["message"] = $lang['DRI_ACCEPT_ITINERARY_SUCCESS'];
-            } else {
-                // task failed to update
-                $response["error"] = true;
-                $response["message"] = $lang['DRI_ACCEPT_ITINERARY_FAILURE'];
-            }
-            echoRespnse(200, $response);
-        });
-
-/**
- * Updating when itinerary is rejected by driver
- * method PUT
- * params 
- * url - /accept_itinerary/:id
- */
-$app->put('/driver_reject_itinerary/:id', 'authenticateUser', function($itinerary_id) use($app) {
-            // check for required params
-            //verifyRequiredParams(array('task', 'status'));
-
-            global $user_id;
-
-            $language = "en";
-            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
-                $language = $_GET['lang'];
-                include '../include/lang_'.$_GET['lang'].'.php';
-            } else {
-                include '../include/lang_en.php';
-            }
-
-            $db = new DbHandler();
-            $response = array();
-            // updating task
-            $result = $db->updateDrivereRectedItinerary($itinerary_id);
-            if ($result) {
-                // task updated successfully
-                $response["error"] = false;
-                $response["message"] = $lang['DRI_REJECT_ITINERARY_SUCCESS'];
-            } else {
-                // task failed to update
-                $response["error"] = true;
-                $response["message"] = $lang['DRI_REJECT_ITINERARY_FAILURE'];
-            }
-            echoRespnse(200, $response);
-        });
-//not finished 
-//not finished yet: bi phat sau khi delete khi da duoc accepted
-/**
- * Deleting itinerary. Users can delete only their itineraries
- * method DELETE
- * url /itinerary
- */
-$app->delete('/itinerary/:id', 'authenticateUser', function($itinerary_id) use($app) {
-            global $user_id;
-
-            $language = "en";
-            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
-                $language = $_GET['lang'];
-                include '../include/lang_'.$_GET['lang'].'.php';
-            } else {
-                include '../include/lang_en.php';
-            }
-
-            $db = new DbHandler();
-            $response = array();
-            $result = $db->deleteItinerary($itinerary_id);
-            if ($result) {
-                // itinerary deleted successfully
-                $response["error"] = false;
-                $response["message"] = $lang['DELETE_ITINERARY_SUCCESS'];
-            } else {
-                // itinerary failed to delete
-                $response["error"] = true;
-                $response["message"] = $lang['DELETE_ITINERARY_FAILURE'];
-            }
-            echoRespnse(200, $response);
-        });
-
-$app->post('/feedback', function() use ($app) {
-            $language = "en";
-            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
-                $language = $_GET['lang'];
-                include '../include/lang_'.$_GET['lang'].'.php';
-            } else {
-                include '../include/lang_en.php';
-            }
-
-            // check for required params
-            verifyRequiredParams(array('email', 'name', 'content'), $language);
-
-            $response = array();
-
-            // reading post params
-            $email = $app->request->post('email');
-            $name = $app->request->post('name');
-            $content = $app->request->post('content');
-
-            // validating email address
-            validateEmail($email, $language);
-
-            $db = new DbHandler();
-            $res = $db->createFeedback($email, $name, $content);
-
-            if ($res == USER_CREATED_FEEDBACK_SUCCESSFULLY) {
-                $response["error"] = false;
-                $response["message"] = $lang['ALERT_FEEDBACK'];
-            } else if ($res == USER_CREATE_FEEDBACK_FAILED) {
-                $response["error"] = true;
-                $response["message"] = $lang['ERR_FEEDBACK'];
-            }
-            // echo json response
-            echoRespnse(201, $response);
-        });
-
-$app->get('/comment/:user_id', 'authenticateUser', function($user_id) {
-            $language = "en";
-            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
-                $language = $_GET['lang'];
-                include '../include/lang_'.$_GET['lang'].'.php';
-            } else {
-                include '../include/lang_en.php';
-            }
-
-            $response = array();
-            $db = new DbHandler();
-
-            if ($db->isUserExists1($user_id)) {
-                $response['error'] = false;
-                $response['comments'] = array();
-                $result = $db->getListCommentOfUser($user_id);
-                while ($comment = $result->fetch_assoc()) {
-                    array_push($response['comment'], $comment);
-                }
-                echoRespnse(200, $response);
-
-            } else {
-                $response['error'] = true;
-                $response['message'] = $lang['ERR_LINK_REQUEST'];
-                echoRespnse(404, $response);
-            }
-        });
-
-
-//Staticstic for admin
-$app->get('/statistic/:field', 'authenticateStaff', function($field) {
-            $language = "en";
-            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
-                $language = $_GET['lang'];
-                include '../include/lang_'.$_GET['lang'].'.php';
-            } else {
-                include '../include/lang_en.php';
-            }
-
-            $response = array();
-            $db = new DbHandler();
-
-            if ($field == 'user'){
-                $result = $db->statisticUserBy("123");
-            } else if ($field == 'itinerary'){
-                $result = $db->statisticItineraryBy("123");
-            } else if ($field == 'total_money'){
-                $result = $db->statisticMoneyBy("123");
-            } else {
-
-            }
-
-            if (isset($result)) {
-                $response['error'] = false;
-                $response['stats'] = $result;
-
-                echoRespnse(200, $response);
-
-            } else {
-                $response['error'] = true;
-                $response['message'] = $lang['ERR_LINK_REQUEST'];
-                echoRespnse(404, $response);
-            }
-        });
-
-
-//staticstic for customer
-$app->get('/statistic_customer/:field', 'authenticateUser', function($field) {
-            $language = "en";
-            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
-                $language = $_GET['lang'];
-                include '../include/lang_'.$_GET['lang'].'.php';
-            } else {
-                include '../include/lang_en.php';
-            }
-
-            global $user_id;
-
-            $response = array();
-            $db = new DbHandler();
-
-            if ($field == 'itinerary'){
-                $result = $db->statisticCustomerItineraryBy("123", $user_id);
-            } else if ($field == 'total_money'){
-                $result = $db->statisticCustomerMoneyBy("123", $user_id);
-            } else {
-
-            }
-
-            if (isset($result)) {
-                $response['error'] = false;
-                $response['stats'] = $result;
-
-                echoRespnse(200, $response);
-
-            } else {
-                $response['error'] = true;
-                $response['message'] = $lang['ERR_LINK_REQUEST'];
-                echoRespnse(404, $response);
-            }
-        });
-
-$app->get('/statistic_driver/:field', 'authenticateUser', function($field) {
-            $language = "en";
-            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
-                $language = $_GET['lang'];
-                include '../include/lang_'.$_GET['lang'].'.php';
-            } else {
-                include '../include/lang_en.php';
-            }
-
-            global $user_id;
-
-            $response = array();
-            $db = new DbHandler();
-
-            if ($field == 'itinerary'){
-                $result = $db->statisticDriverItineraryBy("123", $user_id);
-            } else if ($field == 'total_money'){
-                $result = $db->statisticDriverMoneyBy("123", $user_id);
-            } else {
-
-            }
-
-            if (isset($result)) {
-                $response['error'] = false;
-                $response['stats'] = $result;
-
-                echoRespnse(200, $response);
-
-            } else {
-                $response['error'] = true;
-                $response['message'] = $lang['ERR_LINK_REQUEST'];
-                echoRespnse(404, $response);
-            }
         });
 
 /**
