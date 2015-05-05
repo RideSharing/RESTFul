@@ -1631,29 +1631,29 @@ $app->post('/itinerary', 'authenticateUser', function() use ($app) {
             if ($dlat*EPSILON/$dlon != 1) {
                 if ($dlat*EPSILON/$dlon > 1) {
                     if ($start_address_lat > $end_address_lat) {
-                        $table = "itinerary_south";
+                        $table = "itinerary_created_south";
                     } else {
-                        $table = "itinerary_north";
+                        $table = "itinerary_created_north";
                     }
                 } else {
                     if ($start_address_long > $end_address_long) {
-                        $table = "itinerary_west";
+                        $table = "itinerary_created_west";
                     } else {
-                        $table = "itinerary_east";
+                        $table = "itinerary_created_east";
                     }
                 }
             } else {
                 if ($start_address_lat > $end_address_lat) {
                     if ($start_address_long > $end_address_long) {
-                        $table = "itinerary_southwest";
+                        $table = "itinerary_created_southwest";
                     } else {
-                        $table = "itinerary_southeast";
+                        $table = "itinerary_created_southeast";
                     }
                 } else {
                     if ($start_address_long > $end_address_long) {
-                        $table = "itinerary_northwest";
+                        $table = "itinerary_created_northwest";
                     } else {
-                        $table = "itinerary_northeast";
+                        $table = "itinerary_created_northeast";
                     }
                 }
             }
