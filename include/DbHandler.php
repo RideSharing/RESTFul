@@ -1115,6 +1115,7 @@ class DbHandler {
             end_address, end_address_lat, end_address_long, pick_up_address, pick_up_address_lat, pick_up_address_long, 
             drop_address, drop_address_lat, drop_address_long, leave_date, duration, cost, description, distance) ";
                 $q .= " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+
         $stmt = $this->conn->prepare($q);
 
         $stmt->bind_param("isddsddsddsddsidsd",
