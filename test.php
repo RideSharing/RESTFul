@@ -1,7 +1,8 @@
 <?php
 
-if (1 == 1) {
-	echo 1;
-}
+$handle = fopen("include/log.txt", "a");
+        fwrite($handle, "text");
+        fwrite($handle, "\r\n");
+        fclose($handle);
 
 ?>

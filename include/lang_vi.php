@@ -100,5 +100,4 @@ $lang['ERR_PASS_LENGTH']   = "Độ dài mật khẩu phải nằm trong khoản
 $lang['ERR_PASS_BLANKSPACE'] =  "Mật khẩu không được có khoảng trống!";
 $lang['STAFF_DELETE_SUCCESS'] = "Xóa nhân viên thành công!";
 $lang['STAFF_DELETE_FAILURE'] = "Xóa nhân viên thất bại. Vui lòng thử lại!";
-
 ?>

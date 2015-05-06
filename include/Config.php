@@ -5,7 +5,7 @@
 define('DB_USERNAME', 'root');
 define('DB_PASSWORD', 'jcvzvJLLxupZQzRs');
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'rs');
+define('DB_NAME', 'rs1');
 
 define('USER_CREATED_SUCCESSFULLY', 0);
 define('USER_CREATE_FAILED', 1);
@@ -57,6 +57,12 @@ define('USER_CREATE_FEEDBACK_FAILED', 23);
 define('VEHICLE_CREATED_SUCCESSFULLY', 24);
 define('VEHICLE_CREATE_FAILED', 25);
 define('VEHICLE_ALREADY_EXISTED', 26);
+
+define('COMMENT_CREATED_SUCCESSFULLY', 27);
+define('COMMENT_CREATE_FAILED', 28);
+
+define('RATING_CREATED_SUCCESSFULLY', 29);
+define('RATING_CREATE_FAILED', 30);
 
 define('EPSILON', 1.0610687022901);
 

@@ -1158,7 +1158,7 @@ class DbHandler {
         $stmt->bind_param("i",$itinerary_id);
         if ($stmt->execute()) {
             $res = array();
-            $stmt->bind_result($itinerary_id, $driver_id, $customer_id, $table_name, $status, $created_at);
+            $stmt->bind_result($status);
 
             // TODO
             // $task = $stmt->get_result()->fetch_assoc();
@@ -1244,34 +1244,33 @@ class DbHandler {
         return $itineraries;
     }
 
-    public function getAverageRatingofDriver($driver_id){
-        $q = "SELECT AVG(rating) AS average_rating FROM rating WHERE user_id = ?";
-        $stmt = $this->conn->prepare($q);
-        $stmt->bind_param("i",$driver_id);
-        $stmt->execute();
-
-        $stmt->bind_result($average_rating);
-            $stmt->close();
-
-        if($average_rating == null){
-            return 0;
-        } else {
-            return $average_rating;
-        }
-    }
+    
 
     public function getAllItinerariesWithDriverInfo($user_id) {
         //$q = "SELECT * FROM itinerary, driver, user WHERE itinerary.driver_id = driver.user_id AND driver.user_id = user.user_id";
-        $q = "SELECT i.itinerary_id, i.driver_id, i.customer_id, i.start_address, i.start_address_lat, i.start_address_long,
+        $q = "SELECT i.itinerary_id, ii.driver_id, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long,
             i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, 
             i.drop_address_long, i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, 
-            i.distance, i.cost, i.description, i.status as itinerary_status, i.created_at,
+            i.distance, i.cost, i.description, ii.status as itinerary_status, ii.created_at,
             d.driver_license, d.driver_license_img, u.user_id, u.email, u.fullname, u.phone, u.personalID, u.link_avatar ";
-        $q .=    "FROM itinerary as i, driver as d, user as u ";
-        $q .=     "WHERE i.driver_id = d.user_id AND d.user_id = u.user_id AND i.driver_id <> ? ";       
+        $q .=    "FROM (SELECT * FROM itinerary_created_northeast
+                    UNION
+                    SELECT * FROM itinerary_created_northwest
+                    UNION
+                    SELECT * FROM itinerary_created_southeast 
+                    UNION
+                    SELECT * FROM itinerary_created_southwest 
+                    UNION
+                    SELECT * FROM itinerary_created_east 
+                    UNION
+                    SELECT * FROM itinerary_created_west
+                    UNION
+                    SELECT * FROM itinerary_created_north 
+                    UNION
+                    SELECT * FROM itinerary_created_south) as i, itinerary as ii, driver as d, user as u ";
+        $q .=     "WHERE ii.driver_id = d.user_id AND d.user_id = u.user_id AND ii.itinerary_id = i.itinerary_id";       
 
         $stmt = $this->conn->prepare($q);
-        $stmt->bind_param("i",$user_id);
         $stmt->execute();
         $itineraries = $stmt->get_result();
         $stmt->close();
@@ -1303,21 +1302,14 @@ class DbHandler {
             $tmp["description"] = $itinerary["description"];
             $tmp["status"] = $itinerary["itinerary_status"];
             $tmp["created_at"] = $itinerary["created_at"];
-
-            //driver info
-            $tmp["driver_license"] = $itinerary["driver_license"];
-            $tmp["driver_license_img"] = $itinerary["driver_license_img"];
             
-            //user info
-            $tmp["user_id"] = $itinerary["user_id"];
-            $tmp["email"] = $itinerary["email"];
             $tmp["fullname"] = $itinerary["fullname"];
+            $tmp["email"] = $itinerary["email"];
             $tmp["phone"] = $itinerary["phone"];
-            $tmp["personalID"] = $itinerary["personalID"];
             $tmp["link_avatar"] = $itinerary["link_avatar"];
 
             //rating
-            $tmp["average_rating"] = $this->getAverageRatingofDriver($itinerary["user_id"]);
+            $tmp["average_rating"] = $this->getAverageRatingofUser($itinerary["user_id"]);
             array_push($result, $tmp);
         }
 
@@ -1325,6 +1317,13 @@ class DbHandler {
     }
 
     public function searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table) {
+        $text = $start_address_lat."/".$start_address_long."/".$end_address_lat."/".$end_address_long."/".$leave_date."/".$cost."/".$duration."/".$distance."/".$table;
+        
+        $handle = fopen("log.txt", "a");
+        fwrite($handle, $text);
+        fwrite($handle, "\r\n");
+        fclose($handle);
+
         require_once '/Config.php';
         $conn2 = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME.";charset=utf8", DB_USERNAME, DB_PASSWORD);
         // set the PDO error mode to exception
@@ -1334,11 +1333,157 @@ class DbHandler {
             $leave_date = date('m/d/Y H:i:s', time());
         }
 
-        $q = "SELECT i.itinerary_id, ii.driver_id, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
+        $q = "";
+
+        if ($table == "itinerary_created_northeast") {
+            $q .= "SELECT i.itinerary_id, ii.driver_id, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
                 i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
                 i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
-                ii.created_at, d.driver_license, d.driver_license_img
-              FROM (SELECT * FROM ".$table." WHERE leave_date >='". $leave_date. "'";
+                ii.created_at, u.fullname, u.phone, u.link_avatar
+              FROM (SELECT * FROM ".$table." WHERE leave_date >='". $leave_date. "' AND (start_address_lat < :start_address_lat OR (start_address_lat - :start_address_lat) < 0.05)
+                    AND (start_address_long < :start_address_long OR (start_address_long - :start_address_long) < 0.05)
+                    AND (end_address_lat > :end_address_lat OR (:end_address_lat - end_address_lat) < 0.05)
+                    AND (end_address_long > :end_address_long OR (:end_address_long - end_address_long) < 0.05)";
+        } else if ($table == "itinerary_created_northwest") {
+            $q .= "SELECT i.itinerary_id, ii.driver_id, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
+                i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
+                i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
+                ii.created_at, u.fullname, u.phone, u.link_avatar
+              FROM (SELECT * FROM ".$table." WHERE leave_date >='". $leave_date. "' AND (start_address_lat < :start_address_lat OR (start_address_lat - :start_address_lat) < 0.05)
+                    AND (start_address_long > :start_address_long OR (:start_address_long - start_address_long) < 0.05)
+                    AND (end_address_lat > :end_address_lat OR (:end_address_lat - end_address_lat) < 0.05)
+                    AND (end_address_long < :end_address_long OR (end_address_long - :end_address_long) < 0.05)";
+        } else if ($table == "itinerary_created_southeast") {
+            $q .= "SELECT i.itinerary_id, ii.driver_id, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
+                i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
+                i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
+                ii.created_at, u.fullname, u.phone, u.link_avatar
+              FROM (SELECT * FROM ".$table." WHERE leave_date >='". $leave_date. "' AND (start_address_lat > :start_address_lat OR (:start_address_lat - start_address_lat) < 0.05)
+                    AND (start_address_long < :start_address_long OR (start_address_long - :start_address_long) < 0.05)
+                    AND (end_address_lat < :end_address_lat OR (end_address_lat - :end_address_lat) < 0.05)
+                    AND (end_address_long > :end_address_long OR (:end_address_long - end_address_long) < 0.05)";
+        } else if ($table == "itinerary_created_southwest") {
+            $q .= "SELECT i.itinerary_id, ii.driver_id, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
+                i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
+                i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
+                ii.created_at, u.fullname, u.phone, u.link_avatar
+              FROM (SELECT * FROM ".$table." WHERE leave_date >='". $leave_date. "' AND (start_address_lat > :start_address_lat OR (:start_address_lat - start_address_lat) < 0.05)
+                    AND (start_address_long > :start_address_long OR (:start_address_long - start_address_long) < 0.05)
+                    AND (end_address_lat < :end_address_lat OR (end_address_lat - :end_address_lat) < 0.05)
+                    AND (end_address_long < :end_address_long OR (end_address_long - :end_address_long) < 0.05)";
+        } else if ($table == "itinerary_created_south") {
+            $q .= "SELECT i.itinerary_id, ii.driver_id, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
+                i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
+                i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
+                ii.created_at, u.fullname, u.phone, u.link_avatar
+              FROM (SELECT * FROM ".$table." WHERE leave_date >='". $leave_date. "' AND (start_address_lat > :start_address_lat OR (:start_address_lat - start_address_lat) < 0.05)
+                    AND (ABS(:start_address_long - start_address_long) < 0.05)
+                    AND (end_address_lat < :end_address_lat OR (end_address_lat - :end_address_lat) < 0.05)
+                    AND (ABS(end_address_long - :end_address_long) < 0.05)";
+        } else if ($table == "itinerary_created_east") {
+            $q .= "SELECT i.itinerary_id, ii.driver_id, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
+                i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
+                i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
+                ii.created_at, u.fullname, u.phone, u.link_avatar
+              FROM (SELECT * FROM ".$table." WHERE leave_date >='". $leave_date. "' AND (ABS(:start_address_lat - start_address_lat) < 0.05)
+                    AND (start_address_long < :start_address_long OR (start_address_long - :start_address_long) < 0.05)
+                    AND (ABS(end_address_lat - :end_address_lat) < 0.05)
+                    AND (end_address_long > :end_address_long OR (:end_address_long - end_address_long) < 0.05)";
+        } else if ($table == "itinerary_created_west") {
+            $q .= "SELECT i.itinerary_id, ii.driver_id, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
+                i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
+                i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
+                ii.created_at, u.fullname, u.phone, u.link_avatar
+              FROM (SELECT * FROM ".$table." WHERE leave_date >='". $leave_date. "' AND (ABS(:start_address_lat - start_address_lat) < 0.05)
+                    AND (start_address_long > :start_address_long OR (:start_address_long - start_address_long) < 0.05)
+                    AND (ABS(end_address_lat - :end_address_lat) < 0.05)
+                    AND (end_address_long < :end_address_long OR (end_address_long - :end_address_long) < 0.05)";
+        } else if ($table == "itinerary_created_north") {
+            $q .= "SELECT i.itinerary_id, ii.driver_id, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
+                i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
+                i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
+                ii.created_at, u.fullname, u.phone, u.link_avatar
+              FROM (SELECT * FROM ".$table." WHERE leave_date >='". $leave_date. "' AND (start_address_lat < :start_address_lat OR (start_address_lat - :start_address_lat) < 0.05)
+                    AND (ABS(:start_address_long - start_address_long) < 0.05)
+                    AND (end_address_lat > :end_address_lat OR (:end_address_lat - end_address_lat) < 0.05)
+                    AND (ABS(end_address_long - :end_address_long) < 0.05)";
+        } else if ($table == "AllStart") {
+            $q .= "SELECT i.itinerary_id, ii.driver_id, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
+                i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
+                i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
+                ii.created_at, u.fullname, u.phone, u.link_avatar
+              FROM (SELECT * FROM itinerary_created_northeast WHERE leave_date >='". $leave_date. "' AND 
+                    ABS(start_address_lat - :start_address_lat) < 0.1 AND ABS(start_address_long - :start_address_long) < 0.1
+                    UNION
+                    SELECT * FROM itinerary_created_northwest WHERE leave_date >='". $leave_date. "' AND 
+                    ABS(start_address_lat - :start_address_lat) < 0.1 AND ABS(start_address_long - :start_address_long) < 0.1
+                    UNION
+                    SELECT * FROM itinerary_created_southeast WHERE leave_date >='". $leave_date. "' AND 
+                    ABS(start_address_lat - :start_address_lat) < 0.1 AND ABS(start_address_long - :start_address_long) < 0.1
+                    UNION
+                    SELECT * FROM itinerary_created_southwest WHERE leave_date >='". $leave_date. "' AND 
+                    ABS(start_address_lat - :start_address_lat) < 0.1 AND ABS(start_address_long - :start_address_long) < 0.1
+                    UNION
+                    SELECT * FROM itinerary_created_east WHERE leave_date >='". $leave_date. "' AND 
+                    ABS(start_address_lat - :start_address_lat) < 0.1 AND ABS(start_address_long - :start_address_long) < 0.1
+                    UNION
+                    SELECT * FROM itinerary_created_west WHERE leave_date >='". $leave_date. "' AND 
+                    ABS(start_address_lat - :start_address_lat) < 0.1 AND ABS(start_address_long - :start_address_long) < 0.1
+                    UNION
+                    SELECT * FROM itinerary_created_north WHERE leave_date >='". $leave_date. "' AND 
+                    ABS(start_address_lat - :start_address_lat) < 0.1 AND ABS(start_address_long - :start_address_long) < 0.1
+                    UNION
+                    SELECT * FROM itinerary_created_south WHERE leave_date >='". $leave_date. "' AND 
+                    ABS(start_address_lat - :start_address_lat) < 0.1 AND ABS(start_address_long - :start_address_long) < 0.1";
+        } else if ($table == "AllEnd") {
+            $q .= "SELECT i.itinerary_id, ii.driver_id, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
+                i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
+                i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
+                ii.created_at, u.fullname, u.phone, u.link_avatar
+              FROM (SELECT * FROM itinerary_created_northeast WHERE leave_date >='". $leave_date. "' AND 
+                    ABS(end_address_lat - :end_address_lat) < 0.1 AND ABS(end_address_long - :end_address_long) < 0.1
+                    UNION
+                    SELECT * FROM itinerary_created_northwest WHERE leave_date >='". $leave_date. "' AND 
+                    ABS(end_address_lat - :end_address_lat) < 0.1 AND ABS(end_address_long - :end_address_long) < 0.1
+                    UNION
+                    SELECT * FROM itinerary_created_southeast WHERE leave_date >='". $leave_date. "' AND 
+                    ABS(end_address_lat - :end_address_lat) < 0.1 AND ABS(end_address_long - :end_address_long) < 0.1
+                    UNION
+                    SELECT * FROM itinerary_created_southwest WHERE leave_date >='". $leave_date. "' AND 
+                    ABS(end_address_lat - :end_address_lat) < 0.1 AND ABS(end_address_long - :end_address_long) < 0.1
+                    UNION
+                    SELECT * FROM itinerary_created_east WHERE leave_date >='". $leave_date. "' AND 
+                    ABS(end_address_lat - :end_address_lat) < 0.1 AND ABS(end_address_long - :end_address_long) < 0.1
+                    UNION
+                    SELECT * FROM itinerary_created_west WHERE leave_date >='". $leave_date. "' AND 
+                    ABS(end_address_lat - :end_address_lat) < 0.1 AND ABS(end_address_long - :end_address_long) < 0.1
+                    UNION
+                    SELECT * FROM itinerary_created_north WHERE leave_date >='". $leave_date. "' AND 
+                    ABS(end_address_lat - :end_address_lat) < 0.1 AND ABS(end_address_long - :end_address_long) < 0.1
+                    UNION
+                    SELECT * FROM itinerary_created_south WHERE leave_date >='". $leave_date. "' AND 
+                    ABS(end_address_lat - :end_address_lat) < 0.1 AND ABS(end_address_long - :end_address_long) < 0.1";
+        } else {
+            $q .= "SELECT i.itinerary_id, ii.driver_id, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
+                i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
+                i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
+                ii.created_at, u.fullname, u.phone, u.link_avatar
+              FROM (SELECT * FROM itinerary_created_northeast
+                    UNION
+                    SELECT * FROM itinerary_created_northwest
+                    UNION
+                    SELECT * FROM itinerary_created_southeast 
+                    UNION
+                    SELECT * FROM itinerary_created_southwest 
+                    UNION
+                    SELECT * FROM itinerary_created_east 
+                    UNION
+                    SELECT * FROM itinerary_created_west
+                    UNION
+                    SELECT * FROM itinerary_created_north 
+                    UNION
+                    SELECT * FROM itinerary_created_south";
+        }
 
         if (isset($duration)) {
             $q .= " AND duration = :duration";
@@ -1350,53 +1495,13 @@ class DbHandler {
             $q .= " AND distance = :distance";
         }
 
-        if ($table == "itinerary_created_northeast") {
-            $q .= " AND (start_address_lat < :start_address_lat OR (start_address_lat - :start_address_lat) < 0.01)
-                    AND (start_address_long < :start_address_long OR (start_address_long - :start_address_long) < 0.01)
-                    AND (end_address_lat > :end_address_lat OR (:end_address_lat - end_address_lat) < 0.01)
-                    AND (end_address_long > :end_address_long OR (:end_address_long - end_address_long) < 0.01)";
-        } else if ($table == "itinerary_created_northwest") {
-            $q .= " AND (start_address_lat < :start_address_lat OR (start_address_lat - :start_address_lat) < 0.01)
-                    AND (start_address_long > :start_address_long OR (:start_address_long - start_address_long) < 0.01)
-                    AND (end_address_lat > :end_address_lat OR (:end_address_lat - end_address_lat) < 0.01)
-                    AND (end_address_long < :end_address_long OR (end_address_long - :end_address_long) < 0.01)";
-        } else if ($table == "itinerary_created_southeast") {
-            $q .= " AND (start_address_lat > :start_address_lat OR (:start_address_lat - start_address_lat) < 0.01)
-                    AND (start_address_long < :start_address_long OR (start_address_long - :start_address_long) < 0.01)
-                    AND (end_address_lat < :end_address_lat OR (end_address_lat - :end_address_lat) < 0.01)
-                    AND (end_address_long > :end_address_long OR (:end_address_long - end_address_long) < 0.01)";
-        } else if ($table == "itinerary_created_southwest") {
-            $q .= " AND (start_address_lat > :start_address_lat OR (:start_address_lat - start_address_lat) < 0.01)
-                    AND (start_address_long > :start_address_long OR (:start_address_long - start_address_long) < 0.01)
-                    AND (end_address_lat < :end_address_lat OR (end_address_lat - :end_address_lat) < 0.01)
-                    AND (end_address_long < :end_address_long OR (end_address_long - :end_address_long) < 0.01)";
-        } else if ($table == "itinerary_created_south") {
-            $q .= " AND (start_address_lat > :start_address_lat OR (:start_address_lat - start_address_lat) < 0.01)
-                    AND (ABS(:start_address_long - start_address_long) < 0.01)
-                    AND (end_address_lat < :end_address_lat OR (end_address_lat - :end_address_lat) < 0.01)
-                    AND (ABS(end_address_long - :end_address_long) < 0.01)";
-        } else if ($table == "itinerary_created_east") {
-            $q .= " AND (ABS(:start_address_lat - start_address_lat) < 0.01)
-                    AND (start_address_long < :start_address_long OR (start_address_long - :start_address_long) < 0.01)
-                    AND (ABS(end_address_lat - :end_address_lat) < 0.01)
-                    AND (end_address_long > :end_address_long OR (:end_address_long - end_address_long) < 0.01)";
-        } else if ($table == "itinerary_created_west") {
-            $q .= " AND (ABS(:start_address_lat - start_address_lat) < 0.01)
-                    AND (start_address_long > :start_address_long OR (:start_address_long - start_address_long) < 0.01)
-                    AND (ABS(end_address_lat - :end_address_lat) < 0.01)
-                    AND (end_address_long < :end_address_long OR (end_address_long - :end_address_long) < 0.01)";
-        } else {
-            $q .= " AND (start_address_lat < :start_address_lat OR (start_address_lat - :start_address_lat) < 0.01)
-                    AND (ABS(:start_address_long - start_address_long) < 0.01)
-                    AND (end_address_lat > :end_address_lat OR (:end_address_lat - end_address_lat) < 0.01)
-                    AND (ABS(end_address_long - :end_address_long) < 0.01)";
-        }
-
         $q .= ") as i 
               INNER JOIN (select * from itinerary where status = 1) as ii
               ON ii.itinerary_id = i.itinerary_id
               INNER JOIN (select * from driver where user_id <> :user_id and status = 2) as d 
-              ON ii.driver_id = d.user_id";
+              ON ii.driver_id = d.user_id
+              INNER JOIN user as u 
+              ON d.user_id = u.user_id";
                  
         $stmt = $conn2->prepare($q);
 
@@ -1410,14 +1515,24 @@ class DbHandler {
             $stmt->bindParam(':distance', $distance);
         }
 
-        $stmt->bindParam(':start_address_lat', $start_address_lat);
-        $stmt->bindParam(':start_address_long', $start_address_long);
-        $stmt->bindParam(':end_address_lat', $end_address_lat);
-        $stmt->bindParam(':end_address_long', $end_address_long);
+        if ($table == "AllStart") {
+            $stmt->bindParam(':start_address_lat', $start_address_lat);
+            $stmt->bindParam(':start_address_long', $start_address_long);
+        } else if ($table == "AllEnd") {
+            $stmt->bindParam(':end_address_lat', $end_address_lat);
+            $stmt->bindParam(':end_address_long', $end_address_long);
+        } else {
+            $stmt->bindParam(':start_address_lat', $start_address_lat);
+            $stmt->bindParam(':start_address_long', $start_address_long);
+            $stmt->bindParam(':end_address_lat', $end_address_lat);
+            $stmt->bindParam(':end_address_long', $end_address_long);
+        }
+        
         $stmt->bindParam(':user_id', $user_id);
 
         $stmt->execute();
         $itineraries = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
         return $itineraries;
     }
 
@@ -1427,11 +1542,11 @@ class DbHandler {
      * @param Integer $driver_id id of the driver
      */
     public function getDriverItineraries($driver_id, $order) {
-        $q = "SELECT itinerary_id, i.driver_id, i.customer_id, start_address, start_address_lat, start_address_long,
-            pick_up_address, pick_up_address_lat, pick_up_address_long, drop_address, drop_address_lat, drop_address_long,
-            end_address, end_address_lat, end_address_long, leave_date, duration, distance, cost, description, i.status as itinerary_status, i.created_at,
-            driver_license, driver_license_img, u.user_id, u.email, u.fullname, u.phone, personalID, link_avatar ";
-        $q .=    "FROM itinerary as i, driver as d, user as u ";
+        $q = "SELECT i.itinerary_id, i.driver_id, i.customer_id, i.start_address, i.start_address_lat, i.start_address_long,
+            i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long,
+            i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, i.status as itinerary_status, i.created_at,
+            d.driver_license, d.driver_license_img, u.user_id, u.email, u.fullname, u.phone, u.personalID, u.link_avatar ";
+        $q .=    "FROM i_itinerary as i, driver as d, user as u ";
         $q .=     "WHERE i.driver_id = d.user_id AND d.user_id = u.user_id AND driver_id = ? ";
 
         if(isset($order)){
@@ -1439,6 +1554,7 @@ class DbHandler {
         } else {
             $q .= "ORDER BY itinerary_status";
         }
+
         //$q = "SELECT * FROM itinerary WHERE driver_id = ?";
         $stmt = $this->conn->prepare($q);
         $stmt->bind_param("i",$driver_id);
@@ -1458,13 +1574,8 @@ class DbHandler {
             pick_up_address, pick_up_address_lat, pick_up_address_long, drop_address, drop_address_lat, drop_address_long,
             end_address, end_address_lat, end_address_long, leave_date, duration, distance, cost, description, i.status as itinerary_status, i.created_at,
             driver_license, driver_license_img, u.user_id, u.email, u.fullname, u.phone, personalID, link_avatar ";
-        $q .=    "FROM itinerary as i, driver as d, user as u ";
+        $q .=    "FROM i_itinerary as i, driver as d, user as u ";
         $q .=     "WHERE i.driver_id = d.user_id AND d.user_id = u.user_id AND customer_id = ? ";
-        //if(isset($order)){
-        //    $q .= " ORDER BY " .$order;
-        //} else {
-        //    $q .= " ORDER BY itinerary_status";
-        //}
         
         $stmt = $this->conn->prepare($q);
         $stmt->bind_param("i",$customer_id);
@@ -1482,7 +1593,32 @@ class DbHandler {
      * @param String $status task status
      */
     public function updateItinerary($itinerary_id) {
-        $q = "UPDATE itinerary set start_address = ?, end_address = ?, leave_day = ?, duration = ?, cost = ?, description = ? 
+        $q = "SELECT status FROM itinerary WHERE itinerary_id = ?";
+        $stmt = $this->conn->prepare($q);
+        $stmt->bind_param("i",$itinerary_id);
+        $stmt->execute();
+        $stmt->bind_result($status);
+        $stmt->close();
+        switch ($status) {
+            case '1':
+                $table_name = 'i_created_'.$table_name;
+                break;
+            case '2':
+                $table_name = 'i_joinning';
+                break;
+            case '3':
+                $table_name = 'i_accepted';
+                break;
+            case '4':
+                $table_name = 'i_completed';
+                break;
+            default:
+                return NULL;
+                break;
+        }
+        
+        
+        $q = "UPDATE ".$table_name." set start_address = ?, end_address = ?, leave_day = ?, duration = ?, cost = ?, description = ? 
                 WHERE itinerary_id = ?";
         $stmt = $this->conn->prepare();
         $stmt->bind_param("sssidsi", $itinerary_id);
@@ -1492,6 +1628,17 @@ class DbHandler {
         return $num_affected_rows > 0;
     }
 
+    public function updateItinerary3($itinerary_fields, $itinerary_id) {
+        $q = "SELECT status, table_name FROM itinerary WHERE itinerary_id = ?";
+        $stmt = $this->conn->prepare($q);
+        $stmt->bind_param("i",$itinerary_id);
+        $stmt->execute();
+        $stmt->bind_result($status, $table_name);
+        $stmt->close();
+
+        echo $status;
+    }
+
     //not finished yet
     /**
      * Updating itinerary
@@ -1499,8 +1646,33 @@ class DbHandler {
      * @param Integer $itinerary_id id of the itinerary
      */
     public function updateItinerary2($itinerary_fields, $itinerary_id) {
+        $q = "SELECT status, table_name FROM itinerary WHERE itinerary_id = ?";
+        $stmt = $this->conn->prepare($q);
+        $stmt->bind_param("i",$itinerary_id);
+        $stmt->execute();
+        $stmt->bind_result($status, $table_name);
+        $stmt->close();
 
-        $q= "UPDATE itinerary SET ";
+        echo 123;
+
+        switch ($status) {
+            case '1':
+                $table_name = 'i_created_'.$table_name;
+                break;
+            case '2':
+                $table_name = 'i_joinning';
+                break;
+            case '3':
+                $table_name = 'i_accepted';
+                break;
+            case '4':
+                $table_name = 'i_completed';
+                break;
+            default:
+                break;
+        }
+
+        $q = "UPDATE ".$table_name." SET ";
         foreach ($itinerary_fields as $key => $value) {
             //check whether the value is numeric
             if(!is_numeric($value)){
@@ -1526,7 +1698,7 @@ class DbHandler {
     }
 
     public function checkItineraryStatus($itinerary_id){
-        $q = "SELECT status FROM itinerary WHERE itinerary_id = ?";
+        $q = "SELECT status FROM i_itinerary WHERE itinerary_id = ?";
         $stmt = $this->conn->prepare($q);
         $stmt->bind_param("i",$itinerary_id);
         $stmt->execute();
@@ -1551,8 +1723,31 @@ class DbHandler {
      * @param Integer $itinerary_id id of the itinerary
      */
     public function updateCustomerAcceptedItinerary($itinerary_id, $customer_id) {
+        $q = "SELECT status FROM itinerary WHERE itinerary_id = ?";
+        $stmt = $this->conn->prepare($q);
+        $stmt->bind_param("i",$itinerary_id);
+        $stmt->execute();
+        $stmt->bind_result($status);
+        $stmt->close();
+        switch ($status) {
+            case '1':
+                $table_name = 'i_created_'.$table_name;
+                break;
+            case '2':
+                $table_name = 'i_joinning';
+                break;
+            case '3':
+                $table_name = 'i_accepted';
+                break;
+            case '4':
+                $table_name = 'i_completed';
+                break;
+            default:
+                return NULL;
+                break;
+        }
         //ITINERARY_STATUS_CUSTOMER_ACCEPTED
-        $q = "UPDATE itinerary set customer_id = ?, status = 2 
+        $q = "UPDATE ".$table_name." set customer_id = ?, status = 2 
                 WHERE itinerary_id = ?";
         $stmt = $this->conn->prepare($q);
         $stmt->bind_param("ii",$customer_id, $itinerary_id);
@@ -1568,7 +1763,31 @@ class DbHandler {
      * @param Integer $itinerary_id id of the itinerary
      */
     public function updateCustomerRejectedItinerary($itinerary_id) {
-        $q = "UPDATE itinerary set customer_id = null, status = 1 
+        $q = "SELECT status FROM itinerary WHERE itinerary_id = ?";
+        $stmt = $this->conn->prepare($q);
+        $stmt->bind_param("i",$itinerary_id);
+        $stmt->execute();
+        $stmt->bind_result($status);
+        $stmt->close();
+        switch ($status) {
+            case '1':
+                $table_name = 'i_created_'.$table_name;
+                break;
+            case '2':
+                $table_name = 'i_joinning';
+                break;
+            case '3':
+                $table_name = 'i_accepted';
+                break;
+            case '4':
+                $table_name = 'i_completed';
+                break;
+            default:
+                return NULL;
+                break;
+        }
+
+        $q = "UPDATE ".$table_name." set customer_id = null, status = 1 
                 WHERE itinerary_id = ?";
         $stmt = $this->conn->prepare($q);
         $stmt->bind_param("i", $itinerary_id);
@@ -1584,7 +1803,31 @@ class DbHandler {
      * @param Integer $itinerary_id id of the itinerary
      */
     public function updateDriverAcceptedItinerary($itinerary_id) {
-        $q = "UPDATE itinerary set status = 3 
+        $q = "SELECT status FROM itinerary WHERE itinerary_id = ?";
+        $stmt = $this->conn->prepare($q);
+        $stmt->bind_param("i",$itinerary_id);
+        $stmt->execute();
+        $stmt->bind_result($status);
+        $stmt->close();
+        switch ($status) {
+            case '1':
+                $table_name = 'i_created_'.$table_name;
+                break;
+            case '2':
+                $table_name = 'i_joinning';
+                break;
+            case '3':
+                $table_name = 'i_accepted';
+                break;
+            case '4':
+                $table_name = 'i_completed';
+                break;
+            default:
+                return NULL;
+                break;
+        }
+
+        $q = "UPDATE ".$table_name." set status = 3 
                 WHERE itinerary_id = ?";
         $stmt = $this->conn->prepare($q);
         $stmt->bind_param("i", $itinerary_id);
@@ -1600,7 +1843,31 @@ class DbHandler {
      * @param Integer $itinerary_id id of the itinerary
      */
     public function updateDrivereRectedItinerary($itinerary_id) {
-        $q = "UPDATE itinerary set customer_id = null, status = 1 
+        $q = "SELECT status FROM itinerary WHERE itinerary_id = ?";
+        $stmt = $this->conn->prepare($q);
+        $stmt->bind_param("i",$itinerary_id);
+        $stmt->execute();
+        $stmt->bind_result($status);
+        $stmt->close();
+        switch ($status) {
+            case '1':
+                $table_name = 'i_created_'.$table_name;
+                break;
+            case '2':
+                $table_name = 'i_joinning';
+                break;
+            case '3':
+                $table_name = 'i_accepted';
+                break;
+            case '4':
+                $table_name = 'i_completed';
+                break;
+            default:
+                return NULL;
+                break;
+        }
+
+        $q = "UPDATE ".$table_name." set customer_id = null, status = 1 
                 WHERE itinerary_id = ?";
         $stmt = $this->conn->prepare($q);
         $stmt->bind_param("i", $itinerary_id);
@@ -1616,12 +1883,49 @@ class DbHandler {
      * @param String $itinerary_id id of the itinerary to delete
      */
     public function deleteItinerary($itinerary_id) {
-        $stmt = $this->conn->prepare("DELETE FROM itinerary WHERE itinerary_id = ?");
+        $q = "SELECT table_name, status FROM itinerary WHERE itinerary_id = ?";
+        $stmt = $this->conn->prepare($q);
+        $stmt->bind_param("i",$itinerary_id);
+        $stmt->execute();
+        $stmt->bind_result($table_name, $status);
+        $stmt->store_result();
+        $stmt->fetch();
+        $stmt->close();
+
+        switch ($status) {
+                case '1':
+                    $table_name = 'itinerary_created_'.$table_name;
+                    break;
+                case '2':
+                    $table_name = 'itinerary_joinning';
+                    break;
+                case '3':
+                    $table_name = 'itinerary_accepted';
+                    break;
+                case '4':
+                    $table_name = 'itinerary_completed';
+                    break;
+                default:
+                    return NULL;
+                    break;
+        }
+
+        $q = "DELETE FROM ".$table_name." WHERE itinerary_id = ?";
+
+        $stmt = $this->conn->prepare($q);
         $stmt->bind_param("i", $itinerary_id);
         $stmt->execute();
         $num_affected_rows = $stmt->affected_rows;
         $stmt->close();
-        return $num_affected_rows > 0;
+
+        $q = "DELETE FROM itinerary WHERE itinerary_id = ?";
+        $stmt = $this->conn->prepare($q);
+        $stmt->bind_param("i", $itinerary_id);
+        $stmt->execute();
+        $num_affected_rows1 = $stmt->affected_rows;
+        $stmt->close();
+
+        return $num_affected_rows > 0 || $num_affected_rows1 > 0;
     }
 
     /* ------------- Feedback table ------------------ */
@@ -1835,6 +2139,202 @@ class DbHandler {
 
         $stmt->close();
         return $stats;
+    }
+
+
+    /* ------------- `Comment` table method ------------------ */
+
+    public function createComment($user_id, $content, $comment_about_user_id) {
+        // First check if user already existed in db
+
+            $sql_query = "INSERT INTO commnet(user_comment_id, comment_about_user_id, content) values(?, ?, ?)";
+
+            // insert query
+            if ($stmt = $this->conn->prepare($sql_query)) {
+                $stmt->bind_param("iis", $user_id, $comment_about_user_id, $content==NULL?'':$content);
+                $result = $stmt->execute();
+            } else {
+                var_dump($this->conn->error);
+            }
+
+            $stmt->close();
+
+            // Check for successful insertion
+            if ($result) {
+                // User successfully inserted
+                return COMMENT_CREATED_SUCCESSFULLY;
+            } else {
+                // Failed to create user
+                return COMMENT_CREATE_FAILED;
+            }
+    }
+
+    /**
+     * Fetching user by email
+     * @param String $email User email id
+     */
+    public function getListCommentOfUser($user_id) {
+        $stmt = $this->conn->prepare("SELECT * FROM comment WHERE user_comment_id = ?");
+
+        $stmt->bind_param("i", $user_id);
+
+        if ($stmt->execute()) {
+            // $user = $stmt->get_result()->fetch_assoc();
+            $vehicle = $stmt->get_result();
+            $stmt->close();
+            return $vehicle;
+        } else {
+            return NULL;
+        }
+    }
+
+    /**
+     * Fetching user by email
+     * @param String $email User email id
+     */
+    public function getComment($comment_id) {
+        $stmt = $this->conn->prepare("SELECT comment_id, user_comment_id, comment_about_user_id, content, created_at
+                                      FROM commnet WHERE comment_id = ?");
+
+        $stmt->bind_param("i", $comment_id);
+
+        if ($stmt->execute()) {
+            // $user = $stmt->get_result()->fetch_assoc();
+            $stmt->bind_result($comment_id, $user_comment_id, $comment_about_user_id, $content, $created_at);
+            $stmt->fetch();
+            $commnent = array();
+            $commnent["comment_id"] = $comment_id;
+            $commnent["user_comment_id"] = $user_comment_id;
+            $commnent["comment_about_user_id"] = $comment_about_user_id;
+            $commnent["content"] = $content; 
+            $commnent["created_at"] = $created_at;
+            $stmt->close();
+            return $commnent;
+        } else {
+            return NULL;
+        }
+    }
+
+    public function updateComment($comment_id, $content) {
+        require_once '/Config.php';
+        $conn2 = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME.";charset=utf8", DB_USERNAME, DB_PASSWORD);
+        // set the PDO error mode to exception
+        $conn2->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        $qry = "UPDATE vehicle set";
+        $param = array();
+
+        if (isset($content)) { 
+            $qry .= " content = :content,"; 
+        }
+
+        $qry .= " status = 1 WHERE comment_id = :comment_id";
+
+        $stmt = $conn2->prepare($qry);
+
+        if (isset($content)) { 
+            $stmt->bindParam(':content', $content);
+        }
+
+        $stmt->bindParam(':comment_id', $comment_id);
+        $stmt->execute();
+        $num_affected_rows = $stmt->rowCount();
+        $conn2 = null;
+        return $num_affected_rows > 0;
+    }
+
+    /**
+     * Delete driver
+     * @param String $user_id id of user
+     */
+    public function deleteComment($comment_id) {
+        $stmt = $this->conn->prepare("DELETE FROM comment WHERE comment_id = ?");
+        $stmt->bind_param("i", $comment_id);
+        $stmt->execute();
+        $num_affected_rows = $stmt->affected_rows;
+        $stmt->close();
+        return $num_affected_rows > 0;
+    }
+
+
+    /* ------------- `Rating` table method ------------------ */
+
+    public function createRating($user_id, $rating, $rating_user_id) {
+        // First check if user already existed in db
+
+            $sql_query = "INSERT INTO rating(user_id, rating_user_id, rating) values(?, ?, ?)";
+
+            // insert query
+            if ($stmt = $this->conn->prepare($sql_query)) {
+                $stmt->bind_param("iii", $user_id, $rating_user_id, $rating);
+                $result = $stmt->execute();
+            } else {
+                var_dump($this->conn->error);
+            }
+
+            $stmt->close();
+
+            // Check for successful insertion
+            if ($result) {
+                // User successfully inserted
+                return RATING_CREATED_SUCCESSFULLY;
+            } else {
+                // Failed to create user
+                return RATING_CREATE_FAILED;
+            }
+    }
+
+    public function getAverageRatingofUser($user_id){
+        $q = "SELECT AVG(rating) AS average_rating FROM rating WHERE user_id = ?";
+        $stmt = $this->conn->prepare($q);
+        $stmt->bind_param("i",$driver_id);
+        $stmt->execute();
+
+        $stmt->bind_result($average_rating);
+            $stmt->close();
+
+        if($average_rating == null){
+            return 0;
+        } else {
+            return $average_rating;
+        }
+    }
+
+    /**
+     * Fetching user by email
+     * @param String $email User email id
+     */
+    public function getRating($user_id, $rating_user_id) {
+        $stmt = $this->conn->prepare("SELECT rating FROM rating WHERE user_id = ? AND rating_user_id = ?");
+
+        $stmt->bind_param("ii", $user_id, $rating_user_id);
+
+        if ($stmt->execute()) {
+
+            $stmt->bind_result($rating);
+            $stmt->close();
+            if($rating == null){
+                return 0;
+            } else {
+                return $rating;
+            }
+        } else {
+            return NULL;
+        }
+    }
+
+
+    /**
+     * Delete driver
+     * @param String $user_id id of user
+     */
+    public function deleteRating($rating_id) {
+        $stmt = $this->conn->prepare("DELETE FROM rating WHERE rating_id = ?");
+        $stmt->bind_param("i", $rating_id);
+        $stmt->execute();
+        $num_affected_rows = $stmt->affected_rows;
+        $stmt->close();
+        return $num_affected_rows > 0;
     }
 
     /* ------------- Utility method ------------------ */
