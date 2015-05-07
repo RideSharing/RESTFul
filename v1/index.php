@@ -1339,7 +1339,7 @@ $app->put('/itinerary/:id', 'authenticateUser', function($itinerary_id) use($app
             $db = new DbHandler();
             $response = array();
             // updating task
-            $result = $db->updateItinerary3($request_params, $itinerary_id);
+            $result = $db->updateItinerary2($request_params, $itinerary_id);
 
             if ($result) {
                 // task updated successfully

@@ -1628,17 +1628,6 @@ class DbHandler {
         return $num_affected_rows > 0;
     }
 
-    public function updateItinerary3($itinerary_fields, $itinerary_id) {
-        $q = "SELECT status, table_name FROM itinerary WHERE itinerary_id = ?";
-        $stmt = $this->conn->prepare($q);
-        $stmt->bind_param("i",$itinerary_id);
-        $stmt->execute();
-        $stmt->bind_result($status, $table_name);
-        $stmt->close();
-
-        echo $status;
-    }
-
     //not finished yet
     /**
      * Updating itinerary
@@ -1651,9 +1640,8 @@ class DbHandler {
         $stmt->bind_param("i",$itinerary_id);
         $stmt->execute();
         $stmt->bind_result($status, $table_name);
+        $stmt->fetch();
         $stmt->close();
-
-        echo 123;
 
         switch ($status) {
             case '1':
@@ -1687,7 +1675,7 @@ class DbHandler {
 
         $nq = substr($q, 0, strlen($q) - 1 );
 
-        $nq .= " WHERE itinerary_id = {$itinerary_id} LIMIT 1";
+        $nq .= " WHERE itinerary_id = {$itinerary_id}";
 
         $stmt = $this->conn->prepare($nq);
         
@@ -1723,12 +1711,14 @@ class DbHandler {
      * @param Integer $itinerary_id id of the itinerary
      */
     public function updateCustomerAcceptedItinerary($itinerary_id, $customer_id) {
-        $q = "SELECT status FROM itinerary WHERE itinerary_id = ?";
+        $q = "SELECT status, table_name FROM itinerary WHERE itinerary_id = ?";
         $stmt = $this->conn->prepare($q);
         $stmt->bind_param("i",$itinerary_id);
         $stmt->execute();
-        $stmt->bind_result($status);
+        $stmt->bind_result($status, $table_name);
+        $stmt->fetch();
         $stmt->close();
+
         switch ($status) {
             case '1':
                 $table_name = 'i_created_'.$table_name;
@@ -1743,9 +1733,9 @@ class DbHandler {
                 $table_name = 'i_completed';
                 break;
             default:
-                return NULL;
                 break;
         }
+        
         //ITINERARY_STATUS_CUSTOMER_ACCEPTED
         $q = "UPDATE ".$table_name." set customer_id = ?, status = 2 
                 WHERE itinerary_id = ?";
@@ -1763,12 +1753,14 @@ class DbHandler {
      * @param Integer $itinerary_id id of the itinerary
      */
     public function updateCustomerRejectedItinerary($itinerary_id) {
-        $q = "SELECT status FROM itinerary WHERE itinerary_id = ?";
+        $q = "SELECT status, table_name FROM itinerary WHERE itinerary_id = ?";
         $stmt = $this->conn->prepare($q);
         $stmt->bind_param("i",$itinerary_id);
         $stmt->execute();
-        $stmt->bind_result($status);
+        $stmt->bind_result($status, $table_name);
+        $stmt->fetch();
         $stmt->close();
+
         switch ($status) {
             case '1':
                 $table_name = 'i_created_'.$table_name;
@@ -1783,7 +1775,6 @@ class DbHandler {
                 $table_name = 'i_completed';
                 break;
             default:
-                return NULL;
                 break;
         }
 
@@ -1803,12 +1794,14 @@ class DbHandler {
      * @param Integer $itinerary_id id of the itinerary
      */
     public function updateDriverAcceptedItinerary($itinerary_id) {
-        $q = "SELECT status FROM itinerary WHERE itinerary_id = ?";
+        $q = "SELECT status, table_name FROM itinerary WHERE itinerary_id = ?";
         $stmt = $this->conn->prepare($q);
         $stmt->bind_param("i",$itinerary_id);
         $stmt->execute();
-        $stmt->bind_result($status);
+        $stmt->bind_result($status, $table_name);
+        $stmt->fetch();
         $stmt->close();
+
         switch ($status) {
             case '1':
                 $table_name = 'i_created_'.$table_name;
@@ -1823,7 +1816,6 @@ class DbHandler {
                 $table_name = 'i_completed';
                 break;
             default:
-                return NULL;
                 break;
         }
 
@@ -1843,12 +1835,14 @@ class DbHandler {
      * @param Integer $itinerary_id id of the itinerary
      */
     public function updateDrivereRectedItinerary($itinerary_id) {
-        $q = "SELECT status FROM itinerary WHERE itinerary_id = ?";
+        $q = "SELECT status, table_name FROM itinerary WHERE itinerary_id = ?";
         $stmt = $this->conn->prepare($q);
         $stmt->bind_param("i",$itinerary_id);
         $stmt->execute();
-        $stmt->bind_result($status);
+        $stmt->bind_result($status, $table_name);
+        $stmt->fetch();
         $stmt->close();
+
         switch ($status) {
             case '1':
                 $table_name = 'i_created_'.$table_name;
@@ -1863,7 +1857,6 @@ class DbHandler {
                 $table_name = 'i_completed';
                 break;
             default:
-                return NULL;
                 break;
         }
 
