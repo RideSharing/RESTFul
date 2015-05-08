@@ -1115,42 +1115,70 @@ $app->get('/itineraries', 'authenticateUser', function() use($app) {
             $cost = $app->request->get('cost');
             $distance = $app->request->get('distance');
 
+            $startRow = 0;
+            $endRow = 10;
+
             if (isset($start_address_lat) && isset($start_address_long) && isset($end_address_lat) && isset($end_address_long)) {
                 $table = "";
                 if (($end_address_lat - $start_address_lat) > 0.05 && ($end_address_long - $start_address_long) > 0.05) {
                     $table = "itinerary_created_northeast";
+                    $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
+                    if (count($result) < 10) {
+
+                    }
                 } else if (($end_address_lat - $start_address_lat) > 0.05 && ($end_address_long - $start_address_long) < -0.05) {
                     $table = "itinerary_created_northwest";
+                    $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
                 } else if (($end_address_lat - $start_address_lat) < -0.05 && ($end_address_long - $start_address_long) < -0.05) {
                     $table = "itinerary_created_southwest";
+                    $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
                 } else if (($end_address_lat - $start_address_lat) < -0.05 && ($end_address_long - $start_address_long) > 0.05) {
                     $table = "itinerary_created_southeast";
+                    $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
                 } else if (($end_address_lat - $start_address_lat) > -0.05 && ($end_address_lat - $start_address_lat) < 0.05 &&
                             ($end_address_long - $start_address_long) > 0.05) {
                     $table = "itinerary_created_east";
+                    $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
+
+                    if (count($result) < 10) {
+                        
+                    }
                 } else if (($end_address_lat - $start_address_lat) > -0.05 && ($end_address_lat - $start_address_lat) < 0.05 &&
                             ($end_address_long - $start_address_long) < -0.05) {
                     $table = "itinerary_created_west";
+                    $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
+
+                    if (count($result) < 10) {
+                        
+                    }
                 } else if (($end_address_long - $start_address_long) > -0.05 && ($end_address_long - $start_address_long) < 0.05 &&
                             ($end_address_lat - $start_address_lat) > 0.05) {
                     $table = "itinerary_created_north";
+                    $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
+
+                    if (count($result) < 10) {
+                        
+                    }
                 } else if (($end_address_long - $start_address_long) > -0.05 && ($end_address_long - $start_address_long) < 0.05 &&
                             ($end_address_lat - $start_address_lat) < -0.05) {
                     $table = "itinerary_created_south";
+                    $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
+
+                    if (count($result) < 10) {
+                        
+                    }
                 } else {
                     $response["error"] = true;
                     $response["message"] = $lang['CREATE_ITINERARY_FAILURE_BECAUSE_SHORT_DISTANCE'];
                     echoRespnse(200, $response);
                     $app->stop();
                 }
-
-                $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table);
             } else if (isset($start_address_lat) && isset($start_address_long)) {
                 $table = "AllStart";
-                $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table);
+                $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
             } else if (isset($end_address_lat) && isset($end_address_long)) {
                 $table = "AllEnd";
-                $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table);
+                $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
             } else {
                 // fetching all user tasks
                 $result = $db->getAllItinerariesWithDriverInfo($user_id);
@@ -1417,18 +1445,68 @@ $app->put('/customer_reject_itinerary/:id', 'authenticateUser', function($itiner
 
             $db = new DbHandler();
             $response = array();
-            // updating task
-            $result = $db->updateCustomerRejectedItinerary($itinerary_id);
-            if ($result) {
-                // task updated successfully
-                $response["error"] = false;
-                $response["message"] = $lang['CUS_REJECT_ITINERARY_SUCCESS'];
+
+            $status = $db->checkItineraryStatus($itinerary_id);
+
+            if ($status == 2 || $status == 3) {
+                // updating task
+                $result = $db->updateCustomerRejectedItinerary($itinerary_id);
+                if ($result) {
+                    // task updated successfully
+                    $response["error"] = false;
+                    $response["message"] = $lang['CUS_REJECT_ITINERARY_SUCCESS'];
+                } else {
+                    // task failed to update
+                    $response["error"] = true;
+                    $response["message"] = $lang['CUS_REJECT_ITINERARY_FAILURE'];
+                }
+                echoRespnse(200, $response);
             } else {
                 // task failed to update
                 $response["error"] = true;
                 $response["message"] = $lang['CUS_REJECT_ITINERARY_FAILURE'];
+                echoRespnse(200, $response);
             }
-            echoRespnse(200, $response);
+        });
+
+$app->put('/customer_end_itinerary/:id', 'authenticateUser', function($itinerary_id) use($app) {
+            // check for required params
+            //verifyRequiredParams(array('task', 'status'));
+
+            global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $db = new DbHandler();
+            $response = array();
+
+            $status = $db->checkItineraryStatus($itinerary_id);
+
+            if ($status == 3) {
+                // updating task
+                $result = $db->updateCustomerEndItinerary($itinerary_id);
+                if ($result) {
+                    // task updated successfully
+                    $response["error"] = false;
+                    $response["message"] = $lang['CUS_END_ITINERARY_SUCCESS'];
+                } else {
+                    // task failed to update
+                    $response["error"] = true;
+                    $response["message"] = $lang['CUS_END_ITINERARY_FAILURE'];
+                }
+                echoRespnse(200, $response);
+            } else {
+                // task failed to update
+                $response["error"] = true;
+                $response["message"] = $lang['CUS_END_ITINERARY_FAILURE'];
+                echoRespnse(200, $response);
+            }
         });
 
 /**
@@ -1453,18 +1531,28 @@ $app->put('/driver_accept_itinerary/:id', 'authenticateUser', function($itinerar
 
             $db = new DbHandler();
             $response = array();
-            // updating task
-            $result = $db->updateDriverAcceptedItinerary($itinerary_id);
-            if ($result) {
-                // task updated successfully
-                $response["error"] = false;
-                $response["message"] = $lang['DRI_ACCEPT_ITINERARY_SUCCESS'];
+
+            $status = $db->checkItineraryStatus($itinerary_id);
+
+            if ($status == 2) {
+                // updating task
+                $result = $db->updateDriverAcceptedItinerary($itinerary_id);
+                if ($result) {
+                    // task updated successfully
+                    $response["error"] = false;
+                    $response["message"] = $lang['DRI_ACCEPT_ITINERARY_SUCCESS'];
+                } else {
+                    // task failed to update
+                    $response["error"] = true;
+                    $response["message"] = $lang['DRI_ACCEPT_ITINERARY_FAILURE'];
+                }
+                echoRespnse(200, $response);
             } else {
                 // task failed to update
                 $response["error"] = true;
                 $response["message"] = $lang['DRI_ACCEPT_ITINERARY_FAILURE'];
+                echoRespnse(200, $response);
             }
-            echoRespnse(200, $response);
         });
 
 /**
@@ -1489,18 +1577,28 @@ $app->put('/driver_reject_itinerary/:id', 'authenticateUser', function($itinerar
 
             $db = new DbHandler();
             $response = array();
-            // updating task
-            $result = $db->updateDrivereRectedItinerary($itinerary_id);
-            if ($result) {
-                // task updated successfully
-                $response["error"] = false;
-                $response["message"] = $lang['DRI_REJECT_ITINERARY_SUCCESS'];
+
+            $status = $db->checkItineraryStatus($itinerary_id);
+
+            if ($status == 2 || $status == 3) {
+                // updating task
+                $result = $db->updateDrivereRectedItinerary($itinerary_id);
+                if ($result) {
+                    // task updated successfully
+                    $response["error"] = false;
+                    $response["message"] = $lang['DRI_REJECT_ITINERARY_SUCCESS'];
+                } else {
+                    // task failed to update
+                    $response["error"] = true;
+                    $response["message"] = $lang['DRI_REJECT_ITINERARY_FAILURE'];
+                }
+                echoRespnse(200, $response);
             } else {
                 // task failed to update
                 $response["error"] = true;
                 $response["message"] = $lang['DRI_REJECT_ITINERARY_FAILURE'];
+                echoRespnse(200, $response);
             }
-            echoRespnse(200, $response);
         });
 //not finished 
 //not finished yet: bi phat sau khi delete khi da duoc accepted
@@ -1742,7 +1840,7 @@ $app->delete('/comment/:comment_id', 'authenticateUser', function($comment_id) {
 
 
 /////////////////////////////////////////////////////////////////////////////////
-
+///statistic_customer/:field
 
 
 $app->get('/rating/:user_id/:rating_user_id', 'authenticateUser', function($user_id, $rating_user_id) {
@@ -1759,21 +1857,15 @@ $app->get('/rating/:user_id/:rating_user_id', 'authenticateUser', function($user
 
             if ($db->isUserExists1($user_id)) {
                 $response['error'] = false;
-                $response['comments'] = array();
-                //////////////////////////////////
-                $result = $db->getRating($user_id, $rating_user_id);
+                $rating = $db->getRating($user_id, $rating_user_id);
                 
-                if ($average_rating != NULL) {
-                    $response["error"] = false;
-                    $response['average_rating'] = $average_rating["average_rating"];;
+                if ($rating != NULL) {
+                    $response['rating'] = $rating["rating"];;
                     echoRespnse(200, $response);
                 } else {
-                    $response["error"] = true;
                     $response["message"] = $lang['ERR_LINK_REQUEST'];
                     echoRespnse(404, $response);
                 }
-
-/////////////////////////////////////////////////
                 echoRespnse(200, $response);
 
             } else {
@@ -1890,9 +1982,6 @@ $app->delete('/rating/:rating_id', 'authenticateUser', function($rating_id) {
 
 
 
-
-
-
 //Staticstic for admin
 $app->get('/statistic/:field', 'authenticateStaff', function($field) {
             $language = "en";
@@ -1907,11 +1996,11 @@ $app->get('/statistic/:field', 'authenticateStaff', function($field) {
             $db = new DbHandler();
 
             if ($field == 'user'){
-                $result = $db->statisticUserBy("123");
+                $result = $db->statisticUserBy();
             } else if ($field == 'itinerary'){
-                $result = $db->statisticItineraryBy("123");
+                $result = $db->statisticItineraryBy();
             } else if ($field == 'total_money'){
-                $result = $db->statisticMoneyBy("123");
+                $result = $db->statisticMoneyBy();
             } else {
 
             }
@@ -1946,9 +2035,9 @@ $app->get('/statistic_customer/:field', 'authenticateUser', function($field) {
             $db = new DbHandler();
 
             if ($field == 'itinerary'){
-                $result = $db->statisticCustomerItineraryBy("123", $user_id);
+                $result = $db->statisticCustomerItineraryBy($user_id);
             } else if ($field == 'total_money'){
-                $result = $db->statisticCustomerMoneyBy("123", $user_id);
+                $result = $db->statisticCustomerMoneyBy($user_id);
             } else {
 
             }
@@ -1981,9 +2070,9 @@ $app->get('/statistic_driver/:field', 'authenticateUser', function($field) {
             $db = new DbHandler();
 
             if ($field == 'itinerary'){
-                $result = $db->statisticDriverItineraryBy("123", $user_id);
+                $result = $db->statisticDriverItineraryBy($user_id);
             } else if ($field == 'total_money'){
-                $result = $db->statisticDriverMoneyBy("123", $user_id);
+                $result = $db->statisticDriverMoneyBy($user_id);
             } else {
 
             }
