@@ -958,7 +958,7 @@ $app->post('/itinerary', 'authenticateUser', function() use ($app) {
 
             // check for required params
             verifyRequiredParams(array('start_address','start_address_lat','start_address_long','end_address',
-                'end_address_lat','end_address_long','leave_date','duration','cost', 'distance'), $language);
+                'end_address_lat','end_address_long','leave_date','duration','cost', 'distance', 'vehicle_id'), $language);
 
             $response = array();
             
@@ -979,6 +979,7 @@ $app->post('/itinerary', 'authenticateUser', function() use ($app) {
             $cost = $app->request->post('cost');
             $description = $app->request->post('description');
             $distance = $app->request->post('distance');
+            $vehicle_id = $app->request->post('vehicle_id');
 
             global $user_id;
             $db = new DbHandler();
@@ -1016,7 +1017,7 @@ $app->post('/itinerary', 'authenticateUser', function() use ($app) {
             // creating new itinerary
             $itinerary_id = $db->createItinerary($user_id, $start_address, $start_address_lat,$start_address_long,
                      $end_address, $end_address_lat, $end_address_long, $pick_up_address, $pick_up_address_lat, $pick_up_address_long,
-                     $drop_address, $drop_address_lat, $drop_address_long, $leave_date, $duration, $cost, $description, $distance, $table);
+                     $drop_address, $drop_address_lat, $drop_address_long, $leave_date, $duration, $cost, $description, $distance, $vehicle_id, $table);
 
             if ($itinerary_id != NULL) {
                 $response["error"] = false;
@@ -1057,6 +1058,8 @@ $app->get('/itinerary/:id', function($itinerary_id) {
                 $response["error"] = false;
                 $response["itinerary_id"] = $result["itinerary_id"];
                 $response["driver_id"] = $result["driver_id"];
+                $response["vehicle_id"] = $result["vehicle_id"];
+                $response["vehicle_type"] = $result["vehicle_type"];
                 $response["customer_id"] = $result["customer_id"];
                 $response["start_address"] = $result["start_address"];
                 $response["start_address_lat"] = $result["start_address_lat"];
@@ -1228,6 +1231,8 @@ $app->get('/itineraries/driver/:order', 'authenticateUser', function($order) {
                 //itinerary info
                 $tmp["itinerary_id"] = $itinerary["itinerary_id"];
                 $tmp["driver_id"] = $itinerary["driver_id"];
+                $tmp["vehicle_id"] = $itinerary["vehicle_id"];
+                $tmp["vehicle_type"] = $itinerary["vehicle_type"];
                 $tmp["customer_id"] = $itinerary["customer_id"];
                 $tmp["start_address"] = $itinerary["start_address"];
                 $tmp["start_address_lat"] = $itinerary["start_address_lat"];
@@ -1600,6 +1605,53 @@ $app->put('/driver_reject_itinerary/:id', 'authenticateUser', function($itinerar
                 echoRespnse(200, $response);
             }
         });
+///////////////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * Updating when itinerary ongoing
+ * method PUT
+ * params 
+ * url - /accept_itinerary/:id
+ */
+$app->put('/driver_ongoing_itinerary/:id', 'authenticateUser', function($itinerary_id) use($app) {
+            // check for required params
+            //verifyRequiredParams(array('task', 'status'));
+
+            global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $db = new DbHandler();
+            $response = array();
+
+            $status = $db->checkItineraryStatus($itinerary_id);
+
+            if ($status == 2 || $status == 3) {
+                // updating task
+                $result = $db->updateOnGoingItinerary($itinerary_id);
+                if ($result) {
+                    // task updated successfully
+                    $response["error"] = false;
+                    $response["message"] = $lang['DRI_REJECT_ITINERARY_SUCCESS'];
+                } else {
+                    // task failed to update
+                    $response["error"] = true;
+                    $response["message"] = $lang['DRI_REJECT_ITINERARY_FAILURE'];
+                }
+                echoRespnse(200, $response);
+            } else {
+                // task failed to update
+                $response["error"] = true;
+                $response["message"] = $lang['DRI_REJECT_ITINERARY_FAILURE'];
+                echoRespnse(200, $response);
+            }
+        });
+///////////////////////////////////////////////////////////////////////////////////////////
 //not finished 
 //not finished yet: bi phat sau khi delete khi da duoc accepted
 /**
@@ -1670,7 +1722,10 @@ $app->post('/feedback', function() use ($app) {
         });
 
 
-////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
+
+
+
 $app->get('/comments/:user_id', 'authenticateUser', function($user_id) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
@@ -1723,9 +1778,9 @@ $app->post('/comment', 'authenticateUser', function() use ($app) {
             $comment_about_user_id = $app->request->post('comment_about_user_id');
 
             $db = new DbHandler();
-            $res = $db->createCommnent($user_id, $content, $comment_about_user_id);
+            $res = $db->createComment($user_id, $content, $comment_about_user_id);
 
-            if ($res == c) {
+            if ($res == COMMENT_CREATED_SUCCESSFULLY) {
                 $response["error"] = false;
                 $response["message"] = $lang['REGISTER_SUCCESS'];
             } else if ($res == COMMENT_CREATE_FAILED) {
@@ -1839,7 +1894,7 @@ $app->delete('/comment/:comment_id', 'authenticateUser', function($comment_id) {
         });
 
 
-/////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
 ///statistic_customer/:field
 
 
@@ -1934,7 +1989,7 @@ $app->post('/rating', 'authenticateUser', function() use ($app) {
             $db = new DbHandler();
             $res = $db->createRating($user_id, $rating, $rating_user_id);
 
-            if ($res == c) {
+            if ($res == RATING_CREATED_SUCCESSFULLY) {
                 $response["error"] = false;
                 $response["message"] = $lang['REGISTER_SUCCESS'];
             } else if ($res == RATING_CREATE_FAILED) {
@@ -2176,6 +2231,7 @@ $app->post('/staff/login', function() use ($app) {
                     $response['created_at'] = $staff['created_at'];
                     $response['link_avatar'] = $staff['link_avatar'];
                     $response['staff_id'] = $staff['staff_id'];
+                    $response['role'] = $staff['role'];
                 } else {
                     // unknown error occurred
                     $response['error'] = true;
@@ -2548,6 +2604,139 @@ $app->delete('/staff/user/:user_id', 'authenticateStaff', function($user_id) {
         });
 
 /**
+ * Get all user information
+ * method GET
+ * url /user
+ */
+$app->get('/staff/driver', 'authenticateStaff', function() {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $response = array();
+            $db = new DbHandler();
+
+            $response['error'] = false;
+            $response['users'] = array();
+
+            // fetch task
+            $result = $db->getListDriver();
+
+            while ($user = $result->fetch_assoc()) {
+                array_push($response['users'], $user);               
+            }
+
+            echoRespnse(200, $response);
+        });
+
+/**
+ * Get user information
+ * method GET
+ * url /staff/user
+ */
+$app->get('/staff/driver/:user_id', 'authenticateStaff', function($user_id) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $response = array();
+            $db = new DbHandler();
+
+            // fetch task
+            $result = $db->getDriverByUserID($user_id);
+
+            if ($result != NULL) {
+                $response["error"] = false;
+                $response['fullname'] = $result['fullname'];
+                $response['driver_license'] = $result['driver_license'];
+                $response['driver_license_img'] = $result['driver_license_img'];
+                $response['created_at'] = $result['created_at'];
+                $response['status'] = $result['status'];
+                echoRespnse(200, $response);
+            } else {
+                $response["error"] = true;
+                $response["message"] = "The requested resource doesn't exists";
+                echoRespnse(404, $response);
+            }
+        });
+
+/**
+ * Get user information
+ * method GET
+ * url /user
+ */
+$app->get('/staff/driver/:user_id/:field', 'authenticateStaff', function($user_id, $field) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $response = array();
+            $db = new DbHandler();
+
+            // fetch task
+            $result = $db->getDriverByField($user_id, $field);
+
+            if ($result != NULL) {
+                $response["error"] = false;
+                $response[$field] = $result;
+                echoRespnse(200, $response);
+            } else {
+                $response["error"] = true;
+                $response["message"] = $lang['ERR_LINK_REQUEST'];
+                echoRespnse(404, $response);
+            }
+        });
+
+/**
+ * Updating user
+ * method PUT
+ * params task, status
+ * url - /user
+ */
+$app->put('/staff/driver/:user_id', 'authenticateStaff', function($user_id) use($app) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            // check for required params
+            verifyRequiredParams(array('status'), $language);
+        
+            $status = $app->request->put('status');
+
+            $db = new DbHandler();
+            $response = array();
+
+            // updating task
+            $result = $db->updateDriver1($user_id, $status);
+            if ($result) {
+                // task updated successfully
+                $response["error"] = false;
+                $response["message"] = $lang['ALERT_UPDATE'];
+            } else {
+                // task failed to update
+                $response["error"] = true;
+                $response["message"] = $lang['ERR_UPDATE'];
+            }
+            echoRespnse(200, $response);
+        });
+
+/**
  * Listing all itineraries of particual user
  * method GET
  * url /itineraries          
@@ -2576,7 +2765,7 @@ $app->get('/staff/itineraries', 'authenticateStaff', function() {
         });
 
 
-$app->get('staff/itinerary/:id', function($itinerary_id) {
+$app->get('/staff/itinerary/:id', function($itinerary_id) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
@@ -2615,6 +2804,7 @@ $app->get('staff/itinerary/:id', function($itinerary_id) {
                 $response["description"] = $result["description"];
                 $response["status"] = $result["status"];
                 $response["created_at"] = $result["created_at"];
+                $response["fullname"] = $result["fullname"];
                 echoRespnse(200, $response);
             } else {
                 $response["error"] = true;
@@ -2623,7 +2813,7 @@ $app->get('staff/itinerary/:id', function($itinerary_id) {
             }
         });
 
-$app->put('staff/itinerary/:id', 'authenticateStaff', function($itinerary_id) use($app) {
+$app->put('/staff/itinerary/:id', 'authenticateStaff', function($itinerary_id) use($app) {
             // check for required params
             //verifyRequiredParams(array('task', 'status'));
             global $staff_id;

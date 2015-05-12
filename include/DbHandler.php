@@ -516,15 +516,20 @@ class DbHandler {
      * @param String $email User email id
      */
     public function getDriverByUserID($user_id) {
-        $stmt = $this->conn->prepare("SELECT driver_license, driver_license_img FROM driver WHERE user_id = ?");
+        $stmt = $this->conn->prepare("SELECT d.*, u.fullname FROM driver as d INNER JOIN user as u 
+                                        ON u.user_id = d.user_id WHERE d.user_id = ?");
         $stmt->bind_param("s", $user_id);
         if ($stmt->execute()) {
             // $user = $stmt->get_result()->fetch_assoc();
-            $stmt->bind_result($driver_license, $driver_license_img);
+            $stmt->bind_result($driver_id, $driver_license, $driver_license_img, $status, $created_at, $fullname);
             $stmt->fetch();
             $user = array();
+            $user["driver_id"] = $driver_id;
             $user["driver_license"] = $driver_license;
             $user["driver_license_img"] = $driver_license_img;
+            $user["status"] = $status;
+            $user["created_at"] = $created_at;
+            $user["fullname"] = $fullname;
             $stmt->close();
             return $user;
         } else {
@@ -586,6 +591,22 @@ class DbHandler {
     }
 
     /**
+     * Fetching user by email
+     * @param String $email User email id
+     */
+    public function getListDriver() {
+        $stmt = $this->conn->prepare("SELECT d.*, u.fullname FROM user as u INNER JOIN driver as d ON d.user_id = u.user_id");
+        if ($stmt->execute()) {
+            // $user = $stmt->get_result()->fetch_assoc();
+            $users = $stmt->get_result();
+            $stmt->close();
+            return $users;
+        } else {
+            return NULL;
+        }
+    }
+
+    /**
      * Updating driver
      * @param String $user_id id of user
      * @param String $driver_license Driver License
@@ -596,6 +617,19 @@ class DbHandler {
                                         WHERE user_id = ?");
 
         $stmt->bind_param("ssi", $driver_license, $driver_license_img, $user_id);
+        $stmt->execute();
+
+        $num_affected_rows = $stmt->affected_rows;
+
+        $stmt->close();
+        return $num_affected_rows > 0;
+    }
+
+    public function updateDriver1($user_id, $status) {
+        $stmt = $this->conn->prepare("UPDATE driver set status = ? 
+                                        WHERE user_id = ?");
+
+        $stmt->bind_param("ii", $status, $user_id);
         $stmt->execute();
 
         $num_affected_rows = $stmt->affected_rows;
@@ -1101,13 +1135,13 @@ class DbHandler {
      */
     public function createItinerary($driver_id, $start_address, $start_address_lat,$start_address_long,
              $end_address, $end_address_lat, $end_address_long, $pick_up_address, $pick_up_address_lat, $pick_up_address_long,
-             $drop_address, $drop_address_lat, $drop_address_long, $leave_date, $duration, $cost, $description, $distance, $table) {
+             $drop_address, $drop_address_lat, $drop_address_long, $leave_date, $duration, $cost, $description, $distance, $vehicle_id, $table) {
 
         $name_table = split("_", $table);
         $name_table = $name_table[2];
-        $q = "INSERT INTO itinerary (table_name, driver_id) VALUES ('".$name_table."', ?)";
+        $q = "INSERT INTO itinerary (table_name, driver_id, vehicle_id) VALUES ('".$name_table."', ?, ?)";
         $stmt = $this->conn->prepare($q);
-        $stmt->bind_param('i', $driver_id);
+        $stmt->bind_param('ii', $driver_id, $vehicle_id);
         $result = $stmt->execute();
         $new_itinerary_id = $this->conn->insert_id;
 
@@ -1153,18 +1187,25 @@ class DbHandler {
      * @param Integer $itinerary_id id of the itinerary
      */
     public function getItinerary($itinerary_id) {
-        $q = "SELECT * FROM itinerary WHERE itinerary_id = ?";
+        $q = "SELECT i.*, v.type as vehicle_type, u.fullname as d_fullname, u2.fullname as c_fullname FROM itinerary as i 
+                INNER JOIN vehicle as v ON i.vehicle_id = v.vehicle_id
+                INNER JOIN user as u on u.user_id = i.driver_id
+                WHERE itinerary_id = ?";
         $stmt = $this->conn->prepare($q);
         $stmt->bind_param("i",$itinerary_id);
+        $customer_id = "";
         if ($stmt->execute()) {
             $res = array();
-            $stmt->bind_result($itinerary_id, $driver_id, $customer_id, $table_name, $status, $created_at);
+            $stmt->bind_result($itinerary_id, $driver_id, $vehicle_id, $customer_id, $table_name, $status, $created_at, $type, $fullname);
 
             // TODO
             // $task = $stmt->get_result()->fetch_assoc();
             $stmt->fetch();
             $res["itinerary_id"] = $itinerary_id;
             $res["driver_id"] = $driver_id;
+            $res["fullname"] = $fullname;
+            $res["vehicle_id"] = $vehicle_id;
+            $res["vehicle_type"] = $type;
             $res["customer_id"] = $customer_id;
             $res["created_at"] = $created_at;
             $res["status"] = $status;
@@ -1191,6 +1232,27 @@ class DbHandler {
         } else {
             return NULL;
         }
+
+        //Right here
+        $q = "SELECT fullname FROM user WHERE user_id = ?";
+        $stmt = $this->conn->prepare($q);
+        $stmt->bind_param("i", $customer_id);
+
+        if ($stmt->execute()) {
+            $stmt->bind_result($fullname);
+
+            // TODO
+            // $task = $stmt->get_result()->fetch_assoc();
+            $stmt->fetch();
+            $res["customer_fullname"] = $fullname;
+            
+
+            $stmt->close();
+            return $res;
+        } else {
+            return NULL;
+        }
+        //
 
         $q = "SELECT * FROM ".$table_name." WHERE itinerary_id = ?";
         $stmt = $this->conn->prepare($q);
@@ -1248,7 +1310,7 @@ class DbHandler {
 
     public function getAllItinerariesWithDriverInfo($user_id) {
         //$q = "SELECT * FROM itinerary, driver, user WHERE itinerary.driver_id = driver.user_id AND driver.user_id = user.user_id";
-        $q = "SELECT i.itinerary_id, ii.driver_id, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long,
+        $q = "SELECT i.itinerary_id, ii.driver_id, v.vehicle_id, v.type as vehicle_type, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long,
             i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, 
             i.drop_address_long, i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, 
             i.distance, i.cost, i.description, ii.status as itinerary_status, ii.created_at,
@@ -1267,8 +1329,8 @@ class DbHandler {
                     UNION
                     SELECT * FROM itinerary_created_north 
                     UNION
-                    SELECT * FROM itinerary_created_south) as i, itinerary as ii, driver as d, user as u ";
-        $q .=     "WHERE ii.driver_id = d.user_id AND d.user_id = u.user_id AND ii.itinerary_id = i.itinerary_id";       
+                    SELECT * FROM itinerary_created_south) as i, itinerary as ii, driver as d, user as u, vehicle as v ";
+        $q .=     "WHERE ii.driver_id = d.user_id AND d.user_id = u.user_id AND ii.itinerary_id = i.itinerary_id AND ii.vehicle_id = v.vehicle_id";       
 
         $stmt = $this->conn->prepare($q);
         $stmt->execute();
@@ -1282,6 +1344,8 @@ class DbHandler {
 
             $tmp["itinerary_id"] = $itinerary["itinerary_id"];
             $tmp["driver_id"] = $itinerary["driver_id"];
+            $tmp["vehicle_id"] = $itinerary["vehicle_id"];
+            $tmp["vehicle_type"] = $itinerary["vehicle_type"];
             $tmp["customer_id"] = $itinerary["customer_id"];
             $tmp["start_address"] = $itinerary["start_address"];
             $tmp["start_address_lat"] = $itinerary["start_address_lat"];
@@ -1480,7 +1544,7 @@ class DbHandler {
             $table == "itinerary_created_north" || $table == "itinerary_created_east" ||
             $table == "itinerary_created_southeast" || $table == "itinerary_created_southwest" ||
             $table == "itinerary_created_south" || $table == "itinerary_created_west") {
-            $q .= "SELECT i.itinerary_id, ii.driver_id, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
+            $q .= "SELECT i.itinerary_id, ii.driver_id, v.type as vehicle_type, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
                 i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
                 i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
                 ii.created_at, u.fullname, u.phone, u.link_avatar
@@ -1583,6 +1647,8 @@ class DbHandler {
               ON ii.driver_id = d.user_id
               INNER JOIN user as u 
               ON d.user_id = u.user_id
+              INNER JOIN vehicle as v
+              ON v.vehicle_id = ii.vehicle_id
               ORDER BY i.cost, i.distance, i.duration";
 
         if (isset($startRow) && isset($endRow)) {
@@ -1628,12 +1694,12 @@ class DbHandler {
      * @param Integer $driver_id id of the driver
      */
     public function getDriverItineraries($driver_id, $order) {
-        $q = "SELECT i.itinerary_id, i.driver_id, i.customer_id, i.start_address, i.start_address_lat, i.start_address_long,
+        $q = "SELECT i.itinerary_id, i.driver_id, i.vehicle_id, v.type as vehicle_type, i.customer_id, i.start_address, i.start_address_lat, i.start_address_long,
             i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long,
             i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, i.status as itinerary_status, i.created_at,
             d.driver_license, d.driver_license_img, u.user_id, u.email, u.fullname, u.phone, u.personalID, u.link_avatar ";
-        $q .=    "FROM i_itinerary as i, driver as d, user as u ";
-        $q .=     "WHERE i.driver_id = d.user_id AND d.user_id = u.user_id AND driver_id = ? ";
+        $q .=    "FROM i_itinerary as i, driver as d, user as u, vehicle as v ";
+        $q .=     "WHERE i.driver_id = d.user_id AND d.user_id = u.user_id AND v.vehicle_id = i.vehicle_id AND driver_id = ? ";
 
         if(isset($order)){
             $q .= "ORDER BY " .$order;
@@ -1656,12 +1722,12 @@ class DbHandler {
      * @param Integer $customer_id id of the customer
      */
     public function getCustomerItineraries($customer_id, $order) {
-        $q = "SELECT itinerary_id, i.driver_id, i.customer_id, start_address, start_address_lat, start_address_long,
+        $q = "SELECT itinerary_id, i.driver_id, i.vehicle_id, v.type as vehicle_type, i.customer_id, start_address, start_address_lat, start_address_long,
             pick_up_address, pick_up_address_lat, pick_up_address_long, drop_address, drop_address_lat, drop_address_long,
             end_address, end_address_lat, end_address_long, leave_date, duration, distance, cost, description, i.status as itinerary_status, i.created_at,
             driver_license, driver_license_img, u.user_id, u.email, u.fullname, u.phone, personalID, link_avatar ";
-        $q .=    "FROM i_itinerary as i, driver as d, user as u ";
-        $q .=     "WHERE i.driver_id = d.user_id AND d.user_id = u.user_id AND customer_id = ? ";
+        $q .=    "FROM i_itinerary as i, driver as d, user as u, vehicle as v ";
+        $q .=     "WHERE i.driver_id = d.user_id AND d.user_id = u.user_id AND v.vehicle_id = i.vehicle_id AND customer_id = ? ";
         
         $stmt = $this->conn->prepare($q);
         $stmt->bind_param("i",$customer_id);
@@ -2065,6 +2131,75 @@ class DbHandler {
         return $num_affected_rows > 0;
     }
 
+
+    /**
+     * Updating accepted itinerary by driver
+     * @param Aray $itinerary_fields properties of the itinerary
+     * @param Integer $itinerary_id id of the itinerary
+     */
+    public function updateOnGoingItinerary($itinerary_id) {
+        $q = "SELECT status, table_name FROM itinerary WHERE itinerary_id = ?";
+        $stmt = $this->conn->prepare($q);
+        $stmt->bind_param("i",$itinerary_id);
+        $stmt->execute();
+        $stmt->bind_result($status, $table_name);
+        $stmt->fetch();
+        $stmt->close();
+
+        switch ($status) {
+            case '1':
+                $table_name = 'itinerary_created_'.$table_name;
+                break;
+            case '2':
+                $table_name = 'itinerary_joinning';
+                break;
+            case '3':
+                $table_name = 'itinerary_accepted';
+                break;
+            case '4':
+                $table_name = 'itinerary_completed';
+                break;
+            default:
+                break;
+        }
+
+        $itinerary = $this->getItinerary($itinerary_id);
+
+        $q = "INSERT INTO itinerary_accepted (itinerary_id, start_address, start_address_lat, start_address_long, 
+            end_address, end_address_lat, end_address_long, pick_up_address, pick_up_address_lat, pick_up_address_long, 
+            drop_address, drop_address_lat, drop_address_long, leave_date, duration, cost, description, distance) 
+            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+
+        $stmt = $this->conn->prepare($q);
+
+        $stmt->bind_param("isddsddsddsddsidsd",
+            $itinerary['itinerary_id'], $itinerary['start_address'], $itinerary['start_address_lat'], $itinerary['start_address_long'], 
+            $itinerary['end_address'], $itinerary['end_address_lat'], $itinerary['end_address_long'], $itinerary['pick_up_address'], 
+            $itinerary['pick_up_address_lat'], $itinerary['pick_up_address_long'], $itinerary['drop_address'], $itinerary['drop_address_lat'], 
+            $itinerary['drop_address_long'], $itinerary['leave_date'], $itinerary['duration'], $itinerary['cost'], 
+            $itinerary['description'], $itinerary['distance']);
+
+        $stmt->execute();
+        $stmt->close();
+
+        $q = "DELETE FROM itinerary_joinning WHERE itinerary_id = ?";
+
+        $stmt = $this->conn->prepare($q);
+        $stmt->bind_param("i", $itinerary_id);
+        $stmt->execute();
+        $num_affected_rows = $stmt->affected_rows;
+        $stmt->close();
+        
+        //ITINERARY_STATUS_CUSTOMER_ACCEPTED
+        $q = "UPDATE itinerary set status = 3 WHERE itinerary_id = ?";
+        $stmt = $this->conn->prepare($q);
+        $stmt->bind_param("i", $itinerary_id);
+        $stmt->execute();
+        $num_affected_rows = $stmt->affected_rows;
+        $stmt->close();
+        return $num_affected_rows > 0;
+    }
+
     /**
      * Updating rejected itinerary by driver
      * @param Aray $itinerary_fields properties of the itinerary
@@ -2406,7 +2541,7 @@ class DbHandler {
     public function createComment($user_id, $content, $comment_about_user_id) {
         // First check if user already existed in db
 
-            $sql_query = "INSERT INTO commnet(user_comment_id, comment_about_user_id, content) values(?, ?, ?)";
+            $sql_query = "INSERT INTO comment(user_comment_id, comment_about_user_id, content) values(?, ?, ?)";
 
             // insert query
             if ($stmt = $this->conn->prepare($sql_query)) {
