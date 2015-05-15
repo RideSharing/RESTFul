@@ -1187,7 +1187,7 @@ class DbHandler {
      * @param Integer $itinerary_id id of the itinerary
      */
     public function getItinerary($itinerary_id) {
-        $q = "SELECT i.*, v.type as vehicle_type, u.fullname as d_fullname, u2.fullname as c_fullname FROM itinerary as i 
+        $q = "SELECT i.*, v.type as vehicle_type, u.fullname as d_fullname, u.phone FROM itinerary as i 
                 INNER JOIN vehicle as v ON i.vehicle_id = v.vehicle_id
                 INNER JOIN user as u on u.user_id = i.driver_id
                 WHERE itinerary_id = ?";
@@ -1196,7 +1196,7 @@ class DbHandler {
         $customer_id = "";
         if ($stmt->execute()) {
             $res = array();
-            $stmt->bind_result($itinerary_id, $driver_id, $vehicle_id, $customer_id, $table_name, $status, $created_at, $type, $fullname);
+            $stmt->bind_result($itinerary_id, $driver_id, $vehicle_id, $customer_id, $table_name, $status, $created_at, $type, $fullname, $phone);
 
             // TODO
             // $task = $stmt->get_result()->fetch_assoc();
@@ -1204,6 +1204,7 @@ class DbHandler {
             $res["itinerary_id"] = $itinerary_id;
             $res["driver_id"] = $driver_id;
             $res["fullname"] = $fullname;
+            $res["phone"] = $phone;
             $res["vehicle_id"] = $vehicle_id;
             $res["vehicle_type"] = $type;
             $res["customer_id"] = $customer_id;
@@ -1245,16 +1246,13 @@ class DbHandler {
             // $task = $stmt->get_result()->fetch_assoc();
             $stmt->fetch();
             $res["customer_fullname"] = $fullname;
-            
 
             $stmt->close();
-            return $res;
-        } else {
-            return NULL;
         }
         //
 
         $q = "SELECT * FROM ".$table_name." WHERE itinerary_id = ?";
+
         $stmt = $this->conn->prepare($q);
         $stmt->bind_param("i", $itinerary_id);
 
@@ -1287,6 +1285,9 @@ class DbHandler {
             $res["description"] = $description;
 
             $stmt->close();
+
+            $res["average_rating"] = $this->getAverageRatingofUser($res["driver_id"]);
+
             return $res;
         } else {
             return NULL;
@@ -1544,7 +1545,7 @@ class DbHandler {
             $table == "itinerary_created_north" || $table == "itinerary_created_east" ||
             $table == "itinerary_created_southeast" || $table == "itinerary_created_southwest" ||
             $table == "itinerary_created_south" || $table == "itinerary_created_west") {
-            $q .= "SELECT i.itinerary_id, ii.driver_id, v.type as vehicle_type, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
+            $q .= "SELECT i.itinerary_id, ii.driver_id, r.average_rating, v.type as vehicle_type, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
                 i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
                 i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
                 ii.created_at, u.fullname, u.phone, u.link_avatar
@@ -1553,7 +1554,7 @@ class DbHandler {
                     AND (ABS(:end_address_lat - end_address_lat) < 0.05)
                     AND (ABS(:end_address_long - end_address_long) < 0.05)";
         } else if ($table == "AllStart") {
-            $q .= "SELECT i.itinerary_id, ii.driver_id, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
+            $q .= "SELECT i.itinerary_id, ii.driver_id, r.average_rating, v.type as vehicle_type, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
                 i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
                 i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
                 ii.created_at, u.fullname, u.phone, u.link_avatar
@@ -1581,7 +1582,7 @@ class DbHandler {
                     SELECT * FROM itinerary_created_south WHERE leave_date >='". $leave_date. "' AND 
                     ABS(start_address_lat - :start_address_lat) < 0.2 AND ABS(start_address_long - :start_address_long) < 0.2";
         } else if ($table == "AllEnd") {
-            $q .= "SELECT i.itinerary_id, ii.driver_id, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
+            $q .= "SELECT i.itinerary_id, ii.driver_id, r.average_rating, v.type as vehicle_type, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
                 i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
                 i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
                 ii.created_at, u.fullname, u.phone, u.link_avatar
@@ -1609,7 +1610,7 @@ class DbHandler {
                     SELECT * FROM itinerary_created_south WHERE leave_date >='". $leave_date. "' AND 
                     ABS(end_address_lat - :end_address_lat) < 0.1 AND ABS(end_address_long - :end_address_long) < 0.1";
         } else {
-            $q .= "SELECT i.itinerary_id, ii.driver_id, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
+            $q .= "SELECT i.itinerary_id, ii.driver_id, r.average_rating, v.type as vehicle_type, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
                 i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
                 i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
                 ii.created_at, u.fullname, u.phone, u.link_avatar
@@ -1647,8 +1648,10 @@ class DbHandler {
               ON ii.driver_id = d.user_id
               INNER JOIN user as u 
               ON d.user_id = u.user_id
-              INNER JOIN vehicle as v
+              INNER JOIN vehicle  as v
               ON v.vehicle_id = ii.vehicle_id
+              INNER JOIN (SELECT rating_user_id, AVG(rating) as average_rating FROM rating GROUP BY rating_user_id) as r
+              ON r.rating_user_id = d.user_id
               ORDER BY i.cost, i.distance, i.duration";
 
         if (isset($startRow) && isset($endRow)) {
@@ -2427,15 +2430,27 @@ class DbHandler {
 
     //Customer staticstic 
     //number of itineraries creted per month
-    public function statisticCustomerItineraryBy($customer_id) {
+    public function statisticCustomerItineraryBy($customer_id, $year) {
         $q = "SELECT DATE_FORMAT(created_at,'%Y-%m') as month, COUNT(DATE_FORMAT(created_at,'%Y-%m')) as number 
-                FROM (SELECT * FROM i_itinerary WHERE customer_id = ?) as i GROUP BY DATE_FORMAT(created_at,'%Y-%m')";
-        echo $customer_id;
-        $stmt = $this->conn->prepare($q);
-        if ($stmt->bind_param("i",$customer_id)) {
-            $stmt->execute();
+                FROM (SELECT * FROM i_itinerary WHERE customer_id = ? ";
+
+
+        if( $year == 'all' ) {
+            $q .= " ) as i GROUP BY DATE_FORMAT(created_at,'%Y-%m')";
+            $stmt = $this->conn->prepare($q);
+            if ($stmt->bind_param("i",$customer_id)) {
+                $stmt->execute();
+            } else {
+                var_dump($this->db->error);
+            }
         } else {
-            var_dump($this->db->error);
+            $q .= " AND DATE_FORMAT(created_at,'%Y') = ? ) as i GROUP BY DATE_FORMAT(created_at,'%Y-%m')";
+            $stmt = $this->conn->prepare($q);
+            if ($stmt->bind_param("ii",$customer_id, $year)) {
+                $stmt->execute();
+            } else {
+                var_dump($this->db->error);
+            }
         }
 
         $results = $stmt->get_result();
@@ -2456,16 +2471,35 @@ class DbHandler {
     }
 
     //total money come frome itineraries per month
-    public function statisticCustomerMoneyBy($customer_id) {
+    public function statisticCustomerMoneyBy($customer_id, $year) {
         $q = "SELECT DATE_FORMAT(created_at,'%Y-%m') as month, SUM(cost) as total_money 
-                FROM (SELECT * FROM i_itinerary WHERE customer_id = ?) as i GROUP BY DATE_FORMAT(created_at,'%Y-%m') ";
+                FROM (SELECT * FROM i_itinerary WHERE customer_id = ? ";
         
-        $stmt = $this->conn->prepare($q);
-        if ($stmt->bind_param("i",$customer_id)) {
-            $stmt->execute();
+        if( $year == 'all' ) {
+            $q .= " ) as i GROUP BY DATE_FORMAT(created_at,'%Y-%m')";
+            $stmt = $this->conn->prepare($q);
+            if ($stmt->bind_param("i",$customer_id)) {
+                $stmt->execute();
+            } else {
+                var_dump($this->db->error);
+            }
         } else {
-            var_dump($this->db->error);
+            $q .= " AND DATE_FORMAT(created_at,'%Y') = ? ) as i GROUP BY DATE_FORMAT(created_at,'%Y-%m')";
+            $stmt = $this->conn->prepare($q);
+            if ($stmt->bind_param("ii",$customer_id, $year)) {
+                $stmt->execute();
+            } else {
+                var_dump($this->db->error);
+            }
         }
+
+
+        //$stmt = $this->conn->prepare($q);
+        //if ($stmt->bind_param("i",$customer_id)) {
+        //    $stmt->execute();
+        //} else {
+        //    var_dump($this->db->error);
+        //}
         
         $results = $stmt->get_result();
 
@@ -2486,12 +2520,23 @@ class DbHandler {
 
     //Driver Staticstic
     //number of itineraries creted per month
-    public function statisticDriverItineraryBy($driver_id) {
+    public function statisticDriverItineraryBy($driver_id, $year) {
+
         $q = "SELECT DATE_FORMAT(created_at,'%Y-%m') as month, COUNT(DATE_FORMAT(created_at,'%Y-%m')) as number 
-                FROM (SELECT * FROM i_itinerary WHERE driver_id = ?) as i GROUP BY DATE_FORMAT(created_at,'%Y-%m')";
+                FROM (SELECT * FROM i_itinerary WHERE driver_id = ? ";
+
+        if( $year == 'all' ) {
+            $q .= " ) as i GROUP BY DATE_FORMAT(created_at,'%Y-%m')";
+            $stmt = $this->conn->prepare($q);
+            $stmt->bind_param("i",$driver_id);
+        } else {
+            $q .= " AND DATE_FORMAT(created_at,'%Y') = ? ) as i GROUP BY DATE_FORMAT(created_at,'%Y-%m')";
+            $stmt = $this->conn->prepare($q);
+            $stmt->bind_param("ii",$driver_id, $year);
+        }
         
-        $stmt = $this->conn->prepare($q);
-        $stmt->bind_param("i",$driver_id);
+        //$stmt->bind_param("i",$driver_id);
+        
         $stmt->execute();
         $results = $stmt->get_result();
 
@@ -2511,12 +2556,20 @@ class DbHandler {
     }
 
     //total money come frome itineraries per month
-    public function statisticDriverMoneyBy($driver_id) {
+    public function statisticDriverMoneyBy($driver_id, $year) {
         $q = "SELECT DATE_FORMAT(created_at,'%Y-%m') as month, SUM(cost) as total_money 
-                FROM (SELECT * FROM i_itinerary WHERE driver_id = ?) as i GROUP BY DATE_FORMAT(created_at,'%Y-%m')";
+                FROM (SELECT * FROM i_itinerary WHERE driver_id = ? ";
         
-        $stmt = $this->conn->prepare($q);
-        $stmt->bind_param("i",$driver_id);
+        if( $year == 'all' ) {
+            $q .= " ) as i GROUP BY DATE_FORMAT(created_at,'%Y-%m')";
+            $stmt = $this->conn->prepare($q);
+            $stmt->bind_param("i",$driver_id);
+        } else {
+            $q .= " AND DATE_FORMAT(created_at,'%Y') = ? ) as i GROUP BY DATE_FORMAT(created_at,'%Y-%m')";
+            $stmt = $this->conn->prepare($q);
+            $stmt->bind_param("ii",$driver_id, $year);
+        }
+
         $stmt->execute();
         $results = $stmt->get_result();
 
@@ -2679,13 +2732,13 @@ class DbHandler {
     }
 
     public function getAverageRatingofUser($user_id){
-        $q = "SELECT AVG(rating) AS average_rating FROM rating WHERE user_id = ?";
+        $q = "SELECT AVG(rating) FROM rating group by rating_user_id having rating_user_id = ?";
         $stmt = $this->conn->prepare($q);
-        $stmt->bind_param("i",$driver_id);
+        $stmt->bind_param("i", $user_id);
         $stmt->execute();
 
         $stmt->bind_result($average_rating);
-            $stmt->close();
+        $stmt->close();
 
         if($average_rating == null){
             return 0;

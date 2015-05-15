@@ -1058,6 +1058,7 @@ $app->get('/itinerary/:id', function($itinerary_id) {
                 $response["error"] = false;
                 $response["itinerary_id"] = $result["itinerary_id"];
                 $response["driver_id"] = $result["driver_id"];
+                $response["average_rating"] = $result["average_rating"];
                 $response["vehicle_id"] = $result["vehicle_id"];
                 $response["vehicle_type"] = $result["vehicle_type"];
                 $response["customer_id"] = $result["customer_id"];
@@ -1077,6 +1078,7 @@ $app->get('/itinerary/:id', function($itinerary_id) {
                 $response["duration"] = $result["duration"];
                 $response["distance"] = $result["distance"];
                 $response["cost"] = $result["cost"];
+                $response["phone"] = $result["phone"];
                 $response["description"] = $result["description"];
                 $response["status"] = $result["status"];
                 $response["created_at"] = $result["created_at"];
@@ -1300,6 +1302,8 @@ $app->get('/itineraries/customer/:order', 'authenticateUser', function($order) {
                 //itinerary info
                 $tmp["itinerary_id"] = $itinerary["itinerary_id"];
                 $tmp["driver_id"] = $itinerary["driver_id"];
+                $tmp["vehicle_id"] = $itinerary["vehicle_id"];
+                $tmp["vehicle_type"] = $itinerary["vehicle_type"];
                 $tmp["customer_id"] = $itinerary["customer_id"];
                 $tmp["start_address"] = $itinerary["start_address"];
                 $tmp["start_address_lat"] = $itinerary["start_address_lat"];
@@ -2075,7 +2079,7 @@ $app->get('/statistic/:field', 'authenticateStaff', function($field) {
 
 
 //staticstic for customer
-$app->get('/statistic_customer/:field', 'authenticateUser', function($field) {
+$app->get('/statistic_customer/:field/:year', 'authenticateUser', function($field, $year) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
@@ -2090,9 +2094,9 @@ $app->get('/statistic_customer/:field', 'authenticateUser', function($field) {
             $db = new DbHandler();
 
             if ($field == 'itinerary'){
-                $result = $db->statisticCustomerItineraryBy($user_id);
+                $result = $db->statisticCustomerItineraryBy($user_id, $year);
             } else if ($field == 'total_money'){
-                $result = $db->statisticCustomerMoneyBy($user_id);
+                $result = $db->statisticCustomerMoneyBy($user_id, $year);
             } else {
 
             }
@@ -2110,7 +2114,7 @@ $app->get('/statistic_customer/:field', 'authenticateUser', function($field) {
             }
         });
 
-$app->get('/statistic_driver/:field', 'authenticateUser', function($field) {
+$app->get('/statistic_driver/:field/:year', 'authenticateUser', function($field, $year) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
@@ -2125,9 +2129,9 @@ $app->get('/statistic_driver/:field', 'authenticateUser', function($field) {
             $db = new DbHandler();
 
             if ($field == 'itinerary'){
-                $result = $db->statisticDriverItineraryBy($user_id);
+                $result = $db->statisticDriverItineraryBy($user_id, $year);
             } else if ($field == 'total_money'){
-                $result = $db->statisticDriverMoneyBy($user_id);
+                $result = $db->statisticDriverMoneyBy($user_id, $year);
             } else {
 
             }
