@@ -1435,7 +1435,9 @@ class DbHandler {
                 i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
                 i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
                 ii.created_at, u.fullname, u.phone, u.link_avatar
-              FROM (SELECT * FROM ".$table." WHERE leave_date >='". $leave_date. "' AND ((ABS(start_address_lat - :start_address_lat) < 0.05)
+              FROM (SELECT * FROM itinerary_created_northeast 
+                INNER JOIN 
+              WHERE leave_date >='". $leave_date. "' AND ((ABS(start_address_lat - :start_address_lat) < 0.05)
                     AND (ABS(start_address_long - :start_address_long) < 0.05))";
         } else if ($table == "itinerary_created_northwest") {
             $q .= "SELECT i.itinerary_id, ii.driver_id, r.average_rating, v.type as vehicle_type, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
@@ -1512,7 +1514,7 @@ class DbHandler {
             $q .= " AND distance <= :distance";
         }
 
-        $q .= ") as i 
+        $q .= " AND) as i 
               INNER JOIN (select * from itinerary where status = 1) as ii
               ON ii.itinerary_id = i.itinerary_id
               INNER JOIN (select * from driver where user_id <> :user_id and status = 2) as d 
@@ -1567,7 +1569,7 @@ class DbHandler {
         // set the PDO error mode to exception
         $conn2->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-        if (!isset($leave_date)) {
+        if (!isset($leave_date) || $leave_date == '') {
             $leave_date = date('m/d/Y H:i:s', time());
         }
 
@@ -1663,13 +1665,13 @@ class DbHandler {
                     SELECT * FROM itinerary_created_south";
         }
 
-        if (isset($duration)) {
+        if (isset($duration) && $duration != '') {
             $q .= " AND duration <= :duration";
         }
-        if (isset($cost)) {
+        if (isset($cost) && $cost != '') {
             $q .= " AND cost <= :cost";
         }
-        if (isset($distance)) {
+        if (isset($distance) && $distance != '') {
             $q .= " AND distance <= :distance";
         }
 
@@ -1692,13 +1694,13 @@ class DbHandler {
                  
         $stmt = $conn2->prepare($q);
 
-        if (isset($duration)) {
+        if (isset($duration) && $duration != '') {
             $stmt->bindParam(':duration', $duration);
         }
-        if (isset($cost)) {
+        if (isset($cost) && $cost != '') {
             $stmt->bindParam(':cost', $cost);
         }
-        if (isset($distance)) {
+        if (isset($distance) && $distance != '') {
             $stmt->bindParam(':distance', $distance);
         }
 
@@ -1767,7 +1769,7 @@ class DbHandler {
         $q .=     "WHERE i.driver_id = d.user_id AND d.user_id = u.user_id AND v.vehicle_id = i.vehicle_id AND customer_id = ? ";
         
         $stmt = $this->conn->prepare($q);
-        $stmt->bind_param("i",$customer_id);
+        $stmt->bind_param("i", $customer_id);
         $stmt->execute();
         $itineraries = $stmt->get_result();
         $stmt->close();
@@ -2384,6 +2386,28 @@ class DbHandler {
         }
     }
 
+    public function getListFeedbacks() {
+        $stmt = $this->conn->prepare("SELECT * FROM feedback");
+
+        if ($stmt->execute()) {
+            // $user = $stmt->get_result()->fetch_assoc();
+            $feedback = $stmt->get_result();
+            $stmt->close();
+            return $feedback;
+        } else {
+            return NULL;
+        }
+    }
+
+    public function deleteFeedback($feedback_id) {
+        $stmt = $this->conn->prepare("DELETE FROM feedback WHERE feedback_id = ?");
+        $stmt->bind_param("i", $feedback_id);
+        $stmt->execute();
+        $num_affected_rows = $stmt->affected_rows;
+        $stmt->close();
+        return $num_affected_rows > 0;
+    }
+
     /* ------------- Statistic ------------------ */
 
     //number of users created per month
@@ -2464,13 +2488,13 @@ class DbHandler {
 
     //Customer staticstic 
     //number of itineraries creted per month
-    public function statisticCustomerItineraryBy($customer_id, $year) {
-        $q = "SELECT DATE_FORMAT(created_at,'%Y-%m') as month, COUNT(DATE_FORMAT(created_at,'%Y-%m')) as number 
+    public function statisticCustomerBy($customer_id, $year) {
+        $q = "SELECT DATE_FORMAT(created_at,'%Y-%m') as month, COUNT(DATE_FORMAT(created_at,'%Y-%m')) as number, SUM(cost) as total_money  
                 FROM (SELECT * FROM i_itinerary WHERE customer_id = ? ";
 
 
         if( $year == 'all' ) {
-            $q .= " ) as i GROUP BY DATE_FORMAT(created_at,'%Y-%m')";
+            $q .= " ) as i  GROUP BY DATE_FORMAT(created_at,'%Y-%m')";
             $stmt = $this->conn->prepare($q);
             if ($stmt->bind_param("i",$customer_id)) {
                 $stmt->execute();
@@ -2496,7 +2520,7 @@ class DbHandler {
 
             $tmp["month"] = $stat["month"];
             $tmp["number"] = $stat["number"];
-
+            $tmp["total_money"] = $stat["total_money"];
             array_push($stats, $tmp);
         }
 
@@ -2554,9 +2578,9 @@ class DbHandler {
 
     //Driver Staticstic
     //number of itineraries creted per month
-    public function statisticDriverItineraryBy($driver_id, $year) {
+    public function statisticDriverBy($driver_id, $year) {
 
-        $q = "SELECT DATE_FORMAT(created_at,'%Y-%m') as month, COUNT(DATE_FORMAT(created_at,'%Y-%m')) as number 
+        $q = "SELECT DATE_FORMAT(created_at,'%Y-%m') as month, COUNT(DATE_FORMAT(created_at,'%Y-%m')) as number, SUM(cost) as total_money  
                 FROM (SELECT * FROM i_itinerary WHERE driver_id = ? ";
 
         if( $year == 'all' ) {
@@ -2581,7 +2605,7 @@ class DbHandler {
 
             $tmp["month"] = $stat["month"];
             $tmp["number"] = $stat["number"];
-
+            $tmp["total_money"] = $stat["total_money"];
             array_push($stats, $tmp);
         }
 
