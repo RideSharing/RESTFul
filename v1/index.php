@@ -1121,15 +1121,15 @@ $app->get('/itineraries', 'authenticateUser', function() use($app) {
             $distance = $app->request->get('distance');
 
             $startRow = 0;
-            $endRow = 10;
+            $endRow = 30;
 
             if (isset($start_address_lat) && isset($start_address_long) && isset($end_address_lat) && isset($end_address_long)) {
                 $table = "";
                 if (($end_address_lat - $start_address_lat) > 0.05 && ($end_address_long - $start_address_long) > 0.05) {
                     $table = "itinerary_created_northeast";
                     $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
-                    if (count($result) < 10) {
-
+                    if (count($result) < 30) {
+                        
                     }
                 } else if (($end_address_lat - $start_address_lat) > 0.05 && ($end_address_long - $start_address_long) < -0.05) {
                     $table = "itinerary_created_northwest";
@@ -1145,7 +1145,7 @@ $app->get('/itineraries', 'authenticateUser', function() use($app) {
                     $table = "itinerary_created_east";
                     $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
 
-                    if (count($result) < 10) {
+                    if (count($result) < 30) {
                         
                     }
                 } else if (($end_address_lat - $start_address_lat) > -0.05 && ($end_address_lat - $start_address_lat) < 0.05 &&
@@ -1153,7 +1153,7 @@ $app->get('/itineraries', 'authenticateUser', function() use($app) {
                     $table = "itinerary_created_west";
                     $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
 
-                    if (count($result) < 10) {
+                    if (count($result) < 30) {
                         
                     }
                 } else if (($end_address_long - $start_address_long) > -0.05 && ($end_address_long - $start_address_long) < 0.05 &&
@@ -1161,7 +1161,7 @@ $app->get('/itineraries', 'authenticateUser', function() use($app) {
                     $table = "itinerary_created_north";
                     $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
 
-                    if (count($result) < 10) {
+                    if (count($result) < 30) {
                         
                     }
                 } else if (($end_address_long - $start_address_long) > -0.05 && ($end_address_long - $start_address_long) < 0.05 &&
@@ -1169,7 +1169,7 @@ $app->get('/itineraries', 'authenticateUser', function() use($app) {
                     $table = "itinerary_created_south";
                     $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
 
-                    if (count($result) < 10) {
+                    if (count($result) < 30) {
                         
                     }
                 } else {
@@ -1730,7 +1730,7 @@ $app->post('/feedback', function() use ($app) {
 
 
 
-$app->get('/comments/:user_id', 'authenticateUser', function($user_id) {
+$app->get('/commentsofuser/:user_id', 'authenticateUser', function($user_id) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
@@ -1747,7 +1747,35 @@ $app->get('/comments/:user_id', 'authenticateUser', function($user_id) {
                 $response['comments'] = array();
                 $result = $db->getListCommentOfUser($user_id);
                 while ($comment = $result->fetch_assoc()) {
-                    array_push($response['comment'], $comment);
+                    array_push($response['comments'], $comment);
+                }
+                echoRespnse(200, $response);
+
+            } else {
+                $response['error'] = true;
+                $response['message'] = $lang['ERR_LINK_REQUEST'];
+                echoRespnse(404, $response);
+            }
+        });
+
+$app->get('/commentsaboutuser/:user_id', 'authenticateUser', function($user_id) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $response = array();
+            $db = new DbHandler();
+
+            if ($db->isUserExists1($user_id)) {
+                $response['error'] = false;
+                $response['comments'] = array();
+                $result = $db->getListCommentAboutUser($user_id);
+                while ($comment = $result->fetch_assoc()) {
+                    array_push($response['comments'], $comment);
                 }
                 echoRespnse(200, $response);
 
@@ -1786,7 +1814,7 @@ $app->post('/comment', 'authenticateUser', function() use ($app) {
 
             if ($res == COMMENT_CREATED_SUCCESSFULLY) {
                 $response["error"] = false;
-                $response["message"] = $lang['REGISTER_SUCCESS'];
+                $response["message"] = $lang['RATING_SUCCESS'];
             } else if ($res == COMMENT_CREATE_FAILED) {
                 $response["error"] = true;
                 $response["message"] = $lang['ERR_REGISTER'];
@@ -1957,7 +1985,7 @@ $app->get('/average_rating/:user_id', 'authenticateUser', function($user_id) {
 
             if ($average_rating != NULL) {
                 $response["error"] = false;
-                $response['average_rating'] = $average_rating["average_rating"];;
+                $response['average_rating'] = $average_rating;
                 echoRespnse(200, $response);
             } else {
                 $response["error"] = true;
@@ -1995,7 +2023,7 @@ $app->post('/rating', 'authenticateUser', function() use ($app) {
 
             if ($res == RATING_CREATED_SUCCESSFULLY) {
                 $response["error"] = false;
-                $response["message"] = $lang['REGISTER_SUCCESS'];
+                $response["message"] = $lang['RATING_SUCCESS'];
             } else if ($res == RATING_CREATE_FAILED) {
                 $response["error"] = true;
                 $response["message"] = $lang['ERR_REGISTER'];
@@ -2079,7 +2107,7 @@ $app->get('/statistic/:field', 'authenticateStaff', function($field) {
 
 
 //staticstic for customer
-$app->get('/statistic_customer/:field/:year', 'authenticateUser', function($field, $year) {
+$app->get('/statistic_customer/:year', 'authenticateUser', function( $year) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
@@ -2093,18 +2121,16 @@ $app->get('/statistic_customer/:field/:year', 'authenticateUser', function($fiel
             $response = array();
             $db = new DbHandler();
 
-            if ($field == 'itinerary'){
-                $result = $db->statisticCustomerItineraryBy($user_id, $year);
-            } else if ($field == 'total_money'){
-                $result = $db->statisticCustomerMoneyBy($user_id, $year);
-            } else {
-
-            }
+            
+            $result = $db->statisticCustomerBy($user_id, $year);
+        
+            //$result2 = $db->statisticCustomerMoneyBy($user_id, $year);
+            
 
             if (isset($result)) {
                 $response['error'] = false;
-                $response['stats'] = $result;
-
+                $response['stats_customer'] = $result;
+                //$response['stats_totalmoney'] = $result2;
                 echoRespnse(200, $response);
 
             } else {
@@ -2114,7 +2140,7 @@ $app->get('/statistic_customer/:field/:year', 'authenticateUser', function($fiel
             }
         });
 
-$app->get('/statistic_driver/:field/:year', 'authenticateUser', function($field, $year) {
+$app->get('/statistic_driver/:year', 'authenticateUser', function( $year) {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
                 $language = $_GET['lang'];
@@ -2128,18 +2154,16 @@ $app->get('/statistic_driver/:field/:year', 'authenticateUser', function($field,
             $response = array();
             $db = new DbHandler();
 
-            if ($field == 'itinerary'){
-                $result = $db->statisticDriverItineraryBy($user_id, $year);
-            } else if ($field == 'total_money'){
-                $result = $db->statisticDriverMoneyBy($user_id, $year);
-            } else {
-
-            }
+            
+            $result = $db->statisticDriverBy($user_id, $year);
+        
+            //$result2 = $db->statisticDriverMoneyBy($user_id, $year);
+            
 
             if (isset($result)) {
                 $response['error'] = false;
-                $response['stats'] = $result;
-
+                $response['stats_driver'] = $result;
+                //$response['stats_totalmoney'] = $result2;
                 echoRespnse(200, $response);
 
             } else {
@@ -2736,6 +2760,134 @@ $app->put('/staff/driver/:user_id', 'authenticateStaff', function($user_id) use(
                 // task failed to update
                 $response["error"] = true;
                 $response["message"] = $lang['ERR_UPDATE'];
+            }
+            echoRespnse(200, $response);
+        });
+
+$app->get('/staff/vehicle', 'authenticateStaff', function() {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $response = array();
+            $db = new DbHandler();
+
+            $response['error'] = false;
+            $response['vehicles'] = array();
+
+            // fetch task
+            $result = $db->getListVehicles();
+
+            while ($vehicle = $result->fetch_assoc()) {
+                array_push($response['vehicles'], $vehicle);               
+            }
+
+            echoRespnse(200, $response);
+        });
+
+$app->get('/staff/vehicle/:vehicle_id', 'authenticateStaff', function($vehicle_id) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $response = array();
+            $db = new DbHandler();
+
+            $response['error'] = false;
+
+            // fetch task
+            $result = $db->getVehicle($vehicle_id);
+            $response['vehicle'] = $result;
+
+            echoRespnse(200, $response);
+        });
+
+$app->put('/staff/vehicle/:vehicle_id', 'authenticateStaff', function($vehicle_id) use($app) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            // check for required params
+            verifyRequiredParams(array('status'), $language);
+        
+            $status = $app->request->put('status');
+
+            $db = new DbHandler();
+            $response = array();
+
+            // updating task
+            $result = $db->updateVehicle1($vehicle_id, $status);
+            if ($result) {
+                // task updated successfully
+                $response["error"] = false;
+                $response["message"] = $lang['ALERT_UPDATE'];
+            } else {
+                // task failed to update
+                $response["error"] = true;
+                $response["message"] = $lang['ERR_UPDATE'];
+            }
+            echoRespnse(200, $response);
+        });
+
+$app->get('/staff/feedback', 'authenticateStaff', function() {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $response = array();
+            $db = new DbHandler();
+
+            $response['error'] = false;
+            $response['feedbacks'] = array();
+
+            // fetch task
+            $result = $db->getListFeedbacks();
+
+            while ($feedback = $result->fetch_assoc()) {
+                array_push($response['feedbacks'], $feedback);               
+            }
+
+            echoRespnse(200, $response);
+        });
+
+$app->delete('/staff/feedback/:feedback_id', 'authenticateStaff', function($feedback_id) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $db = new DbHandler();
+            $response = array();
+
+            $result = $db->deleteFeedback($feedback_id);
+
+            if ($result) {
+                // user deleted successfully
+                $response["error"] = false;
+                $response["message"] = $lang['FEEDBACK_DELETE_SUCCESS'];
+            } else {
+                // task failed to delete
+                $response["error"] = true;
+                $response["message"] = $lang['FEEDBACK_DELETE_FAILURE'];
             }
             echoRespnse(200, $response);
         });

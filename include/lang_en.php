@@ -8,11 +8,11 @@ Language: English
 $lang = array();
 
 $lang['MAIL_REGISTER'] = "Hi there,<br>Please click on the link below to active your account:
-							<a href='http://192.168.10.132/WebApp/controller/register.php?active_key=";
+							<a href='http://rideshare.tk/WebApp/controller/register.php?active_key=";
 $lang['MAIL_REGISTER_ACTIVE_ACCOUNT'] = "'>Active account</a>";
 
 $lang['FORGOTPASS_MSG'] = "Hi there,<br>Please click on the link below to reset your password:
-                           <a href='http://localhost/RideSharing/controller/change_password.php?api_key=";
+                           <a href='http://rideshare.tk/WebApp/controller/change_password.php?api_key=";
 $lang['FORGOTPASS_MSG1'] = "'>Reset password</a>";
 
 //User message
@@ -26,13 +26,13 @@ $lang['ERR_SEND_EMAIL']    = "Sorry! Sent email is missing.";
 $lang['ERR_REGISTER']      = "Sorry! Registration is missing.";
 $lang['ERR_EMAIL_EXIST']   = "Sorry! Your email registration is existing.";
 $lang['ACTIVATED_ACCOUNT_SUCCESS'] = "Activate your account is successful!.";
-$lang['ERR_ACTIVATED_ACCOUNT']     = "Activate your account is missing!.";
+$lang['ERR_ACTIVATED_ACCOUNT']     = "Activate your account is failure!.";
 $lang['ERR_LOGIN']         = "Have some mistakes, Please try again!.";
 $lang['ERR_EMAIL_PASS']    = "Wrong email or password!.";
 $lang['ERR_ACTIVATED_ACCOUNT']     = "Your account is not activate. Please activate before you login!.";
 $lang['ERR_ACOUNT_LOCKED'] = "Your current account is locked!.";
-$lang['ERR_LOGIN_CHECK']   = "Your login is missing!.";
-$lang['ALERT_SENT_EMAIL']  = "An alert email is sent to you. Please check and do something following the guide.";
+$lang['ERR_LOGIN_CHECK']   = "Login fail!.";
+$lang['ALERT_SENT_EMAIL']  = "An email is sent to you. Please check and do something following the guide.";
 $lang['ERROR_ACTIVATED']   = "Sorry! Have some mistakes. Please try again!.";
 $lang['ERR_TYPE_EMAIL']    = "Your email address is not exactly!";
 $lang['ERR_LINK_REQUEST']  = "The link you request is not existing!.";
@@ -45,6 +45,7 @@ $lang['ERR_UPDATE']        = "Your update is not successful! Please try again.";
 $lang['USER_DELETE_SUCCESS'] = "Delete user is successful!."; 
 $lang['USER_DELETE_FAILURE'] = "Delete user is failure!.";
 $lang['REGISTER_SUCCESS']  = "Registration is successful!.";
+$lang['RATING_SUCCESS']  = "Thank for your feedback!.";
 $lang['REGISTER_DRIVER']   = "You are driver.";
 $lang['REGISTER_VEHICLE']   = "You have registered this vehicle!";
 $lang['ERR_REGISTER']      = "Sorry! Registration is missing.";
@@ -103,6 +104,8 @@ $lang['ERR_EMAIL_VALID']  = "Your email is not validation.";
 $lang['ERR_PASS_LENGTH']  = "The length of your password must limited from 6 to 12 characters.";
 $lang['ERR_PASS_BLANKSPACE'] = "Your password not contain the blank space.";
 
-$lang['STAFF_DELETE_SUCCESS'] = "Delete staff is successful!."; 
-$lang['STAFF_DELETE_FAILURE'] = "Delete staff is failure!.";
+$lang['STAFF_DELETE_SUCCESS'] = "Delete staff is successful!"; 
+$lang['STAFF_DELETE_FAILURE'] = "Delete staff is failure!";
+$lang['FEEDBACK_DELETE_SUCCESS'] = "Delete feedback is successful!";
+$lang['FEEDBACK_DELETE_FAILURE'] = "Delete feedback is failure!";
 ?>

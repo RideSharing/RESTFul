@@ -7,11 +7,11 @@ Language: Vietnamese
 $lang = array();
 
 $lang['MAIL_REGISTER'] = "Chao ban,<br>Vui long nhan vao duong link sau de kich hoat tai khoan:
-							<a href='http://192.168.10.74/WebApp/controller/register.php?active_key=";
+							<a href='http://rideshare.tk/WebApp/controller/register.php?active_key=";
 $lang['MAIL_REGISTER_ACTIVE_ACCOUNT'] = "'>Kich hoat tai khoan</a>";
 
 $lang['FORGOTPASS_MSG'] = "Chao ban,<br>Vui long click vao duong link sau de doi mat khau:
-                           <a href='http://localhost/RideSharing/controller/change_password.php?api_key=";
+                           <a href='http://rideshare.tk/WebApp/controller/change_password.php?api_key=";
 $lang['FORGOTPASS_MSG1'] = "'>Doi mat khau</a>";
 
 //User message
@@ -44,6 +44,7 @@ $lang['ERR_UPDATE']        = "Cập nhật thông tin thất bại. Vui lòng th
 $lang['USER_DELETE_SUCCESS'] = "Xóa người dùng thành công!";
 $lang['USER_DELETE_FAILURE'] = "Xóa người dùng thất bại. Vui lòng thử lại!";
 $lang['REGISTER_SUCCESS']  = "Đăng kí thành công!"; 
+$lang['RATING_SUCCESS']  = "Cám ơn nhận xét của bạn!.";
 $lang['REGISTER_DRIVER']   = "Bạn đã đăng kí làm lái xe!";
 $lang['REGISTER_VEHICLE']   = "Bạn đã đăng kí phương tiện này!";
 $lang['ERR_REGISTER']      = "Xin lỗi! Có lỗi xảy ra trong quá trình đăng kí."; 
@@ -102,4 +103,6 @@ $lang['ERR_PASS_LENGTH']   = "Độ dài mật khẩu phải nằm trong khoản
 $lang['ERR_PASS_BLANKSPACE'] =  "Mật khẩu không được có khoảng trống!";
 $lang['STAFF_DELETE_SUCCESS'] = "Xóa nhân viên thành công!";
 $lang['STAFF_DELETE_FAILURE'] = "Xóa nhân viên thất bại. Vui lòng thử lại!";
+$lang['FEEDBACK_DELETE_SUCCESS'] = "Xóa phản hồi thành công!";
+$lang['FEEDBACK_DELETE_FAILURE'] = "Xóa phản hồi thất bại. Vui lòng thử lại!";
 ?>
