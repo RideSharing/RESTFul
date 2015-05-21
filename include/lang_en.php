@@ -45,6 +45,7 @@ $lang['ERR_UPDATE']        = "Your update is not successful! Please try again.";
 $lang['USER_DELETE_SUCCESS'] = "Delete user is successful!."; 
 $lang['USER_DELETE_FAILURE'] = "Delete user is failure!.";
 $lang['REGISTER_SUCCESS']  = "Registration is successful!.";
+$lang['RATING_SUCCESS']  = "Thank for your feedback!.";
 $lang['REGISTER_DRIVER']   = "You are driver.";
 $lang['REGISTER_VEHICLE']   = "You have registered this vehicle!";
 $lang['ERR_REGISTER']      = "Sorry! Registration is missing.";

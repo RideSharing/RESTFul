@@ -44,6 +44,7 @@ $lang['ERR_UPDATE']        = "Cập nhật thông tin thất bại. Vui lòng th
 $lang['USER_DELETE_SUCCESS'] = "Xóa người dùng thành công!";
 $lang['USER_DELETE_FAILURE'] = "Xóa người dùng thất bại. Vui lòng thử lại!";
 $lang['REGISTER_SUCCESS']  = "Đăng kí thành công!"; 
+$lang['RATING_SUCCESS']  = "Cám ơn nhận xét của bạn!.";
 $lang['REGISTER_DRIVER']   = "Bạn đã đăng kí làm lái xe!";
 $lang['REGISTER_VEHICLE']   = "Bạn đã đăng kí phương tiện này!";
 $lang['ERR_REGISTER']      = "Xin lỗi! Có lỗi xảy ra trong quá trình đăng kí."; 
