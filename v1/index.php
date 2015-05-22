@@ -1255,6 +1255,7 @@ $app->get('/itineraries/driver/:order', 'authenticateUser', function($order) {
                 $tmp["description"] = $itinerary["description"];
                 $tmp["status"] = $itinerary["itinerary_status"];
                 $tmp["created_at"] = $itinerary["created_at"];
+                $tmp["average_rating"] = $itinerary["average_rating"];
 
                 //driver info
                 $tmp["driver_license"] = $itinerary["driver_license"];
@@ -1268,7 +1269,8 @@ $app->get('/itineraries/driver/:order', 'authenticateUser', function($order) {
                 $tmp["personalID"] = $itinerary["personalID"];
                 $tmp["link_avatar"] = $itinerary["link_avatar"];
                 array_push($response["itineraries"], $tmp);
-            }           
+            }   
+
             echoRespnse(200, $response);
         });
 /**
@@ -1324,6 +1326,7 @@ $app->get('/itineraries/customer/:order', 'authenticateUser', function($order) {
                 $tmp["description"] = $itinerary["description"];
                 $tmp["status"] = $itinerary["itinerary_status"];
                 $tmp["created_at"] = $itinerary["created_at"];
+                $tmp["average_rating"] = $itinerary["average_rating"];
 
                 //driver info
                 $tmp["driver_license"] = $itinerary["driver_license"];
@@ -2198,12 +2201,13 @@ $app->post('/staff', function() use ($app) {
             $email = $app->request->post('email');
             $fullname = $app->request->post('fullname');
             $personalID = $app->request->post('personalID');
+            $link_avatar = $app->request->post('link_avatar');
 
             // validating email address
             validateEmail($email, $language);
 
             $db = new DbHandler();
-            $res = $db->createStaff($role, $email, $fullname, $personalID);
+            $res = $db->createStaff($role, $email, $fullname, $personalID, $link_avatar);
 
             if ($res == STAFF_CREATED_SUCCESSFULLY) {
                 $response["error"] = false;
@@ -2888,6 +2892,57 @@ $app->delete('/staff/feedback/:feedback_id', 'authenticateStaff', function($feed
                 // task failed to delete
                 $response["error"] = true;
                 $response["message"] = $lang['FEEDBACK_DELETE_FAILURE'];
+            }
+            echoRespnse(200, $response);
+        });
+
+$app->get('/staff/comment', 'authenticateStaff', function() {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $response = array();
+            $db = new DbHandler();
+
+            $response['error'] = false;
+            $response['comments'] = array();
+
+            // fetch task
+            $result = $db->getListComment();
+
+            while ($comment = $result->fetch_assoc()) {
+                array_push($response['comments'], $comment);               
+            }
+
+            echoRespnse(200, $response);
+        });
+
+$app->delete('/staff/comment/:comment_id', 'authenticateStaff', function($comment_id) {
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $db = new DbHandler();
+            $response = array();
+
+            $result = $db->deleteComment($comment_id);
+
+            if ($result) {
+                // user deleted successfully
+                $response["error"] = false;
+                $response["message"] = $lang['COMMENT_DELETE_SUCCESS'];
+            } else {
+                // task failed to delete
+                $response["error"] = true;
+                $response["message"] = $lang['COMMENT_DELETE_FAILURE'];
             }
             echoRespnse(200, $response);
         });

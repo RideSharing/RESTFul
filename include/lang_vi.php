@@ -105,4 +105,6 @@ $lang['STAFF_DELETE_SUCCESS'] = "Xóa nhân viên thành công!";
 $lang['STAFF_DELETE_FAILURE'] = "Xóa nhân viên thất bại. Vui lòng thử lại!";
 $lang['FEEDBACK_DELETE_SUCCESS'] = "Xóa phản hồi thành công!";
 $lang['FEEDBACK_DELETE_FAILURE'] = "Xóa phản hồi thất bại. Vui lòng thử lại!";
+$lang['COMMENT_DELETE_SUCCESS'] = "Xóa bình luận thành công!";
+$lang['COMMENT_DELETE_FAILURE'] = "Xóa bình luận thất bại. Vui lòng thử lại!";
 ?>

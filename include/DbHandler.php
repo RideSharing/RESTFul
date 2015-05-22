@@ -913,7 +913,7 @@ class DbHandler {
      * @param String $email Staff login email id
      * @param String $personalID Staff personal ID
      */
-    public function createStaff($role, $email, $fullname, $personalID) {
+    public function createStaff($role, $email, $fullname, $personalID, $link_avatar) {
         require_once 'PassHash.php';
 
         // First check if user already existed in db
@@ -1726,25 +1726,34 @@ class DbHandler {
 
         return $itineraries;
     }
-
     //not finished yet
     /**
      * Fetching all itineraries of one driver
      * @param Integer $driver_id id of the driver
      */
     public function getDriverItineraries($driver_id, $order) {
-        $q = "SELECT i.itinerary_id, i.driver_id, i.vehicle_id, v.type as vehicle_type, i.customer_id, i.start_address, i.start_address_lat, i.start_address_long,
+        $q = "SELECT i.itinerary_id, i.driver_id, r.average_rating, i.vehicle_id, v.type as vehicle_type, i.customer_id, i.start_address, i.start_address_lat, i.start_address_long,
             i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long,
             i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, i.status as itinerary_status, i.created_at,
             d.driver_license, d.driver_license_img, u.user_id, u.email, u.fullname, u.phone, u.personalID, u.link_avatar ";
-        $q .=    "FROM i_itinerary as i, driver as d, user as u, vehicle as v ";
-        $q .=     "WHERE i.driver_id = d.user_id AND d.user_id = u.user_id AND v.vehicle_id = i.vehicle_id AND driver_id = ? ";
+        $q .=    "FROM i_itinerary as i
+                    INNER JOIN driver as d 
+                    ON i.driver_id = d.user_id
+                    INNER JOIN user as u 
+                    ON d.user_id = u.user_id
+                    INNER JOIN vehicle as v 
+                    ON v.vehicle_id = i.vehicle_id
+                    INNER JOIN (SELECT rating_user_id, ROUND(AVG(rating),2) as average_rating FROM rating GROUP BY rating_user_id) as r
+                    ON r.rating_user_id = d.user_id";
+        $q .=     " WHERE driver_id = ? ";
 
         if(isset($order)){
-            $q .= "ORDER BY " .$order;
+            $q .= " ORDER BY " .$order;
         } else {
-            $q .= "ORDER BY itinerary_status";
+            $q .= " ORDER BY itinerary_status";
         }
+
+        //echo $q;
 
         //$q = "SELECT * FROM itinerary WHERE driver_id = ?";
         $stmt = $this->conn->prepare($q);
@@ -1752,6 +1761,7 @@ class DbHandler {
         $stmt->execute();
         $itineraries = $stmt->get_result();
         $stmt->close();
+
         return $itineraries;
     }
 
@@ -1761,12 +1771,20 @@ class DbHandler {
      * @param Integer $customer_id id of the customer
      */
     public function getCustomerItineraries($customer_id, $order) {
-        $q = "SELECT itinerary_id, i.driver_id, i.vehicle_id, v.type as vehicle_type, i.customer_id, start_address, start_address_lat, start_address_long,
+        $q = "SELECT itinerary_id, i.driver_id, i.vehicle_id, r.average_rating, v.type as vehicle_type, i.customer_id, start_address, start_address_lat, start_address_long,
             pick_up_address, pick_up_address_lat, pick_up_address_long, drop_address, drop_address_lat, drop_address_long,
             end_address, end_address_lat, end_address_long, leave_date, duration, distance, cost, description, i.status as itinerary_status, i.created_at,
             driver_license, driver_license_img, u.user_id, u.email, u.fullname, u.phone, personalID, link_avatar ";
-        $q .=    "FROM i_itinerary as i, driver as d, user as u, vehicle as v ";
-        $q .=     "WHERE i.driver_id = d.user_id AND d.user_id = u.user_id AND v.vehicle_id = i.vehicle_id AND customer_id = ? ";
+        $q .=    "FROM i_itinerary as i
+                    INNER JOIN driver as d 
+                    ON i.driver_id = d.user_id
+                    INNER JOIN user as u 
+                    ON d.user_id = u.user_id
+                    INNER JOIN vehicle as v 
+                    ON v.vehicle_id = i.vehicle_id
+                    INNER JOIN (SELECT rating_user_id, ROUND(AVG(rating),2) as average_rating FROM rating GROUP BY rating_user_id) as r
+                    ON r.rating_user_id = d.user_id ";
+        $q .=     " WHERE customer_id = ? ";
         
         $stmt = $this->conn->prepare($q);
         $stmt->bind_param("i", $customer_id);
@@ -2707,6 +2725,21 @@ class DbHandler {
             $vehicle = $stmt->get_result();
             $stmt->close();
             return $vehicle;
+        } else {
+            return NULL;
+        }
+    }
+
+    public function getListComment() {
+        $stmt = $this->conn->prepare("SELECT c.*, u1.fn1, u2.fn2 FROM comment as c 
+                            INNER JOIN (SELECT user_id, fullname as fn1 from user) as u1 ON u1.user_id = c.user_comment_id
+                            INNER JOIN (SELECT user_id, fullname as fn2 from user) as u2 ON u2.user_id = c.comment_about_user_id");
+
+        if ($stmt->execute()) {
+            // $user = $stmt->get_result()->fetch_assoc();
+            $comments = $stmt->get_result();
+            $stmt->close();
+            return $comments;
         } else {
             return NULL;
         }

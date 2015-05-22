@@ -108,4 +108,6 @@ $lang['STAFF_DELETE_SUCCESS'] = "Delete staff is successful!";
 $lang['STAFF_DELETE_FAILURE'] = "Delete staff is failure!";
 $lang['FEEDBACK_DELETE_SUCCESS'] = "Delete feedback is successful!";
 $lang['FEEDBACK_DELETE_FAILURE'] = "Delete feedback is failure!";
+$lang['COMMENT_DELETE_SUCCESS'] = "Delete comment is successful!";
+$lang['COMMENT_DELETE_FAILURE'] = "Delete comment is failure!";
 ?>
