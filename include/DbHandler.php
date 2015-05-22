@@ -924,13 +924,13 @@ class DbHandler {
             // Generating API key
             $api_key = $this->generateApiKey();
 
-            $sql_query = "INSERT INTO staff(email, password, api_key, role, fullname, personalID) 
-                            values(?, ?, ?, ?, ?, ?)";
+            $sql_query = "INSERT INTO staff(email, password, api_key, role, fullname, personalID, link_avatar) 
+                            values(?, ?, ?, ?, ?, ?, ?)";
 
             // insert query
             if ($stmt = $this->conn->prepare($sql_query)) {
-                $stmt->bind_param("sssiss", $email, $password_hash, $api_key, $role==NULL?ROLE_STAFF:$role,
-                                    $fullname==NULL?' ':$fullname, $personalID==NULL?' ':$personalID);
+                $stmt->bind_param("sssisss", $email, $password_hash, $api_key, $role==NULL?ROLE_STAFF:$role,
+                                    $fullname==NULL?' ':$fullname, $personalID==NULL?' ':$personalID, $link_avatar==NULL?' ':$link_avatar);
                 $result = $stmt->execute();
             } else {
                 var_dump($this->conn->error);

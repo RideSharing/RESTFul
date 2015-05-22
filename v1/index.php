@@ -1748,7 +1748,7 @@ $app->get('/commentsofuser/:user_id', 'authenticateUser', function($user_id) {
             if ($db->isUserExists1($user_id)) {
                 $response['error'] = false;
                 $response['comments'] = array();
-                $result = $db->getListCommentOfUser($user_id);
+                $result = $db->getListCommentAboutUser($user_id);
                 while ($comment = $result->fetch_assoc()) {
                     array_push($response['comments'], $comment);
                 }
@@ -1776,7 +1776,7 @@ $app->get('/commentsaboutuser/:user_id', 'authenticateUser', function($user_id) 
             if ($db->isUserExists1($user_id)) {
                 $response['error'] = false;
                 $response['comments'] = array();
-                $result = $db->getListCommentAboutUser($user_id);
+                $result = $db->getListCommentOfUser($user_id);
                 while ($comment = $result->fetch_assoc()) {
                     array_push($response['comments'], $comment);
                 }
