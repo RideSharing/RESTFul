@@ -2845,6 +2845,7 @@ $app->put('/staff/vehicle/:vehicle_id', 'authenticateStaff', function($vehicle_i
             echoRespnse(200, $response);
         });
 
+
 $app->get('/staff/feedback', 'authenticateStaff', function() {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
