@@ -1728,6 +1728,139 @@ $app->post('/feedback', function() use ($app) {
             echoRespnse(201, $response);
         });
 
+$app->post('/message', 'authenticateUser', function() use ($app) {
+            global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            // check for required params
+            verifyRequiredParams(array('to', 'subject', 'content'), $language);
+
+            $response = array();
+
+            // reading post params
+            $to = $app->request->post('to');
+            $subject = $app->request->post('subject');
+            $content = $app->request->post('content');
+
+            // validating email address
+            validateEmail($to, $language);
+
+            $db = new DbHandler();
+            $res = $db->createMessage($user_id, $to, $subject, $content);
+
+            if ($res == USER_CREATED_MESSAGE_SUCCESSFULLY) {
+                $response["error"] = false;
+                $response["message"] = $lang['ALERT_MESSAGE'];
+            } else if ($res == USER_CREATE_MESSAGE_FAILED) {
+                $response["error"] = true;
+                $response["message"] = $lang['ERR_MESSAGE'];
+            } else if ($res == EMAIL_NOT_EXIST) {
+                $response["error"] = true;
+                $response["message"] = $lang['EMAIL_NOT_EXIST'];
+            }
+            // echo json response
+            echoRespnse(201, $response);
+        });
+
+$app->get('/messages', 'authenticateUser', function() {
+            global $user_id;
+
+            $db = new DbHandler();
+
+            // fetch task
+            $result = $db->getListMessage($user_id);
+
+            if ($result != NULL) {
+                $response['error'] = false;
+                $response['messages'] = array();
+
+                while ($message = $result->fetch_assoc()) {
+                    array_push($response['messages'], $message);               
+                }
+
+                echoRespnse(200, $response);
+            } else {
+                $response["error"] = true;
+                $response["message"] = $lang['ERR_LINK_REQUEST'];
+                echoRespnse(404, $response);
+            }
+        });
+
+/**
+ * Get driver information
+ * method GET
+ * url /driver
+ */
+$app->get('/message/:message_id', 'authenticateUser', function($message_id) {
+            global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $response = array();
+            $db = new DbHandler();
+
+            // fetch task
+            $message = $db->getMessage($message_id);
+
+            if ($message != NULL) {
+                $response["error"] = false;
+                $response['message_id'] = $message["message_id"];
+                $response['_from'] = $message["_from"];
+                $response['_to'] = $message["_to"];
+                $response['subject'] = $message["subject"];
+                $response['content'] = $message["content"];
+                $response['created_at'] = $message["created_at"];
+                $response['from_link_avatar'] = $message["from_link_avatar"];
+                
+                echoRespnse(200, $response);
+            } else {
+                $response["error"] = true;
+                $response["message"] = $lang['ERR_LINK_REQUEST'];
+                echoRespnse(404, $response);
+            }
+        });
+
+$app->delete('/message/:message_id', 'authenticateUser', function($message_id) {
+            global $user_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            $db = new DbHandler();
+            $response = array();
+
+            $result = $db->deleteMessage($message_id);
+
+            if ($result) {
+                // user deleted successfully
+                $response["error"] = false;
+                $response["message"] = $lang['MESSAGE_DELETE_SUCCESS'];
+            } else {
+                // task failed to delete
+                $response["error"] = true;
+                $response["message"] = $lang['MESSAGE_DELETE_FAILURE'];
+            }
+            echoRespnse(200, $response);
+        });
+
 
 /////////////////////////////////////////////////////////////////////////////////
 

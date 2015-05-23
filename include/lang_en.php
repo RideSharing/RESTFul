@@ -8,11 +8,11 @@ Language: English
 $lang = array();
 
 $lang['MAIL_REGISTER'] = "Hi there,<br>Please click on the link below to active your account:
-							<a href='http://rideshare.tk/WebApp/controller/register.php?active_key=";
+							<a href='http://localhost/WepApp/controller/register.php?active_key=";
 $lang['MAIL_REGISTER_ACTIVE_ACCOUNT'] = "'>Active account</a>";
 
 $lang['FORGOTPASS_MSG'] = "Hi there,<br>Please click on the link below to reset your password:
-                           <a href='http://rideshare.tk/WebApp/controller/change_password.php?api_key=";
+                           <a href='http://localhost/WepApp/controller/change_password.php?api_key=";
 $lang['FORGOTPASS_MSG1'] = "'>Reset password</a>";
 
 //User message
@@ -103,11 +103,15 @@ $lang['ERR_LINK_REQUEST'] = "The link you request is not existing!.";
 $lang['ERR_EMAIL_VALID']  = "Your email is not validation.";
 $lang['ERR_PASS_LENGTH']  = "The length of your password must limited from 6 to 12 characters.";
 $lang['ERR_PASS_BLANKSPACE'] = "Your password not contain the blank space.";
-
+$lang['ALERT_MESSAGE']   = "Send message successfully!";
+$lang['ERR_MESSAGE']     = "Can not send your message. Please try again.";
 $lang['STAFF_DELETE_SUCCESS'] = "Delete staff is successful!"; 
 $lang['STAFF_DELETE_FAILURE'] = "Delete staff is failure!";
 $lang['FEEDBACK_DELETE_SUCCESS'] = "Delete feedback is successful!";
 $lang['FEEDBACK_DELETE_FAILURE'] = "Delete feedback is failure!";
 $lang['COMMENT_DELETE_SUCCESS'] = "Delete comment is successful!";
 $lang['COMMENT_DELETE_FAILURE'] = "Delete comment is failure!";
+$lang['EMAIL_NOT_EXIST'] = "Email is not exist!";
+$lang['MESSAGE_DELETE_SUCCESS'] = "Delete message is successful!";
+$lang['MESSAGE_DELETE_FAILURE'] = "Delete message is failure!";
 ?>
