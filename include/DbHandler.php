@@ -2379,6 +2379,94 @@ class DbHandler {
         return $num_affected_rows > 0 || $num_affected_rows1 > 0;
     }
 
+    /* ------------- Message table ------------------ */
+
+    public function createMessage($user_id, $to, $subject, $content) {
+        $_from = $this->getUserByUserID($user_id);
+        $_to = $this->getUserByEmail($to);
+
+        if (!isset($_to['email'])) {
+            return EMAIL_NOT_EXIST;
+        }
+
+        $sql_query = "INSERT INTO message(_from, _to, subject, content) values(?, ?, ?, ?)";
+
+        // insert query
+        if ($stmt = $this->conn->prepare($sql_query)) {
+            $stmt->bind_param("ssss", $_from['email'], $to, $subject, $content);
+            $result = $stmt->execute();
+        } else {
+            var_dump($this->conn->error);
+        }
+
+        $stmt->close();
+
+        // Check for successful insertion
+        if ($result) {
+            // User successfully inserted
+            return USER_CREATED_MESSAGE_SUCCESSFULLY;
+        } else {
+            // Failed to create user
+            return USER_CREATE_MESSAGE_FAILED;
+        }
+    }
+
+    public function getListMessage($user_id) {
+        $user = $this->getUserByUserID($user_id);
+
+        $stmt = $this->conn->prepare("SELECT m.*, u.link_avatar as from_link_avatar 
+                                        FROM message as m
+                                        INNER JOIN user as u ON u.email = m._from
+                                        WHERE m._to = ?");
+
+        $stmt->bind_param("s", $user['email']);
+
+        if ($stmt->execute()) {
+            // $user = $stmt->get_result()->fetch_assoc();
+            $vehicle = $stmt->get_result();
+            $stmt->close();
+            return $vehicle;
+        } else {
+            return NULL;
+        }
+    }
+
+    public function getMessage($message_id) {
+        $stmt = $this->conn->prepare("SELECT m.*, u.link_avatar as from_link_avatar 
+                                        FROM message as m
+                                        INNER JOIN user as u ON u.email = m._from
+                                        WHERE m._to = ?");
+
+        $stmt->bind_param("i", $message_id);
+
+        if ($stmt->execute()) {
+            // $user = $stmt->get_result()->fetch_assoc();
+            $stmt->bind_result($_from, $_to, $subject, $content, $message_id, $created_at, $from_link_avatar);
+            $stmt->fetch();
+            $message = array();
+            $message["message_id"] = $message_id;
+            $message["_from"] = $_from;
+            $message["_to"] = $type;
+            $message["subject"] = $subject;
+            $message["content"] = $content;
+            $message["created_at"] = $created_at;
+            $message["from_link_avatar"] = $from_link_avatar;
+            $stmt->close();
+            return $message;
+        } else {
+            return NULL;
+        }
+    }
+
+    public function deleteMessage($message_id) {
+        $stmt = $this->conn->prepare("DELETE FROM message WHERE message_id = ?");
+        $stmt->bind_param("i", $message_id);
+        $stmt->execute();
+        $num_affected_rows = $stmt->affected_rows;
+        $stmt->close();
+        return $num_affected_rows > 0;
+    }
+
     /* ------------- Feedback table ------------------ */
 
     public function createFeedback($email, $name, $content) {

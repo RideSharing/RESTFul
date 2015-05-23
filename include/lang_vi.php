@@ -7,11 +7,11 @@ Language: Vietnamese
 $lang = array();
 
 $lang['MAIL_REGISTER'] = "Chao ban,<br>Vui long nhan vao duong link sau de kich hoat tai khoan:
-							<a href='http://rideshare.tk/WebApp/controller/register.php?active_key=";
+							<a href='http://localhost/WepApp/controller/register.php?active_key=";
 $lang['MAIL_REGISTER_ACTIVE_ACCOUNT'] = "'>Kich hoat tai khoan</a>";
 
 $lang['FORGOTPASS_MSG'] = "Chao ban,<br>Vui long click vao duong link sau de doi mat khau:
-                           <a href='http://rideshare.tk/WebApp/controller/change_password.php?api_key=";
+                           <a href='http://localhost/WepApp/controller/change_password.php?api_key=";
 $lang['FORGOTPASS_MSG1'] = "'>Doi mat khau</a>";
 
 //User message
@@ -107,4 +107,9 @@ $lang['FEEDBACK_DELETE_SUCCESS'] = "Xóa phản hồi thành công!";
 $lang['FEEDBACK_DELETE_FAILURE'] = "Xóa phản hồi thất bại. Vui lòng thử lại!";
 $lang['COMMENT_DELETE_SUCCESS'] = "Xóa bình luận thành công!";
 $lang['COMMENT_DELETE_FAILURE'] = "Xóa bình luận thất bại. Vui lòng thử lại!";
+$lang['ALERT_MESSAGE']   = "Gửi tin nhắn thành công!";
+$lang['ERR_MESSAGE']     = "Không thể gửi tin nhắn, vui lòng thử lại.";
+$lang['EMAIL_NOT_EXIST'] = "Email không tồn tại!";
+$lang['MESSAGE_DELETE_SUCCESS'] = "Xóa tin nhắn thành công!";
+$lang['MESSAGE_DELETE_FAILURE'] = "Xóa tin nhắn thất bại. Vui lòng thử lại!";
 ?>
