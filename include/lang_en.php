@@ -12,7 +12,7 @@ $lang['MAIL_REGISTER'] = "Hi there,<br>Please click on the link below to active 
 $lang['MAIL_REGISTER_ACTIVE_ACCOUNT'] = "'>Active account</a>";
 
 $lang['FORGOTPASS_MSG'] = "Hi there,<br>Please click on the link below to reset your password:
-                           <a href='http://localhost/WepApp/controller/change_password.php?api_key=";
+                           <a href='http://localhost/WepApp/controller/change_pass.php?api_key=";
 $lang['FORGOTPASS_MSG1'] = "'>Reset password</a>";
 
 //User message
@@ -34,7 +34,7 @@ $lang['ERR_ACOUNT_LOCKED'] = "Your current account is locked!.";
 $lang['ERR_LOGIN_CHECK']   = "Login fail!.";
 $lang['ALERT_SENT_EMAIL']  = "An email is sent to you. Please check and do something following the guide.";
 $lang['ERROR_ACTIVATED']   = "Sorry! Have some mistakes. Please try again!.";
-$lang['ERR_TYPE_EMAIL']    = "Your email address is not exactly!";
+$lang['ERR_TYPE_EMAIL']    = "Your email address is not exist!";
 $lang['ERR_LINK_REQUEST']  = "The link you request is not existing!.";
 $lang['ERR_LINK_REQUEST']  = "The link you request is not existing!.";
 $lang['ALERT_UPDATE']      = "Your update is successful!.";   

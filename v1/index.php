@@ -153,7 +153,7 @@ $app->post('/user', function() use ($app) {
                 $response["message"] = $lang['ERR_REGISTER'];
             } else if ($res == USER_ALREADY_EXISTED) {
                 $response["error"] = true;
-                $response["message"] = $lang['ERR_EMAIL_EXIST'];
+                $response["message"] = $lang['REGISTER_USER_SUCCESS'];
             } 
             // echo json response
             echoRespnse(201, $response);
