@@ -1128,49 +1128,66 @@ $app->get('/itineraries', 'authenticateUser', function() use($app) {
                 if (($end_address_lat - $start_address_lat) > 0.05 && ($end_address_long - $start_address_long) > 0.05) {
                     $table = "itinerary_created_northeast";
                     $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
-                    if (count($result) < 30) {
-                        
+                    if (count($result) < 10) {
+                        $result1 = $db->searchItineraries2($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
+                        $result = array_merge($result, $result1);
                     }
                 } else if (($end_address_lat - $start_address_lat) > 0.05 && ($end_address_long - $start_address_long) < -0.05) {
                     $table = "itinerary_created_northwest";
                     $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
+                    if (count($result) < 10) {
+                        $result1 = $db->searchItineraries2($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
+                        $result = array_merge($result, $result1);
+                    }
                 } else if (($end_address_lat - $start_address_lat) < -0.05 && ($end_address_long - $start_address_long) < -0.05) {
                     $table = "itinerary_created_southwest";
                     $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
+                    if (count($result) < 10) {
+                        $result1 = $db->searchItineraries2($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
+                        $result = array_merge($result, $result1);
+                    }
                 } else if (($end_address_lat - $start_address_lat) < -0.05 && ($end_address_long - $start_address_long) > 0.05) {
                     $table = "itinerary_created_southeast";
                     $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
+                    if (count($result) < 10) {
+                        $result1 = $db->searchItineraries2($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
+                        $result = array_merge($result, $result1);
+                    }
                 } else if (($end_address_lat - $start_address_lat) > -0.05 && ($end_address_lat - $start_address_lat) < 0.05 &&
                             ($end_address_long - $start_address_long) > 0.05) {
                     $table = "itinerary_created_east";
                     $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
 
-                    if (count($result) < 30) {
-                        
+                    if (count($result) < 10) {
+                        $result1 = $db->searchItineraries2($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
+                        $result = array_merge($result, $result1);
                     }
                 } else if (($end_address_lat - $start_address_lat) > -0.05 && ($end_address_lat - $start_address_lat) < 0.05 &&
                             ($end_address_long - $start_address_long) < -0.05) {
                     $table = "itinerary_created_west";
                     $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
 
-                    if (count($result) < 30) {
-                        
+                    if (count($result) < 10) {
+                        $result1 = $db->searchItineraries2($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
+                        $result = array_merge($result, $result1);
                     }
                 } else if (($end_address_long - $start_address_long) > -0.05 && ($end_address_long - $start_address_long) < 0.05 &&
                             ($end_address_lat - $start_address_lat) > 0.05) {
                     $table = "itinerary_created_north";
                     $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
 
-                    if (count($result) < 30) {
-                        
+                    if (count($result) < 10) {
+                        $result1 = $db->searchItineraries2($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
+                        $result = array_merge($result, $result1);
                     }
                 } else if (($end_address_long - $start_address_long) > -0.05 && ($end_address_long - $start_address_long) < 0.05 &&
                             ($end_address_lat - $start_address_lat) < -0.05) {
                     $table = "itinerary_created_south";
                     $result = $db->searchItineraries($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
 
-                    if (count($result) < 30) {
-                        
+                    if (count($result) < 10) {
+                        $result1 = $db->searchItineraries2($start_address_lat, $start_address_long, $end_address_lat, $end_address_long, $leave_date, $duration, $cost, $distance, $user_id, $table, $startRow, $endRow);
+                        $result = array_merge($result, $result1);
                     }
                 } else {
                     $response["error"] = true;
@@ -1188,6 +1205,8 @@ $app->get('/itineraries', 'authenticateUser', function() use($app) {
                 // fetching all user tasks
                 $result = $db->getAllItinerariesWithDriverInfo($user_id);
             }
+
+            //print_r($result);
 
             if (isset($result)) {
                 $response["error"] = false;

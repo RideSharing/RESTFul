@@ -1424,97 +1424,59 @@ class DbHandler {
         // set the PDO error mode to exception
         $conn2->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-        if (!isset($leave_date)) {
+        if (!isset($leave_date) || $leave_date == '') {
             $leave_date = date('m/d/Y H:i:s', time());
         }
 
         $q = "";
 
-        if ($table == "itinerary_created_northeast") {
+        if ($table == "itinerary_created_northeast" || $table == "itinerary_created_northwest" ||
+            $table == "itinerary_created_north") {
             $q .= "SELECT i.itinerary_id, ii.driver_id, r.average_rating, v.type as vehicle_type, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
                 i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
                 i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
                 ii.created_at, u.fullname, u.phone, u.link_avatar
-              FROM (SELECT * FROM itinerary_created_northeast 
-                INNER JOIN 
-              WHERE leave_date >='". $leave_date. "' AND ((ABS(start_address_lat - :start_address_lat) < 0.05)
-                    AND (ABS(start_address_long - :start_address_long) < 0.05))";
-        } else if ($table == "itinerary_created_northwest") {
-            $q .= "SELECT i.itinerary_id, ii.driver_id, r.average_rating, v.type as vehicle_type, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
-                i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
-                i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
-                ii.created_at, u.fullname, u.phone, u.link_avatar
-              FROM (SELECT * FROM ".$table." WHERE leave_date >='". $leave_date. "' AND (ABS(start_address_lat - :start_address_lat) < 0.05)
-                    AND (ABS(start_address_long - :start_address_long) < 0.05)
-                    AND (ABS(:end_address_lat - end_address_lat) < 0.05)
-                    AND (ABS(:end_address_long - end_address_long) < 0.05)";
-        } else if ($table == "itinerary_created_north") {
-            $q .= "SELECT i.itinerary_id, ii.driver_id, r.average_rating, v.type as vehicle_type, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
-                i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
-                i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
-                ii.created_at, u.fullname, u.phone, u.link_avatar
-              FROM (SELECT * FROM ".$table." WHERE leave_date >='". $leave_date. "' AND (ABS(start_address_lat - :start_address_lat) < 0.05)
-                    AND (ABS(start_address_long - :start_address_long) < 0.05)
-                    AND (ABS(:end_address_lat - end_address_lat) < 0.05)
-                    AND (ABS(:end_address_long - end_address_long) < 0.05)";
-        } else if ($table == "itinerary_created_southeast") {
-            $q .= "SELECT i.itinerary_id, ii.driver_id, r.average_rating, v.type as vehicle_type, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
-                i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
-                i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
-                ii.created_at, u.fullname, u.phone, u.link_avatar
-              FROM (SELECT * FROM ".$table." WHERE leave_date >='". $leave_date. "' AND (ABS(start_address_lat - :start_address_lat) < 0.05)
-                    AND (ABS(start_address_long - :start_address_long) < 0.05)
-                    AND (ABS(:end_address_lat - end_address_lat) < 0.05)
-                    AND (ABS(:end_address_long - end_address_long) < 0.05)";
-        } else if ($table == "itinerary_created_southwest") {
-            $q .= "SELECT i.itinerary_id, ii.driver_id, r.average_rating, v.type as vehicle_type, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
-                i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
-                i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
-                ii.created_at, u.fullname, u.phone, u.link_avatar
-              FROM (SELECT * FROM ".$table." WHERE leave_date >='". $leave_date. "' AND (ABS(start_address_lat - :start_address_lat) < 0.05)
-                    AND (ABS(start_address_long - :start_address_long) < 0.05)
-                    AND (ABS(:end_address_lat - end_address_lat) < 0.05)
-                    AND (ABS(:end_address_long - end_address_long) < 0.05)";
-        } else if ($table == "itinerary_created_south") {
-            $q .= "SELECT i.itinerary_id, ii.driver_id, r.average_rating, v.type as vehicle_type, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
-                i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
-                i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
-                ii.created_at, u.fullname, u.phone, u.link_avatar
-              FROM (SELECT * FROM ".$table." WHERE leave_date >='". $leave_date. "' AND (ABS(start_address_lat - :start_address_lat) < 0.05)
-                    AND (ABS(start_address_long - :start_address_long) < 0.05)
-                    AND (ABS(:end_address_lat - end_address_lat) < 0.05)
-                    AND (ABS(:end_address_long - end_address_long) < 0.05)";
-        } else if ($table == "itinerary_created_west") {
-            $q .= "SELECT i.itinerary_id, ii.driver_id, r.average_rating, v.type as vehicle_type, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
-                i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
-                i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
-                ii.created_at, u.fullname, u.phone, u.link_avatar
-              FROM (SELECT * FROM ".$table." WHERE leave_date >='". $leave_date. "' AND (ABS(start_address_lat - :start_address_lat) < 0.05)
-                    AND (ABS(start_address_long - :start_address_long) < 0.05)
-                    AND (ABS(:end_address_lat - end_address_lat) < 0.05)
-                    AND (ABS(:end_address_long - end_address_long) < 0.05)";
+              FROM (SELECT * FROM i_itinerary_northeastwest WHERE leave_date >='". $leave_date. "' AND 
+                    (ABS(start_address_lat - :start_address_lat) < 0.05 AND ABS(start_address_long - :start_address_long) < 0.05 AND (end_address_lat - :end_address_lat) > 0.05)
+                    OR (ABS(end_address_lat - :end_address_lat) < 0.05 AND ABS(end_address_long - :end_address_long) < 0.05 AND (:start_address_lat - start_address_lat) > 0.05)";
         } else if ($table == "itinerary_created_east") {
             $q .= "SELECT i.itinerary_id, ii.driver_id, r.average_rating, v.type as vehicle_type, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
                 i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
                 i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
                 ii.created_at, u.fullname, u.phone, u.link_avatar
-              FROM (SELECT * FROM ".$table." WHERE leave_date >='". $leave_date. "' AND (ABS(start_address_lat - :start_address_lat) < 0.05)
-                    AND (ABS(start_address_long - :start_address_long) < 0.05)
-                    AND (ABS(:end_address_lat - end_address_lat) < 0.05)
-                    AND (ABS(:end_address_long - end_address_long) < 0.05)";
+              FROM (SELECT * FROM i_itinerary_created_eastnorthsouth WHERE leave_date >='". $leave_date. "' AND 
+                    (ABS(start_address_lat - :start_address_lat) < 0.05 AND ABS(start_address_long - :start_address_long) < 0.05 AND (end_address_long - :end_address_long) > 0.05)
+                    OR (ABS(end_address_lat - :end_address_lat) < 0.05 AND ABS(end_address_long - :end_address_long) < 0.05 AND (:start_address_long - start_address_long) > 0.05)";
+        } else if ($table == "itinerary_created_southeast" || $table == "itinerary_created_southwest" || 
+            $table == "itinerary_created_south" ) {
+            $q .= "SELECT i.itinerary_id, ii.driver_id, r.average_rating, v.type as vehicle_type, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
+                i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
+                i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
+                ii.created_at, u.fullname, u.phone, u.link_avatar
+              FROM (SELECT * FROM i_itinerary_southeastwest WHERE leave_date >='". $leave_date. "' AND 
+                    (ABS(start_address_lat - :start_address_lat) < 0.05 AND ABS(start_address_long - :start_address_long) < 0.05 AND (:end_address_lat - end_address_lat) > 0.05)
+                    OR (ABS(end_address_lat - :end_address_lat) < 0.05 AND ABS(end_address_long - :end_address_long) < 0.05 AND (start_address_lat - :start_address_lat) > 0.05)";
+        } else {
+            $q .= "SELECT i.itinerary_id, ii.driver_id, r.average_rating, v.type as vehicle_type, ii.customer_id, i.start_address, i.start_address_lat, i.start_address_long, 
+                i.pick_up_address, i.pick_up_address_lat, i.pick_up_address_long, i.drop_address, i.drop_address_lat, i.drop_address_long, 
+                i.end_address, i.end_address_lat, i.end_address_long, i.leave_date, i.duration, i.distance, i.cost, i.description, ii.status, 
+                ii.created_at, u.fullname, u.phone, u.link_avatar
+              FROM (SELECT * FROM i_itinerary_created_westnorthsouth WHERE leave_date >='". $leave_date. "' AND 
+                    (ABS(start_address_lat - :start_address_lat) < 0.05 AND ABS(start_address_long - :start_address_long) < 0.05 AND (:end_address_long - end_address_long) > 0.05)
+                    OR (ABS(end_address_lat - :end_address_lat) < 0.05 AND ABS(end_address_long - :end_address_long) < 0.05 AND (start_address_long - :start_address_long) > 0.05)"; 
         }
 
-        if (isset($duration)) {
+        if (isset($duration) && $duration != '') {
             $q .= " AND duration <= :duration";
         }
-        if (isset($cost)) {
+        if (isset($cost) && $cost != '') {
             $q .= " AND cost <= :cost";
         }
-        if (isset($distance)) {
+        if (isset($distance) && $distance != '') {
             $q .= " AND distance <= :distance";
         }
 
-        $q .= " AND) as i 
+        $q .= ") as i 
               INNER JOIN (select * from itinerary where status = 1) as ii
               ON ii.itinerary_id = i.itinerary_id
               INNER JOIN (select * from driver where user_id <> :user_id and status = 2) as d 
@@ -1533,25 +1495,35 @@ class DbHandler {
                  
         $stmt = $conn2->prepare($q);
 
-        if (isset($duration)) {
+        if (isset($duration) && $duration != '') {
             $stmt->bindParam(':duration', $duration);
         }
-        if (isset($cost)) {
+        if (isset($cost) && $cost != '') {
             $stmt->bindParam(':cost', $cost);
         }
-        if (isset($distance)) {
+        if (isset($distance) && $distance != '') {
             $stmt->bindParam(':distance', $distance);
         }
 
-        $stmt->bindParam(':start_address_lat', $start_address_lat);
-        $stmt->bindParam(':start_address_long', $start_address_long);
-        $stmt->bindParam(':end_address_lat', $end_address_lat);
-        $stmt->bindParam(':end_address_long', $end_address_long);
+        if ($table == "AllStart") {
+            $stmt->bindParam(':start_address_lat', $start_address_lat);
+            $stmt->bindParam(':start_address_long', $start_address_long);
+        } else if ($table == "AllEnd") {
+            $stmt->bindParam(':end_address_lat', $end_address_lat);
+            $stmt->bindParam(':end_address_long', $end_address_long);
+        } else {
+            $stmt->bindParam(':start_address_lat', $start_address_lat);
+            $stmt->bindParam(':start_address_long', $start_address_long);
+            $stmt->bindParam(':end_address_lat', $end_address_lat);
+            $stmt->bindParam(':end_address_long', $end_address_long);
+        }
         
         $stmt->bindParam(':user_id', $user_id);
 
         $stmt->execute();
         $itineraries = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        //print_r($itineraries);
 
         return $itineraries;
     }
