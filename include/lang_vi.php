@@ -11,7 +11,7 @@ $lang['MAIL_REGISTER'] = "Chao ban,<br>Vui long nhan vao duong link sau de kich 
 $lang['MAIL_REGISTER_ACTIVE_ACCOUNT'] = "'>Kich hoat tai khoan</a>";
 
 $lang['FORGOTPASS_MSG'] = "Chao ban,<br>Vui long click vao duong link sau de doi mat khau:
-                           <a href='http://localhost/WepApp/controller/change_password.php?api_key=";
+                           <a href='http://localhost/WepApp/controller/change_pass.php?api_key=";
 $lang['FORGOTPASS_MSG1'] = "'>Doi mat khau</a>";
 
 //User message
