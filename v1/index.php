@@ -2276,12 +2276,12 @@ $app->get('/statistic_customer/:year', 'authenticateUser', function( $year) {
             $response = array();
             $db = new DbHandler();
 
+            if($year == 'all'){
+                $result = $db->statisticCustomerAll($user_id);
+            } else {
+                $result = $db->statisticCustomerBy($user_id, $year);
+            }
             
-            $result = $db->statisticCustomerBy($user_id, $year);
-        
-            //$result2 = $db->statisticCustomerMoneyBy($user_id, $year);
-            
-
             if (isset($result)) {
                 $response['error'] = false;
                 $response['stats_customer'] = $result;
@@ -2309,10 +2309,11 @@ $app->get('/statistic_driver/:year', 'authenticateUser', function( $year) {
             $response = array();
             $db = new DbHandler();
 
-            
-            $result = $db->statisticDriverBy($user_id, $year);
-        
-            //$result2 = $db->statisticDriverMoneyBy($user_id, $year);
+            if($year == 'all'){
+                $result = $db->statisticDriverAll($user_id);
+            } else {
+                $result = $db->statisticDriverBy($user_id, $year);
+            }
             
 
             if (isset($result)) {
@@ -3142,7 +3143,7 @@ $app->get('/staff/itinerary/:id', function($itinerary_id) {
             $db = new DbHandler();
 
             // fetch task
-            $result = $db->getItinerary($itinerary_id);
+            $result = $db->getItinerary1($itinerary_id);
 
             if ($result != NULL) {
                 $response["error"] = false;
@@ -3169,6 +3170,9 @@ $app->get('/staff/itinerary/:id', function($itinerary_id) {
                 $response["status"] = $result["status"];
                 $response["created_at"] = $result["created_at"];
                 $response["fullname"] = $result["fullname"];
+                $response["link_avatar"] = $result["link_avatar"];
+                $response["c_fullname"] = $result["c_fullname"];
+                $response["c_linkavatar"] = $result["c_linkavatar"];
                 echoRespnse(200, $response);
             } else {
                 $response["error"] = true;
