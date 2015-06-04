@@ -2493,6 +2493,36 @@ class DbHandler {
         }
     }
 
+    public function createMessage1($to, $subject, $content) {
+
+        $_to = $this->getUserByEmail($to);
+
+        if (!isset($_to['email'])) {
+            return EMAIL_NOT_EXIST;
+        }
+
+        $sql_query = "INSERT INTO message(_from, _to, subject, content) values(?, ?, ?, ?)";
+
+        // insert query
+        if ($stmt = $this->conn->prepare($sql_query)) {
+            $stmt->bind_param("ssss", 'admin@ridesharing.tk', $to, $subject, $content);
+            $result = $stmt->execute();
+        } else {
+            var_dump($this->conn->error);
+        }
+
+        $stmt->close();
+
+        // Check for successful insertion
+        if ($result) {
+            // User successfully inserted
+            return USER_CREATED_MESSAGE_SUCCESSFULLY;
+        } else {
+            // Failed to create user
+            return USER_CREATE_MESSAGE_FAILED;
+        }
+    }
+
     public function getListMessage($user_id) {
         $user = $this->getUserByUserID($user_id);
 

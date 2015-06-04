@@ -2921,6 +2921,47 @@ $app->put('/staff/driver/:user_id', 'authenticateStaff', function($user_id) use(
             echoRespnse(200, $response);
         });
 
+$app->post('/staff/message', 'authenticateStaff', function() use ($app) {
+            global $staff_id;
+
+            $language = "en";
+            if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
+                $language = $_GET['lang'];
+                include '../include/lang_'.$_GET['lang'].'.php';
+            } else {
+                include '../include/lang_en.php';
+            }
+
+            // check for required params
+            verifyRequiredParams(array('to', 'subject', 'content'), $language);
+
+            $response = array();
+
+            // reading post params
+            $to = $app->request->post('to');
+            $subject = $app->request->post('subject');
+            $content = $app->request->post('content');
+
+            // validating email address
+            validateEmail($to, $language);
+
+            $db = new DbHandler();
+            $res = $db->createMessage($user_id, $to, $subject, $content);
+
+            if ($res == USER_CREATED_MESSAGE_SUCCESSFULLY) {
+                $response["error"] = false;
+                $response["message"] = $lang['ALERT_MESSAGE'];
+            } else if ($res == USER_CREATE_MESSAGE_FAILED) {
+                $response["error"] = true;
+                $response["message"] = $lang['ERR_MESSAGE'];
+            } else if ($res == EMAIL_NOT_EXIST) {
+                $response["error"] = true;
+                $response["message"] = $lang['EMAIL_NOT_EXIST'];
+            }
+            // echo json response
+            echoRespnse(201, $response);
+        });
+
 $app->get('/staff/vehicle', 'authenticateStaff', function() {
             $language = "en";
             if (isset($_GET['lang']) && file_exists('../include/lang_'.$_GET['lang'].'.php')) {
