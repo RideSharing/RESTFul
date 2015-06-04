@@ -3143,7 +3143,7 @@ $app->get('/staff/itinerary/:id', function($itinerary_id) {
             $db = new DbHandler();
 
             // fetch task
-            $result = $db->getItinerary($itinerary_id);
+            $result = $db->getItinerary1($itinerary_id);
 
             if ($result != NULL) {
                 $response["error"] = false;
@@ -3170,6 +3170,9 @@ $app->get('/staff/itinerary/:id', function($itinerary_id) {
                 $response["status"] = $result["status"];
                 $response["created_at"] = $result["created_at"];
                 $response["fullname"] = $result["fullname"];
+                $response["link_avatar"] = $result["link_avatar"];
+                $response["c_fullname"] = $result["c_fullname"];
+                $response["c_linkavatar"] = $result["c_linkavatar"];
                 echoRespnse(200, $response);
             } else {
                 $response["error"] = true;
